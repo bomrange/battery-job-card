@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1F3864">
+<title>Battery Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--navy:#1F3864;--navy2:#2B4A80;--blue:#2E75B6;--teal:#0F7C8C;--amber:#8A6D00;--orange:#C55A11;--green:#548235;--purple:#7030A0;--red:#B42318;--ok:#2F7D4F;
+--bg:#F4F6F9;--card:#fff;--ink:#1d2433;--muted:#5f6b7d;--line:#dde2ea;--soft:#F7F9FC;--r:12px}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}a{color:var(--blue)}
+.splash{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--navy);font-weight:700;font-size:18px}
+.splash .logo{width:64px;height:64px;border-radius:18px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px}
+/* login */
+.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#1F3864 0%,#2B4A80 55%,#F4F6F9 55%)}
+.auth .box{background:#fff;border-radius:18px;box-shadow:0 10px 40px rgba(15,25,50,.18);width:100%;max-width:400px;padding:28px}
+.auth h1{margin:6px 0 2px;font-size:22px;color:var(--navy)}.auth .sub{color:var(--muted);margin-bottom:18px;font-size:13px}
+.brandrow{display:flex;align-items:center;gap:10px}.brandrow .logo{width:42px;height:42px;border-radius:12px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px}
+/* layout */
+.top{position:sticky;top:0;z-index:30;background:var(--navy);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 14px}
+.top .menu{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:18px}
+.top .ttl{font-weight:700;font-size:16px}.top .ttl small{display:block;font-weight:500;font-size:11px;opacity:.75;letter-spacing:.05em}
+.top .me{margin-left:auto;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px}
+.shell{display:flex;min-height:calc(100vh - 56px)}
+.side{width:230px;background:#fff;border-right:1px solid var(--line);padding:12px 8px;flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.side a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--ink);text-decoration:none;font-weight:500;margin-bottom:2px}
+.side a:hover{background:var(--soft)}.side a.on{background:#E8EEF8;color:var(--navy);font-weight:700}
+.side a .ic{width:22px;text-align:center}.side a .badge{margin-left:auto}
+.side .sec{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin:14px 12px 6px}
+main{flex:1;min-width:0;padding:18px;max-width:1240px}
+@media (max-width:900px){.side{position:fixed;left:0;top:56px;z-index:40;transform:translateX(-100%);transition:transform .2s;box-shadow:4px 0 20px rgba(0,0,0,.15)}.side.open{transform:none}main{padding:12px}}
+@media (min-width:901px){.top .menu{display:none}}
+.scrim{position:fixed;inset:56px 0 0 0;background:rgba(0,0,0,.25);z-index:35;display:none}.scrim.on{display:block}
+/* common */
+h2.pg{margin:0 0 4px;font-size:20px}.pgsub{color:var(--muted);margin:0 0 14px;font-size:13px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.panel h3{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grow{flex:1}.right{margin-left:auto}
+.muted{color:var(--muted)}.small{font-size:12px}.tiny{font-size:11px}.b{font-weight:700}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;cursor:pointer;font-weight:600;white-space:nowrap;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:#b9c2d0}.btn.p{background:var(--navy);border-color:var(--navy);color:#fff}.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.big{padding:12px 18px;font-size:15px}.btn.sm{padding:5px 10px;font-size:12px}.btn.danger{color:var(--red);border-color:#f0c2bd}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.block{width:100%;justify-content:center}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.badge{background:var(--red);color:#fff;border-radius:999px;font-size:11px;font-weight:700;padding:1px 7px}
+input[type=text],input[type=tel],input[type=password],input[type=number],input[type=date],input[type=datetime-local],input[type=search],select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff}
+textarea{min-height:70px;resize:vertical}input:focus,select:focus,textarea:focus{outline:2px solid #9DB9E6;border-color:#9DB9E6}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.grid .wide{grid-column:1/-1}
+.opts{display:flex;flex-wrap:wrap;gap:6px}.opts label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 11px;cursor:pointer;background:#fff;font-size:13px;user-select:none}
+.opts input{margin:0;accent-color:var(--navy)}.opts label:has(input:checked){background:#E8EEF8;border-color:#9DB9E6;font-weight:600}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;border-top:4px solid var(--navy);cursor:default}
+.tile.link{cursor:pointer}.tile.link:hover{box-shadow:0 2px 10px rgba(20,30,50,.08)}
+.tile .v{font-size:24px;font-weight:700;line-height:1.1}.tile .k{font-size:12px;color:var(--muted);font-weight:600}
+table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th{text-align:left;font-size:11.5px;color:var(--muted);font-weight:600;padding:7px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+table.t td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.t tr.click{cursor:pointer}table.t tr.click:hover td{background:var(--soft)}.tw{overflow-x:auto}
+.av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#c9d3e3;color:var(--navy);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.av.lg{width:84px;height:84px;font-size:28px}.av.sm{width:26px;height:26px;font-size:11px}.av.xs{width:22px;height:22px;font-size:10px}
+.person{display:inline-flex;align-items:center;gap:8px}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:10px;padding:10px 12px;cursor:pointer}
+.item:hover{box-shadow:0 2px 8px rgba(20,30,50,.08)}.item .id{font-weight:700;font-size:15px}.item .meta{font-size:12px;color:var(--muted)}
+.empty{text-align:center;padding:28px 10px;color:var(--muted)}
+.banner{padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:13px}.banner.warn{background:#FFF4E5;border:1px solid #F5C27A;color:#7A4A00}.banner.err{background:#FDECEA;border:1px solid #F4B4AE;color:var(--red)}.banner.ok{background:#DCF0E3;border:1px solid #9CD3B0;color:#1f5d38}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:600}.tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.ann{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff;border-left:5px solid var(--navy)}
+.ann.recognition{border-left-color:#C9A227;background:#FFFBEA}.ann.promotion{border-left-color:var(--purple);background:#F6F0FB}
+.ann h4{margin:0 0 4px;font-size:15px}.ann .body{white-space:pre-wrap;font-size:13.5px}
+.lb{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.lb:last-child{border-bottom:0}.lb .rank{width:22px;font-weight:700;color:var(--muted);text-align:center}
+.lb .rank.g1{color:#C9A227}.lb .rank.g2{color:#8A8F99}.lb .rank.g3{color:#A0643C}
+.bar{height:9px;border-radius:5px;background:var(--blue)}
+.filters{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-bottom:12px}
+.filters label{font-size:11px;font-weight:600;color:var(--muted)}
+#map{height:420px;border-radius:10px;border:1px solid var(--line)}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(15,22,35,.45);z-index:60;display:flex;justify-content:center;overflow-y:auto;padding:24px 12px}
+.sheet{background:var(--bg);border-radius:14px;max-width:900px;width:100%;align-self:flex-start;overflow:hidden}
+.sheet .hd{background:var(--navy);color:#fff;padding:14px 18px;display:flex;gap:12px;align-items:flex-start}
+.sheet .bd{padding:16px}.xbtn{margin-left:auto;background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600}
+.hist{background:#fff;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.hist h4{margin:0 0 6px;font-size:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 14px;font-size:12.5px}.kv div b{color:var(--muted);font-weight:600}.kv .wide{grid-column:1/-1}
+.action{border:2px solid var(--blue);border-radius:12px;background:#fff;padding:16px;margin-top:6px}.action h3{margin:0 0 10px;font-size:15px}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:22px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1d2433;color:#fff;padding:10px 16px;border-radius:10px;z-index:80;font-weight:600;font-size:13px;display:none;max-width:90vw}
+.gps{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--line)}
+.gps.ok{background:#DCF0E3;border-color:#9CD3B0;color:#1f5d38}.gps.bad{background:#FDECEA;border-color:#F4B4AE;color:var(--red)}
+.foot{font-size:11px;color:var(--muted);text-align:center;padding:20px 0 6px}
+.photo-drop{display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px}
+.topsearch{flex:1;max-width:420px;margin-left:16px;display:flex;align-items:center;background:rgba(255,255,255,.12);border-radius:9px;padding:0 4px 0 0}
+.topsearch input{background:transparent!important;border:0!important;color:#fff!important;padding:8px 10px!important}
+.topsearch input::placeholder{color:#c9d4ea}.topsearch input:focus{outline:none!important}
+.scanbtn{background:transparent;border:0;color:#fff;font-size:16px;cursor:pointer;padding:4px 6px}
+@media (max-width:700px){.top{flex-wrap:wrap}.topsearch{order:3;flex-basis:100%;max-width:none;margin:6px 0 0}.top .me span{display:none}}
+.tl{position:relative;padding-left:18px;border-left:3px solid var(--line);margin-left:6px}
+.tl .ev{position:relative;margin-bottom:10px}.tl .ev:before{content:'';position:absolute;left:-26px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--dot,#2E75B6);border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.scanbox{position:relative;background:#000;border-radius:12px;overflow:hidden}.scanbox video{width:100%;display:block}
+.scanbox .aim{position:absolute;left:12%;right:12%;top:38%;height:24%;border:3px solid #39d353;border-radius:10px}
+@media (max-width:700px){.side{top:104px;height:calc(100vh - 104px)}.scrim{inset:104px 0 0 0}}
+
+</style>
+</head>
+<body>
+<div id="app"><div class="splash"><div class="logo">⚡</div><div>Battery Ops</div></div></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<script>
+// ================= CONFIG =================
+const SB_URL = 'https://vlpxhjsjjzqnecjdylqt.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZscHhoanNqanpxbmVjamR5bHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQyMzY0NjUsImV4cCI6MjEwOTgxMjQ2NX0.Kn2EOPU7Zsqas9oV9Fq76OF0S1Eoc2Mj8A1rYLTK4x8';
+const EMAIL_DOMAIN = '@staff.batteryops.internal';
+const REPEAT_DAYS = 30;
+
+const ROLE_LABEL = { admin:'Super admin', rm:'Regional manager', field_tech:'Field technician', receiving:'Receiving', store:'Store keeper',
+  diagnosis:'Diagnosis', spoc:'Brand SPOC', repair_tech:'Repair technician', qc:'QC engineer', tester:'Air leak / insulation',
+  dispatch:'Dispatch', iot:'IoT (offline to online)', fabrication:'Fabrication', data_view:'Data & reports', wh_tech:'Warehouse technician' };
+const ROLES = Object.keys(ROLE_LABEL);
+const BRANDS = ['CBAK','Ampace','Greenway'];
+const PREFIX = { C:'CBAK', A:'Ampace', D:'Greenway' };
+const BRAND_COLOR = { CBAK:'#2E75B6', Ampace:'#C55A11', Greenway:'#548235', Other:'#666' };
+const REGIONS = ['Central','Eastern','Northern','Western'];
+const WAREHOUSES = ['Main warehouse','Luzira warehouse','Bukoto Solar Hub'];
+const STAGES = [
+  { key:'diagnosis', label:'Diagnosis', color:'#8A6D00', tint:'#FFF2CC' },
+  { key:'assign',    label:'Waiting for assignment', short:'Assign', color:'#5B6B85', tint:'#E7EAEE' },
+  { key:'repair',    label:'Repair', color:'#2E75B6', tint:'#DEEBF7' },
+  { key:'spares',    label:'Waiting for spares', short:'Spares', color:'#A15C00', tint:'#FFE9CC' },
+  { key:'qc',        label:'Quality check', short:'QC', color:'#C55A11', tint:'#FBE5D6' },
+  { key:'test',      label:'Air leak & insulation', short:'Testing', color:'#548235', tint:'#E2EFDA' },
+  { key:'dispatch',  label:'Dispatch', color:'#7030A0', tint:'#EADCF4' },
+  { key:'closed',    label:'Closed', color:'#2F7D4F', tint:'#DCF0E3' },
+];
+const ST = Object.fromEntries(STAGES.map(s => [s.key, s]));
+const FAULTS = [['F01','BMS fault / no communication'],['F02','Cell imbalance (high delta)'],['F03','Dead / low-voltage cell'],['F04','Charging port damage'],
+  ['F05','Discharge connector / terminal damage'],['F06','Broken weld / busbar'],['F07','Fuse / MOSFET failure'],['F08','Water ingress / corrosion'],
+  ['F09','Casing / seal damage (air leak)'],['F10','Insulation failure'],['F11','Firmware / IoT module issue'],['F12','No fault found (NFF)']];
+const FAULT_NAME = Object.fromEntries(FAULTS);
+const TOOLS_REPAIR = ['Multimeter','Battery analyser','Laptop + BMS software','Spot welder','Soldering iron','Crimping tool','Heat gun','Screwdriver / torque set','Balancer / charger'];
+const TOOLS_DIAG = ['Multimeter','Battery analyser','Laptop + BMS software','Insulation tester'];
+const TOOLS_QC = ['Multimeter','Battery analyser','Laptop + BMS software','Charger / discharger','IR thermometer'];
+const TOOLS_TEST = ['Air leak tester','Insulation tester (megger)','Pressure gauge'];
+const SPARES = ['Charging port','Discharge connector','BMS board','Cells','Fuse','MOSFET','Casing / seal','IoT module','SIM card','Wiring / busbar','Other'];
+const WARRANTY = { in:'Under warranty', out:'Out of warranty', unknown:'Not known' };
+const ISSUE_KIND = { rack:'Smart rack not working', faulty:'High number of faulty batteries', critical:'Critical issue', visit:'Routine visit', other:'Other' };
+const PRIORITY = { critical:['Critical','#B42318'], high:['High','#C55A11'], normal:['Normal','#5B6B85'] };
+const QC_CHECKS = ['Pack voltage','Cell balance / delta','BMS communication','Charge / discharge','Temperature','Connectors & casing','Labels / ID'];
+
+// ================= STATE =================
+const S = { sb:null, user:null, me:null, people:{}, peopleList:[], stations:[], cards:[], logs:[], checkins:[], iot:[], issues:[], anns:[], requests:[], team:'all',
+  view:'home', loaded:false, dirty:false, openCard:null, cardSig:null, tab:{}, f:{}, perfRange:'month' };
+
+// ================= HELPERS =================
+const $ = (s, el = document) => el.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const now = () => Date.now();
+const pad = n => String(n).padStart(2, '0');
+const ms = v => v == null ? null : (typeof v === 'number' ? v : Date.parse(v));
+function fmtDT(v){ const t = ms(v); if (!t) return '—'; const d = new Date(t); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function fmtD(v){ const t = ms(v); if (!t) return '—'; const d = new Date(t); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`; }
+function dayKey(v){ const d = new Date(ms(v)); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fmtDur(m){ if (m == null || isNaN(m)) return '—'; m = Math.round(m/60000); if (m < 60) return m + ' min'; const h = Math.floor(m/60); if (h < 48) return h + 'h ' + (m%60) + 'm'; return Math.floor(h/24) + 'd ' + (h%24) + 'h'; }
+const mins = e => (e && e.inAt && e.outAt) ? Math.max(0, (e.outAt - e.inAt) / 60000) : null;
+const hrs = (a, b) => (ms(a) && ms(b)) ? (ms(b) - ms(a)) / 3600000 : null;
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+const pct = v => v == null ? '—' : Math.round(v * 100) + '%';
+const num1 = v => v == null ? '—' : (Math.round(v * 10) / 10).toString();
+const openEntry = arr => { const l = (arr || []).at(-1); return l && !l.outAt ? l : null; };
+const lastDone = arr => [...(arr || [])].reverse().find(e => e.outAt);
+const brandOf = id => PREFIX[(String(id || '').trim()[0] || '').toUpperCase()] || 'Other';
+function toast(msg, long){ const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(() => t.style.display = 'none', long ? 6000 : 2800); }
+function lsGet(k, d){ try { return localStorage.getItem(k) ?? d; } catch(e){ return d; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+function chip(text, bg, fg = '#fff'){ return `<span class="chip" style="background:${bg};color:${fg}">${esc(text)}</span>`; }
+const brandChip = b => b ? chip(b, BRAND_COLOR[b] || '#666') : '';
+const stageChip = k => { const s = ST[k] || ST.diagnosis; return chip(s.short || s.label, s.color); };
+const has = r => !!S.me && (S.me.roles || []).includes(r);
+const hasAny = rs => rs.some(has);
+const isAdmin = () => has('admin');
+const canSeeIot = () => hasAny(['admin','rm','receiving','store','diagnosis','qc','tester','dispatch','iot','fabrication','data_view','wh_tech']);
+const myWh = () => S.me?.warehouse || null;
+const reportsToMe = p => !!p && !!S.me && (p.reports_to || '').trim().toLowerCase() === S.me.full_name.trim().toLowerCase();
+const person = id => S.people[id] || null;
+const nameOf = id => person(id)?.full_name || (id ? 'Unknown' : '—');
+const initials = n => (n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+function avatar(id, cls = ''){ const p = person(id); if (p && p.photo_url) return `<img class="av ${cls}" src="${esc(p.photo_url)}" alt="">`; return `<span class="av ${cls}">${esc(initials(p?.full_name))}</span>`; }
+function avatarP(p, cls = ''){ if (p && p.photo_url) return `<img class="av ${cls}" src="${esc(p.photo_url)}" alt="">`; return `<span class="av ${cls}">${esc(initials(p?.full_name))}</span>`; }
+const who = (id, cls = 'xs') => id ? `<span class="person">${avatar(id, cls)}${esc(nameOf(id))}</span>` : '—';
+const stationName = id => S.stations.find(s => s.id === id)?.name || '';
+function checks(name, items, sel = []){ return `<div class="opts">${items.map(i => `<label><input type="checkbox" name="${name}" value="${esc(i)}" ${sel.includes(i) ? 'checked' : ''}>${esc(i)}</label>`).join('')}</div>`; }
+function radios(name, items, sel, req = true){ return `<div class="opts">${items.map(([v, l], i) => `<label><input type="radio" name="${name}" value="${esc(v)}" ${sel === v ? 'checked' : ''} ${req && i === 0 ? 'required' : ''}>${esc(l)}</label>`).join('')}</div>`; }
+function options(items, sel, blank){ return (blank != null ? `<option value="">${esc(blank)}</option>` : '') + items.map(i => { const [v, l] = Array.isArray(i) ? i : [i, i]; return `<option value="${esc(v)}" ${String(sel) === String(v) ? 'selected' : ''}>${esc(l)}</option>`; }).join(''); }
+const fd = form => { const f = new FormData(form); const g = k => (f.get(k) || '').toString().trim(); g.all = k => f.getAll(k); return g; };
+function rangeOf(key, from, to){
+  const d = new Date(); d.setHours(0, 0, 0, 0); const day = 86400000; const t0 = d.getTime();
+  if (key === 'today') return [t0, t0 + day];
+  if (key === 'yesterday') return [t0 - day, t0];
+  if (key === '7') return [t0 - 6*day, t0 + day];
+  if (key === '30') return [t0 - 29*day, t0 + day];
+  if (key === 'month') return [new Date(d.getFullYear(), d.getMonth(), 1).getTime(), t0 + day];
+  if (key === 'lastmonth') return [new Date(d.getFullYear(), d.getMonth()-1, 1).getTime(), new Date(d.getFullYear(), d.getMonth(), 1).getTime()];
+  if (key === 'all') return [0, t0 + day];
+  const f = from ? Date.parse(from + 'T00:00') : t0; const tt = to ? Date.parse(to + 'T00:00') + day : t0 + day; return [f, tt];
+}
+function getGPS(){
+  return new Promise(res => {
+    if (!navigator.geolocation) return res({ error:'This phone or browser cannot share location' });
+    navigator.geolocation.getCurrentPosition(p => res({ lat:p.coords.latitude, lng:p.coords.longitude, accuracy:Math.round(p.coords.accuracy) }),
+      e => res({ error: e.code === 1 ? 'Location permission was refused' : 'Could not get location (' + e.message + ')' }),
+      { enableHighAccuracy:true, timeout:20000, maximumAge:30000 });
+  });
+}
+async function resizeImage(file, size = 320){
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+  const c = document.createElement('canvas'); c.width = c.height = size; const s = Math.min(img.width, img.height);
+  c.getContext('2d').drawImage(img, (img.width - s)/2, (img.height - s)/2, s, s, 0, 0, size, size);
+  return await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+}
+
+// ================= AUTH =================
+async function boot(){
+  if (!window.supabase){ $('#app').innerHTML = `<div class="auth"><div class="box"><h1>Can't connect</h1><p class="muted">Check your internet connection and reload the page.</p></div></div>`; return; }
+  S.sb = window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true } });
+  window.addEventListener('hashchange', () => { S.dirty = false; route(); });
+  document.addEventListener('click', onClick);
+  document.addEventListener('submit', onSubmit);
+  document.addEventListener('input', e => { if (e.target.closest('main form')) S.dirty = true; });
+  document.addEventListener('change', onChange);
+  const { data } = await S.sb.auth.getSession();
+  if (data && data.session){ S.user = data.session.user; await afterLogin(); } else renderLogin();
+}
+function renderLogin(msg){
+  $('#app').innerHTML = `<div class="auth"><div class="box">
+    <div class="brandrow"><div class="logo">⚡</div><div><div class="b" style="color:var(--navy)">BATTERY OPS</div><div class="tiny muted">BATTERY OPERATIONS MANAGEMENT</div></div></div>
+    <h1>Battery Ops</h1><div class="sub">Sign in with your Staff ID and PIN</div>
+    ${msg ? `<div class="banner err">${esc(msg)}</div>` : ''}
+    <form data-form="login" autocomplete="on">
+      <label class="f">Staff ID</label><input type="text" name="sid" required placeholder="e.g. WH-008" style="text-transform:uppercase;margin-bottom:10px" autocomplete="username">
+      <label class="f">PIN</label><input type="password" name="pin" required inputmode="numeric" placeholder="6-digit PIN" autocomplete="current-password" style="margin-bottom:16px">
+      <button class="btn p big block" type="submit">Sign in</button>
+    </form>
+    <div class="small muted" style="margin-top:14px;text-align:center">Only registered Battery Ops staff can sign in.<br>New staff or forgot your PIN? Ask the Battery Operations Supervisor.</div>
+  </div></div>`;
+}
+function renderRequestAccess(done){
+  $('#app').innerHTML = `<div class="auth"><div class="box">
+    <h1>Request access</h1><div class="sub">Your request goes to the Battery Operations Supervisor for approval.</div>
+    ${done ? `<div class="banner ok">Request sent. You'll get your Staff ID login and PIN from your supervisor once approved.</div><button class="btn block" data-act="back-login">Back to sign in</button>` : `
+    <form data-form="request">
+      <div class="grid" style="grid-template-columns:1fr">
+        <div><label class="f">Staff ID</label><input type="text" name="sid" required style="text-transform:uppercase"></div>
+        <div><label class="f">Full name</label><input type="text" name="name" required></div>
+        <div><label class="f">Phone number</label><input type="tel" name="phone" required></div>
+        <div><label class="f">Your role</label><select name="role">${options(ROLES.filter(r => r !== 'admin').map(r => [r, ROLE_LABEL[r]]))}</select></div>
+        <div><label class="f">Team / station / warehouse (optional)</label><input type="text" name="note"></div>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="btn p" type="submit">Send request</button><button class="btn" type="button" data-act="back-login">Cancel</button></div>
+    </form>`}
+  </div></div>`;
+}
+async function doLogin(form){
+  const g = fd(form); const sid = g('sid').toUpperCase(); const pin = g('pin');
+  const btn = form.querySelector('button'); btn.disabled = true; btn.textContent = 'Signing in…';
+  const { data, error } = await S.sb.auth.signInWithPassword({ email: sid.toLowerCase() + EMAIL_DOMAIN, password: pin });
+  if (error){ renderLogin(/invalid/i.test(error.message) ? 'Wrong Staff ID or PIN.' : /banned/i.test(error.message) ? 'This account has been switched off. Talk to your supervisor.' : error.message); return; }
+  S.user = data.user; await afterLogin();
+}
+async function afterLogin(){
+  const { data: me, error } = await S.sb.from('profiles').select('*').eq('id', S.user.id).single();
+  if (error || !me){ await S.sb.auth.signOut(); renderLogin('Your account has no profile yet. Talk to your supervisor.'); return; }
+  if (!me.active){ await S.sb.auth.signOut(); renderLogin('This account has been switched off. Talk to your supervisor.'); return; }
+  S.me = me;
+  if (me.must_change_pin) return renderChangePin(true);
+  if (!me.photo_url) return renderPhotoGate();
+  await startApp();
+}
+function renderChangePin(first, msg){
+  $('#app').innerHTML = `<div class="auth"><div class="box">
+    <h1>${first ? 'Welcome, ' + esc(S.me.full_name.split(' ')[0]) : 'Change PIN'}</h1>
+    <div class="sub">${first ? 'Before you start, choose your own PIN. Do not share it with anyone.' : 'Choose a new PIN.'}</div>
+    ${msg ? `<div class="banner err">${esc(msg)}</div>` : ''}
+    <form data-form="pin">
+      <label class="f">New PIN (6 digits)</label><input type="password" name="p1" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required style="margin-bottom:10px">
+      <label class="f">Type it again</label><input type="password" name="p2" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required style="margin-bottom:16px">
+      <button class="btn p big block" type="submit">Save PIN</button>
+    </form>
+    ${first ? '' : '<button class="btn block" style="margin-top:8px" data-act="go" data-v="profile">Cancel</button>'}
+  </div></div>`;
+}
+async function savePin(form){
+  const g = fd(form); if (g('p1') !== g('p2')) return renderChangePin(S.me.must_change_pin, 'The two PINs are different. Try again.');
+  if (!/^\d{6}$/.test(g('p1'))) return renderChangePin(S.me.must_change_pin, 'The PIN must be exactly 6 digits.');
+  if (/^(\d)\1{5}$/.test(g('p1')) || g('p1') === '123456') return renderChangePin(S.me.must_change_pin, 'That PIN is too easy to guess. Choose another.');
+  const { error } = await S.sb.auth.updateUser({ password: g('p1') });
+  if (error) return renderChangePin(S.me.must_change_pin, error.message);
+  await S.sb.rpc('pin_changed'); const wasFirst = S.me.must_change_pin; S.me.must_change_pin = false; toast('PIN saved');
+  if (wasFirst){ if (!S.me.photo_url) return renderPhotoGate(); return startApp(); }
+  if (S.loaded){ renderShell(); location.hash = '#profile'; route(); } else startApp();
+}
+function renderPhotoGate(msg){
+  $('#app').innerHTML = `<div class="auth"><div class="box">
+    <h1>Add your profile photo</h1><div class="sub">Your photo shows on your profile, the job cards you work on and the performance boards.</div>
+    ${msg ? `<div class="banner err">${esc(msg)}</div>` : ''}
+    <div class="photo-drop">${avatarP(S.me, 'lg')}
+      <label class="btn p big"><input type="file" accept="image/*" capture="user" data-photo="1" style="display:none">📷 Take or choose a photo</label>
+      <span class="small muted">A clear photo of your face, please.</span></div>
+  </div></div>`;
+}
+async function uploadPhoto(file){
+  try {
+    const blob = await resizeImage(file);
+    const path = `${S.me.id}/avatar.jpg`;
+    const { error } = await S.sb.storage.from('avatars').upload(path, blob, { upsert:true, contentType:'image/jpeg' });
+    if (error) throw error;
+    const url = S.sb.storage.from('avatars').getPublicUrl(path).data.publicUrl + '?v=' + now();
+    const r = await S.sb.rpc('set_my_photo', { p_url: url }); if (r.error) throw r.error;
+    S.me.photo_url = url; if (S.people[S.me.id]) S.people[S.me.id].photo_url = url;
+    toast('Photo saved');
+    if (!S.loaded) return startApp();
+    renderShell(); route();
+  } catch(e){ if (!S.loaded) renderPhotoGate('Could not upload the photo: ' + (e.message || e)); else toast('Could not upload the photo'); }
+}
+async function logout(){ await S.sb.auth.signOut(); location.hash = ''; location.reload(); }
+
+// ================= DATA =================
+async function loadAll(){
+  const sb = S.sb;
+  const q = [
+    sb.from('profiles').select('*').order('full_name'),
+    sb.from('stations').select('*').order('name'),
+    sb.from('job_cards').select('*').order('received_at', { ascending:false }).limit(5000),
+    sb.from('field_logs').select('*').order('created_at', { ascending:false }).limit(5000),
+    sb.from('checkins').select('*').order('created_at', { ascending:false }).limit(5000),
+  ];
+  q.push(sb.from('station_issues').select('*').order('created_at', { ascending:false }).limit(3000));
+  if (canSeeIot()) q.push(sb.from('iot_cases').select('*').order('created_at', { ascending:false }).limit(5000));
+  const r = await Promise.all(q);
+  const err = r.find(x => x.error); if (err) throw err.error;
+  S.peopleList = r[0].data; S.people = Object.fromEntries(S.peopleList.map(p => [p.id, p]));
+  S.me = S.people[S.me.id] || S.me;
+  S.stations = r[1].data; S.cards = r[2].data; S.logs = r[3].data; S.checkins = r[4].data;
+  S.issues = r[5].data;
+  S.iot = r[6] ? r[6].data : [];
+}
+async function reloadTable(t){
+  const map = { job_cards:['cards','received_at'], field_logs:['logs','created_at'], iot_cases:['iot','created_at'], checkins:['checkins','created_at'], station_issues:['issues','created_at'] };
+  if (t === 'iot_cases' && !canSeeIot()) return;
+  const [k, o] = map[t]; const { data, error } = await S.sb.from(t).select('*').order(o, { ascending:false }).limit(5000);
+  if (!error){ S[k] = data; refresh(); }
+}
+function upsertLocal(key, row){ const a = S[key]; const i = a.findIndex(x => x.id === row.id); if (i >= 0) a[i] = row; else a.unshift(row); }
+async function startApp(){
+  $('#app').innerHTML = `<div class="splash"><div class="logo">⚡</div><div>Loading Battery Ops…</div></div>`;
+  try { await loadAll(); } catch(e){ $('#app').innerHTML = `<div class="auth"><div class="box"><h1>Could not load</h1><p class="muted">${esc(e.message || e)}</p><button class="btn p" onclick="location.reload()">Try again</button></div></div>`; return; }
+  S.loaded = true; S.sb.rpc('touch_seen');
+  const ch = S.sb.channel('ops-live');
+  ['job_cards','field_logs','iot_cases','station_issues'].forEach(t => ch.on('postgres_changes', { event:'*', schema:'public', table:t }, () => { clearTimeout(S['_rl' + t]); S['_rl' + t] = setTimeout(() => reloadTable(t), 600); }));
+  ch.subscribe();
+  setInterval(() => { reloadTable('job_cards'); reloadTable('field_logs'); }, 120000);
+  setInterval(tickTimers, 1000);
+  renderShell(); if (!location.hash) location.hash = '#home'; route();
+}
+function tickTimers(){ document.querySelectorAll('[data-since]').forEach(el => { const s = Math.max(0, Math.floor((now() - Number(el.dataset.since)) / 1000)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60; el.textContent = (h ? h + ':' + pad(m) : m) + ':' + pad(x); }); }
+
+// ================= SHELL / ROUTER =================
+const NAV = [
+  { v:'home', ic:'🏠', label:'Home', ok:() => true },
+  { v:'field', ic:'📍', label:'My stations', ok:() => has('field_tech'), badge:() => S.issues.filter(i => i.assigned_to === S.me.id && i.status === 'assigned').length },
+  { v:'receive', ic:'📥', label:'Receive batteries', ok:() => hasAny(['receiving','store','admin','wh_tech']), badge:() => S.logs.filter(l => l.status === 'in_transit').length },
+  { v:'work', ic:'🛠️', label:'My work', ok:() => hasAny(['diagnosis','spoc','repair_tech','qc','tester','dispatch','fabrication','wh_tech','admin','receiving','store']), badge:() => myQueue().length },
+  { v:'iot', ic:'📡', label:'Offline batteries (IoT)', ok:() => hasAny(['iot','admin','rm','data_view','receiving','store','diagnosis','wh_tech']), badge:() => has('iot') ? S.iot.filter(c => c.status === 'isolated' || c.status === 'in_progress').length : 0 },
+  { v:'cards', ic:'🗂️', label:'Job cards', ok:() => !has('field_tech') || hasAny(['admin','rm']) },
+  { v:'search', ic:'🔎', label:'Battery history', ok:() => true },
+  { v:'stations', ic:'🏪', label:'Stations & smart racks', ok:() => hasAny(['admin','rm','data_view']), badge:() => S.issues.filter(i => i.status === 'open').length },
+  { v:'activity', ic:'🗺️', label:'Field activity', ok:() => hasAny(['admin','rm','data_view']) },
+  { v:'performance', ic:'🏆', label:'Performance', ok:() => true },
+  { v:'reports', ic:'📊', label:'Reports', ok:() => hasAny(['admin','rm','data_view','spoc']) },
+  { v:'users', ic:'👥', label:'Users', ok:() => isAdmin() },
+  { v:'profile', ic:'👤', label:'My profile', ok:() => true },
+];
+function whOk(c){ return has('wh_tech') && c.warehouse === myWh(); }
+function myQueue(){
+  return S.cards.filter(c => {
+    if (c.status === 'closed') return false;
+    if (whOk(c)) return true;
+    if (c.status === 'diagnosis') return has('diagnosis');
+    if (c.status === 'assign') return has('spoc') && c.brand === S.me.team;
+    if (c.status === 'repair') return c.assigned_to === S.me.id;
+    if (c.status === 'qc') return has('qc');
+    if (c.status === 'test') return has('tester');
+    if (c.status === 'dispatch') return has('dispatch');
+    return false;
+  });
+}
+function renderShell(){
+  const me = S.me;
+  $('#app').innerHTML = `
+  <div class="top"><button class="menu" data-act="menu" aria-label="Menu">☰</button>
+    <div class="ttl">Battery Ops<small>BATTERY OPERATIONS</small></div>
+    <form data-form="search" class="topsearch"><input type="search" name="q" placeholder="Search battery ID or issue…" autocomplete="off"><button type="button" class="scanbtn" data-act="scan" data-target="topq" title="Scan barcode">📷</button></form>
+    <div class="me" data-act="go" data-v="profile">${avatarP(me, 'sm')}<span class="hide-sm">${esc(me.full_name.split(' ')[0])}</span></div></div>
+  <div class="shell"><nav class="side" id="side"></nav><div class="scrim" id="scrim" data-act="menu"></div><main id="main"></main></div>`;
+  renderNav();
+}
+function renderNav(){
+  const side = $('#side'); if (!side) return;
+  const items = NAV.filter(n => n.ok());
+  side.innerHTML = items.map(n => { const b = n.badge ? n.badge() : 0; return `<a href="#${n.v}" class="${S.view === n.v ? 'on' : ''}"><span class="ic">${n.ic}</span>${n.label}${b ? `<span class="badge">${b}</span>` : ''}</a>`; }).join('')
+    + `<div class="sec">SIGNED IN AS</div><div class="small" style="padding:0 12px">${esc(me().full_name)}<br><span class="muted">${esc(me().staff_id)} · ${(me().roles || []).map(r => ROLE_LABEL[r]).join(', ')}</span></div>
+    <a href="#" data-act="logout" style="margin-top:8px"><span class="ic">↩</span>Sign out</a>
+    <div class="foot">Developed by Mudde</div>`;
+}
+const me = () => S.me;
+const VIEWS = {};
+function route(){
+  if (!S.loaded) return;
+  const v = (location.hash || '#home').slice(1);
+  const item = NAV.find(n => n.v === v && n.ok());
+  S.view = item ? v : 'home';
+  $('#side')?.classList.remove('open'); $('#scrim')?.classList.remove('on');
+  renderNav(); renderMain(); window.scrollTo(0, 0);
+}
+function renderMain(){
+  const m = $('#main'); if (!m) return;
+  try { m.innerHTML = (VIEWS[S.view] || VIEWS.home)() + `<div class="foot">Battery Ops · Developed by Mudde</div>`; }
+  catch(e){ console.error(e); m.innerHTML = `<div class="banner err">Something went wrong on this page: ${esc(e.message)}</div>`; }
+  if (VIEWS[S.view + '_after']) VIEWS[S.view + '_after']();
+}
+// refresh after data changes without wiping a form being filled
+function refresh(){
+  renderNav();
+  if (!S.dirty) renderMain();
+  if (S.openCard) renderCard();
+}
+
+// ================= EVENTS =================
+const ACT = {}; const FORM = {}; const CHANGE = {};
+function onClick(e){
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const fn = ACT[a.dataset.act]; if (!fn) return;
+  if (a.tagName === 'A' || (a.tagName === 'BUTTON' && a.type !== 'submit')) e.preventDefault();
+  fn(a, e);
+}
+function onSubmit(e){ const f = e.target.closest('form[data-form]'); if (!f) return; e.preventDefault(); const fn = FORM[f.dataset.form]; if (fn) fn(f, e); }
+function onChange(e){
+  if (e.target.matches('input[data-photo]') && e.target.files[0]) return uploadPhoto(e.target.files[0]);
+  const c = e.target.closest('[data-chg]'); if (c && CHANGE[c.dataset.chg]) CHANGE[c.dataset.chg](c, e);
+}
+ACT.menu = () => { $('#side').classList.toggle('open'); $('#scrim').classList.toggle('on'); };
+ACT.go = a => { location.hash = '#' + a.dataset.v; };
+ACT.logout = () => logout();
+ACT['request-access'] = () => renderRequestAccess(false);
+ACT['back-login'] = () => renderLogin();
+ACT.tab = a => { S.tab[a.dataset.group] = a.dataset.v; S.dirty = false; renderMain(); };
+FORM.login = f => doLogin(f);
+FORM.search = f => { const q = fd(f)('q'); if (!q) return; S.searchQ = q; f.querySelector('input').blur(); if (location.hash === '#search') renderMain(); else location.hash = '#search'; };
+FORM.pin = f => savePin(f);
+FORM.request = async f => {
+  const g = fd(f); const b = f.querySelector('button[type=submit]'); b.disabled = true;
+  const { error } = await S.sb.from('access_requests').insert({ staff_id:g('sid').toUpperCase(), full_name:g('name'), phone:g('phone'), role_wanted:g('role'), note:g('note') });
+  if (error){ b.disabled = false; toast('Could not send: ' + error.message); return; }
+  renderRequestAccess(true);
+};
+function tabs(group, items, def){
+  const cur = S.tab[group] || def || items[0][0];
+  return { cur, html: `<div class="tabs">${items.map(([v, l]) => `<button data-act="tab" data-group="${group}" data-v="${v}" class="${cur === v ? 'on' : ''}">${l}</button>`).join('')}</div>` };
+}
+
+// ================= HOME =================
+function quick(label, sub, go, color, icon){ return `<div class="tile link" style="border-top-color:${color};padding:16px" data-act="go" data-v="${go}"><div style="font-size:26px">${icon}</div><div class="b" style="font-size:16px;margin-top:4px">${label}</div><div class="small muted">${sub}</div></div>`; }
+VIEWS.home = () => {
+  const m = S.me; const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const [t0] = rangeOf('today');
+  const q = myQueue();
+  const acts = [];
+  if (has('field_tech')){
+    const myT = S.issues.filter(i => i.assigned_to === S.me.id && i.status === 'assigned').length;
+    if (myT) acts.push(quick(`${myT} task${myT === 1 ? '' : 's'} assigned`, 'Stations your manager sent you to', 'field', '#B42318', '🚩'));
+    acts.push(quick('Check in', 'At a station you are visiting', 'field', '#548235', '✅'));
+    acts.push(quick('Log faulty battery', 'Fixed on site or sent to warehouse', 'field', '#0F7C8C', '🔋'));
+  }
+  if (hasAny(['receiving','store','wh_tech'])) acts.push(quick('Receive batteries', `${S.logs.filter(l => l.status === 'in_transit').length} on the way from the field`, 'receive', '#44546A', '📥'));
+  if (NAV.find(n => n.v === 'work').ok() && !isAdmin()) acts.push(quick('My work', `${q.length} batter${q.length === 1 ? 'y' : 'ies'} waiting for you`, 'work', '#B42318', '🛠️'));
+  if (has('iot')) acts.push(quick('Offline batteries', `${S.iot.filter(c => c.status === 'isolated' || c.status === 'in_progress').length} to bring back online`, 'iot', '#0F7C8C', '📡'));
+  if (hasAny(['admin','rm'])) acts.push(quick('Stations & smart racks', `${stationHealth().filter(h => h.critical).length} critical stations`, 'stations', '#B42318', '🏪'));
+  acts.push(hasAny(['admin','rm']) ? quick('Team performance', 'Scorecards for every person', 'performance', '#C9A227', '🏆') : quick('My performance', 'How you are doing this month', 'performance', '#C9A227', '🏆'));
+  if (hasAny(['admin','rm','data_view'])) acts.push(quick('Reports', 'Download to Excel by date', 'reports', '#1F3864', '📊'));
+  let tiles = '';
+  if (hasAny(['admin','rm','data_view'])){
+    const open = S.cards.filter(c => c.status !== 'closed');
+    const tat = avg(S.cards.filter(c => c.status === 'closed' && ms(c.closed_at) >= rangeOf('7')[0]).map(c => hrs(c.received_at, c.closed_at)));
+    const t = [['Received today', S.cards.filter(c => ms(c.received_at) >= t0).length, '#44546A', 'cards'], ['Closed today', S.cards.filter(c => c.status === 'closed' && ms(c.closed_at) >= t0).length, '#2F7D4F', 'cards'],
+      ['Open job cards', open.length, '#1F3864', 'cards'], ['On the way from field', S.logs.filter(l => l.status === 'in_transit').length, '#0F7C8C', 'activity'],
+      ['Offline batteries (IoT)', S.iot.filter(c => c.status !== 'online' && c.status !== 'escalated').length, '#0F7C8C', 'iot'], ['Avg turnaround (7 days)', tat == null ? '—' : num1(tat) + ' h', '#7030A0', 'reports'],
+      ['Repeat repairs (30 days)', S.cards.filter(c => c.is_repeat && ms(c.received_at) >= rangeOf('30')[0]).length, '#B42318', 'reports'],
+      ['Field check-ins today', S.checkins.filter(c => ms(c.created_at) >= t0).length, '#548235', 'activity'],
+      ['Waiting for spares', S.cards.filter(c => c.status === 'spares').length, '#A15C00', 'reports'],
+      ['Station issues open', S.issues.filter(i => i.status !== 'resolved').length, '#B42318', 'stations'],
+      ['Smart racks down', stationHealth().filter(h => h.rackDown).length, '#7030A0', 'stations']];
+    const byWh = WAREHOUSES.map(w => [w, open.filter(c => c.warehouse === w).length]);
+    tiles = `<div class="panel"><h3>Today across Battery Ops</h3><div class="tiles" style="margin:0">${t.map(([k, v, c, go]) => `<div class="tile link" style="border-top-color:${c}" data-act="go" data-v="${go}"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}</div>
+      <div class="row small muted" style="margin-top:10px">Open job cards by warehouse: ${byWh.map(([w, n]) => `<span class="chip" style="background:#E8EEF8;color:#1F3864">${esc(w)}: ${n}</span>`).join(' ')}</div></div>`;
+  }
+  const waiting = q.slice().sort((a, b) => ms(a.received_at) - ms(b.received_at)).slice(0, 5);
+  return `<div class="panel" style="display:flex;gap:14px;align-items:center">${avatarP(m, 'lg')}<div><h2 class="pg">${greet}, ${esc(m.full_name.split(' ')[0])}</h2>
+    <div class="muted small">${esc(m.title || '')}${m.team && m.team !== 'All' ? ' · ' + esc(m.team) + ' team' : ''}${m.warehouse ? ' · ' + esc(m.warehouse) : m.region ? ' · ' + esc(m.region) : ''}</div>
+    <div class="small" style="margin-top:4px">${(m.roles || []).map(r => chip(ROLE_LABEL[r], '#E8EEF8', '#1F3864')).join(' ')}</div></div></div>
+  <div class="tiles">${acts.join('')}</div>${tiles}
+  ${waiting.length ? `<div class="panel"><h3>Waiting for you <a class="right small" href="#work">See all</a></h3><div class="list">${waiting.map(cardItem).join('')}</div></div>` : ''}`;
+};
+
+// ================= PROFILE =================
+VIEWS.profile = () => {
+  const m = S.me;
+  const mineDone = S.cards.filter(c => (c.data?.repairs || []).some(r => r.who === m.id && r.outAt)).length;
+  return `<h2 class="pg">My profile</h2><p class="pgsub">Your details and photo.</p>
+  <div class="panel"><div class="row" style="gap:18px;align-items:flex-start">${avatarP(m, 'lg')}
+    <div class="grow"><div class="b" style="font-size:18px">${esc(m.full_name)}</div><div class="muted">${esc(m.title || '')}</div>
+    <div class="kv" style="margin-top:10px"><div><b>Staff ID:</b> ${esc(m.staff_id)}</div><div><b>Phone:</b> ${esc(m.phone || '—')}</div><div><b>Roles:</b> ${(m.roles || []).map(r => ROLE_LABEL[r]).join(', ')}</div>
+      <div><b>Team:</b> ${esc(m.team || 'All')}</div><div><b>Region:</b> ${esc(m.region || '—')}</div><div><b>Warehouse:</b> ${esc(m.warehouse || '—')}</div><div><b>Reports to:</b> ${esc(m.reports_to || '—')}</div>
+      ${has('repair_tech') ? `<div><b>Batteries repaired (all time):</b> ${mineDone}</div>` : ''}</div>
+    <div class="row" style="margin-top:14px"><label class="btn"><input type="file" accept="image/*" capture="user" data-photo="1" style="display:none">📷 Change photo</label>
+      <button class="btn" data-act="change-pin">🔒 Change PIN</button><button class="btn danger" data-act="logout">Sign out</button></div></div></div></div>
+  <div class="panel small muted">To correct your name, phone, team or role, ask the Battery Operations Supervisor.</div>`;
+};
+ACT['change-pin'] = () => renderChangePin(false);
+
+// ================= FIELD TECHNICIAN =================
+S.gps = null;
+function myStations(){ return S.stations.filter(s => s.field_tech_id === S.me.id).sort((a, b) => a.name.localeCompare(b.name)); }
+function gpsBadge(){
+  const g = S.gps;
+  if (!g) return `<span class="gps">📍 Location not captured yet</span> <button type="button" class="btn sm" data-act="gps">Get my location</button>`;
+  if (g.loading) return `<span class="gps">📍 Getting location…</span>`;
+  if (g.error) return `<span class="gps bad">📍 ${esc(g.error)}</span> <button type="button" class="btn sm" data-act="gps">Try again</button>`;
+  return `<span class="gps ok">📍 Location captured (±${g.accuracy} m)</span> <button type="button" class="btn sm" data-act="gps">Refresh</button>`;
+}
+ACT.gps = async () => { S.gps = { loading:true }; document.querySelectorAll('.gpsbox').forEach(b => b.innerHTML = gpsBadge()); S.gps = await getGPS(); S.gps.at = now(); document.querySelectorAll('.gpsbox').forEach(b => b.innerHTML = gpsBadge()); };
+VIEWS.field = () => {
+  const myTasks = S.issues.filter(i => i.assigned_to === S.me.id && i.status === 'assigned');
+  const t = tabs('field', [...(myTasks.length ? [['tasks', `🚩 My tasks (${myTasks.length})`]] : []), ['log','Log faulty battery'],['checkin','Check in + smart rack'],['logs','My batteries'],['stations','My stations'],['done','Finished tasks']], myTasks.length ? 'tasks' : 'log');
+  const st = myStations();
+  const stOpts = options(st.map(s => [s.id, s.name]), '', '— choose station —');
+  let body = '';
+  if (t.cur === 'log') body = `<div class="panel" style="border-top:5px solid var(--teal)"><h3>Log a faulty battery</h3>
+    <form data-form="flog" autocomplete="off"><div class="grid">
+      <div><label class="f">Station *</label><select name="station" required>${stOpts}<optgroup label="Other stations">${options(S.stations.filter(s => s.field_tech_id !== S.me.id).map(s => [s.id, s.name]))}</optgroup></select></div>
+      <div><label class="f">Battery ID *</label><div class="row" style="flex-wrap:nowrap;gap:6px"><input type="text" name="battery" required placeholder="e.g. C123456" style="text-transform:uppercase" data-chg="bid"><button type="button" class="btn" data-act="scan" data-target="battery">📷</button></div></div>
+      <div><label class="f">Brand</label><input type="text" name="brand" readonly placeholder="Set from battery ID" id="flBrand"></div>
+      <div><label class="f">Reported by</label><select name="reported">${options([['rider','Rider'],['agent','Swap agent'],['self','Myself (found during check)']])}</select></div>
+      <div class="wide"><label class="f">Fault reported *</label><textarea name="fault" required placeholder="What is wrong with the battery?"></textarea></div>
+      <div><label class="f">Voltage (V)</label><input type="number" step="0.01" name="voltage"></div>
+      <div><label class="f">SoC (%)</label><input type="number" min="0" max="100" name="soc"></div>
+      <div><label class="f">Physical damage?</label>${radios('damage', [['no','No'],['yes','Yes']], 'no', false)}</div>
+      <div class="wide"><label class="f">What did you do? *</label>${radios('action', [['fixed','Fixed at the station'],['sent','Sending to the warehouse']], '')}</div>
+      <div class="wide"><label class="f">If fixed: what was done / If sent: transport or person carrying it</label><input type="text" name="note"></div>
+      <div class="wide gpsbox">${gpsBadge()}</div>
+    </div><div class="row" style="margin-top:14px"><button class="btn p big" type="submit">Save</button></div></form></div>`;
+  if (t.cur === 'checkin') body = `<div class="panel" style="border-top:5px solid var(--green)"><h3>Check in at a station</h3>
+    <p class="small muted" style="margin-top:-6px">Check in each time you visit a station. Your location is saved so your supervisor can see your visits.</p>
+    <form data-form="checkin"><div class="grid">
+      <div><label class="f">Station *</label><select name="station" required>${stOpts}<optgroup label="Other stations">${options(S.stations.filter(s => s.field_tech_id !== S.me.id).map(s => [s.id, s.name]))}</optgroup></select></div>
+      <div class="wide"><label class="f">Smart rack *</label>${radios('rack', [['working','Working well'],['partial','Partly working'],['down','Not working'],['none','No smart rack here']], '')}</div>
+      <div><label class="f">If not working: slots affected</label><input type="text" name="slots" placeholder="e.g. 3 of 12"></div>
+      <div class="wide"><label class="f">Note (optional)</label><input type="text" name="note" placeholder="e.g. routine check, rack not charging, batteries collected"></div>
+      <div class="wide gpsbox">${gpsBadge()}</div>
+    </div><div class="small muted" style="margin-top:8px">If the rack is not working, your manager is alerted automatically.</div><div class="row" style="margin-top:14px"><button class="btn ok big" type="submit">✔ Check in</button></div></form></div>
+    <div class="panel"><h3>My recent check-ins</h3>${checkinTable(S.checkins.filter(c => c.tech_id === S.me.id).slice(0, 20))}</div>`;
+  if (t.cur === 'tasks') body = `<div class="panel" style="border-top:5px solid var(--red)"><h3>Tasks from your manager</h3><p class="small muted" style="margin-top:-6px">Go to the station, fix the problem, then open the task and mark it as done. Your location is saved.</p><div class="list">${myTasks.sort((a, b) => (a.priority === 'critical' ? -1 : 1) - (b.priority === 'critical' ? -1 : 1)).map(issueItem).join('')}</div></div>`;
+  if (t.cur === 'done') body = `<div class="panel"><h3>Tasks I finished</h3><div class="list">${S.issues.filter(i => i.assigned_to === S.me.id && i.status === 'resolved').slice(0, 50).map(issueItem).join('') || '<div class="empty">None yet.</div>'}</div></div>`;
+  if (t.cur === 'logs') body = `<div class="panel"><h3>Batteries I logged</h3>${logTable(S.logs.filter(l => l.tech_id === S.me.id).slice(0, 200), false)}</div>`;
+  if (t.cur === 'stations'){
+    const [t7] = rangeOf('7');
+    body = `<div class="panel"><h3>My stations (${st.length})</h3><div class="tw"><table class="t"><tr><th>Station</th><th>Region</th><th class="n">Visits (7 days)</th><th>Last visit</th><th class="n">Batteries logged (7 days)</th></tr>
+      ${st.map(s => { const ci = S.checkins.filter(c => c.station_id === s.id && c.tech_id === S.me.id); const last = ci[0]; return `<tr><td>${esc(s.name)}</td><td>${esc(s.sub_region || s.region || '')}</td><td class="n">${ci.filter(c => ms(c.created_at) >= t7).length}</td><td>${last ? fmtDT(last.created_at) : '<span class="muted">never</span>'}</td><td class="n">${S.logs.filter(l => l.station_id === s.id && ms(l.created_at) >= t7).length}</td></tr>`; }).join('')}</table></div></div>`;
+  }
+  return `<h2 class="pg">My stations</h2><p class="pgsub">${st.length} stations · ${esc(S.me.region || '')}</p>${t.html}${body}`;
+};
+CHANGE.bid = el => { el.value = el.value.toUpperCase(); const b = $('#flBrand'); if (b) b.value = brandOf(el.value) === 'Other' ? '' : brandOf(el.value); };
+document.addEventListener('input', e => { if (e.target.matches('[data-chg=bid]')) CHANGE.bid(e.target); });
+function logStatus(l){ return l.status === 'fixed' ? chip('Fixed on site', '#DCF0E3', '#1f5d38') : l.status === 'in_transit' ? chip('On the way', '#FFF4E5', '#7A4A00') : l.status === 'received' ? chip('At warehouse', '#DEEBF7', '#1F3864') : chip(l.status, '#eee', '#333'); }
+function logTable(list, showTech){
+  if (!list.length) return '<div class="empty">Nothing logged yet.</div>';
+  return `<div class="tw"><table class="t"><tr><th>When</th>${showTech ? '<th>Field tech</th>' : ''}<th>Station</th><th>Battery</th><th>Fault</th><th>Status</th><th>Warehouse stage</th><th>GPS</th></tr>
+  ${list.map(l => { const jc = l.job_card_id && S.cards.find(c => c.id === l.job_card_id); return `<tr ${jc ? `class="click" data-act="open-card" data-id="${jc.id}"` : ''}><td>${fmtDT(l.created_at)}</td>${showTech ? `<td>${who(l.tech_id)}</td>` : ''}<td>${esc(stationName(l.station_id))}</td><td><b>${esc(l.battery_id)}</b> ${brandChip(l.brand)}</td><td class="small">${esc((l.fault || '').slice(0, 60))}</td><td>${logStatus(l)}</td><td>${jc ? stageChip(jc.status) : ''}</td><td>${l.lat ? `<a href="https://maps.google.com/?q=${l.lat},${l.lng}" target="_blank" rel="noopener">map</a>` : '<span class="muted small">none</span>'}</td></tr>`; }).join('')}</table></div>`;
+}
+function checkinTable(list, showTech){
+  if (!list.length) return '<div class="empty">No check-ins yet.</div>';
+  return `<div class="tw"><table class="t"><tr><th>When</th>${showTech ? '<th>Field tech</th>' : ''}<th>Station</th><th>Note</th><th>GPS</th></tr>
+  ${list.map(c => `<tr><td>${fmtDT(c.created_at)}</td>${showTech ? `<td>${who(c.tech_id)}</td>` : ''}<td>${esc(stationName(c.station_id))}</td><td class="small">${esc(c.note || '')}</td><td>${c.lat ? `<a href="https://maps.google.com/?q=${c.lat},${c.lng}" target="_blank" rel="noopener">±${Math.round(c.accuracy || 0)} m</a>` : '<span class="muted small">none</span>'}</td></tr>`).join('')}</table></div>`;
+}
+async function ensureGPS(){
+  if (S.gps && !S.gps.error && !S.gps.loading && now() - S.gps.at < 10*60000) return S.gps;
+  S.gps = { loading:true }; document.querySelectorAll('.gpsbox').forEach(b => b.innerHTML = gpsBadge());
+  S.gps = await getGPS(); S.gps.at = now(); document.querySelectorAll('.gpsbox').forEach(b => b.innerHTML = gpsBadge()); return S.gps;
+}
+FORM.flog = async f => {
+  const g = fd(f); const b = f.querySelector('button[type=submit]'); b.disabled = true; b.textContent = 'Getting location…';
+  const gps = await ensureGPS(); b.textContent = 'Saving…';
+  const st = S.stations.find(s => s.id === g('station'));
+  const bid = g('battery').toUpperCase();
+  const row = { battery_id: bid, brand: brandOf(bid), station_id: g('station'), tech_id: S.me.id, region: st?.region || S.me.region,
+    lat: gps.lat ?? null, lng: gps.lng ?? null, accuracy: gps.accuracy ?? null, reported_by: g('reported'), fault: g('fault'), voltage: g('voltage'), soc: g('soc'), damage: g('damage'),
+    action: g('action'), fix_note: g('action') === 'fixed' ? g('note') : null, transport: g('action') === 'sent' ? g('note') : null, status: g('action') === 'fixed' ? 'fixed' : 'in_transit' };
+  const { data, error } = await S.sb.from('field_logs').insert(row).select().single();
+  if (error){ b.disabled = false; b.textContent = 'Save'; return toast('Not saved: ' + error.message, true); }
+  upsertLocal('logs', data); S.dirty = false; toast(row.action === 'sent' ? 'Saved — the warehouse can now see it is on the way' : 'Saved'); S.tab.field = 'logs'; renderMain();
+};
+FORM.checkin = async f => {
+  const g = fd(f); const b = f.querySelector('button[type=submit]'); b.disabled = true; b.textContent = 'Getting location…';
+  const gps = await ensureGPS();
+  const st = S.stations.find(s => s.id === g('station'));
+  const rack = g('rack') === 'none' ? null : g('rack');
+  const { data, error } = await S.sb.from('checkins').insert({ tech_id: S.me.id, station_id: g('station'), region: st?.region || S.me.region, lat: gps.lat ?? null, lng: gps.lng ?? null, accuracy: gps.accuracy ?? null, note: g('note'), rack_status: rack }).select().single();
+  if (error){ b.disabled = false; b.textContent = '✔ Check in'; return toast('Not saved: ' + error.message, true); }
+  if (rack === 'down' || rack === 'partial'){ try { await reportRack(g('station'), rack, g('note'), g('slots')); } catch(e){ toast('Check-in saved, but the rack alert failed: ' + e.message, true); } }
+  upsertLocal('checkins', data); S.dirty = false; toast(gps.error ? 'Checked in (without location: ' + gps.error + ')' : 'Checked in at ' + (st?.name || 'station'), true); renderMain();
+};
+
+// ================= RECEIVING =================
+VIEWS.receive = () => {
+  const transit = S.logs.filter(l => l.status === 'in_transit');
+  const wh = myWh() || lsGet('bo_wh', 'Main warehouse');
+  const whField = myWh() && !isAdmin() ? `<input type="text" name="warehouse" value="${esc(wh)}" readonly>` : `<select name="warehouse" required>${options(WAREHOUSES, wh)}</select>`;
+  return `<h2 class="pg">Receive batteries</h2><p class="pgsub">Batteries arriving at the warehouse. The first letter of the ID sets the brand: C = CBAK, A = Ampace, D = Greenway.</p>
+  <div class="panel" style="border-top:5px solid var(--teal)"><h3>On the way from field technicians ${transit.length ? `<span class="badge">${transit.length}</span>` : ''}</h3>
+  ${transit.length ? `<div class="tw"><table class="t"><tr><th>Sent</th><th>Battery</th><th>From</th><th>Field tech</th><th>Fault reported</th><th></th></tr>
+    ${transit.map(l => `<tr><td>${fmtDT(l.created_at)}</td><td><b>${esc(l.battery_id)}</b> ${brandChip(l.brand)}</td><td>${esc(stationName(l.station_id))}</td><td>${who(l.tech_id)}</td><td class="small">${esc((l.fault || '').slice(0, 70))}</td>
+    <td><button class="btn sm ok" data-act="recv-log" data-id="${l.id}">Received ✔</button></td></tr>`).join('')}</table></div>` : '<div class="empty">Nothing on the way right now.</div>'}</div>
+  <div class="panel" style="border-top:5px solid #44546A"><h3>Receive a battery directly</h3>
+    <form data-form="recv" autocomplete="off"><div class="grid">
+      <div><label class="f">Battery ID *</label><div class="row" style="flex-wrap:nowrap;gap:6px"><input type="text" name="battery" required style="text-transform:uppercase" data-chg="bid" placeholder="e.g. C123456"><button type="button" class="btn" data-act="scan" data-target="battery">📷</button></div></div>
+      <div><label class="f">Brand</label><input type="text" id="flBrand" readonly placeholder="Set from battery ID"></div>
+      <div><label class="f">Warehouse *</label>${whField}</div>
+      <div><label class="f">From station (optional)</label><select name="station">${options(S.stations.map(s => [s.id, s.name]), '', '— not from a station —')}</select></div>
+      <div class="wide"><label class="f">Fault reported</label><textarea name="fault"></textarea></div>
+      <div><label class="f">Voltage on arrival (V)</label><input type="number" step="0.01" name="voltage"></div>
+      <div><label class="f">SoC on arrival (%)</label><input type="number" name="soc" min="0" max="100"></div>
+      <div><label class="f">Physical damage?</label>${radios('damage', [['no','No'],['yes','Yes']], 'no', false)}</div>
+      <div class="wide"><label class="f">What does it need? *</label><div class="opts"><label><input type="checkbox" name="needs" value="repair" checked>Repair (opens a job card)</label><label><input type="checkbox" name="needs" value="iot">Offline — send to IoT team</label></div></div>
+      <div class="wide"><label class="f">If offline: how long / what was seen (optional)</label><input type="text" name="offline" placeholder="e.g. no data on dashboard for 3 days"></div>
+    </div><div id="recvMsg"></div><div class="row" style="margin-top:14px"><button class="btn p big" type="submit">Save</button></div></form></div>`;
+};
+function openCardFor(bid){ return S.cards.find(c => c.battery_id === bid && c.status !== 'closed'); }
+async function createCard(row){
+  const { data, error } = await S.sb.from('job_cards').insert(row).select().single();
+  if (error) throw error; upsertLocal('cards', data); return data;
+}
+FORM.recv = async f => {
+  const g = fd(f); const bid = g('battery').toUpperCase(); const msg = $('#recvMsg');
+  const dup = openCardFor(bid);
+  if (dup){ msg.innerHTML = `<div class="banner err" style="margin-top:12px">${esc(bid)} already has an open job card (${esc(dup.jc_no)}). <a href="#" data-act="open-card" data-id="${dup.id}">Open it</a></div>`; return; }
+  const st = S.stations.find(s => s.id === g('station'));
+  const needs = g.all('needs'); if (!needs.length){ msg.innerHTML = '<div class="banner err" style="margin-top:12px">Tick what the battery needs: repair, IoT, or both.</div>'; return; }
+  const b = f.querySelector('button[type=submit]'); b.disabled = true; lsSet('bo_wh', g('warehouse'));
+  if (!needs.includes('repair')){
+    try { await createIot({ battery_id: bid, warehouse: g('warehouse'), reason: g('offline') || g('fault'), source: 'receiving' }); S.dirty = false; toast('Sent to the IoT team'); renderMain(); }
+    catch(e){ b.disabled = false; msg.innerHTML = `<div class="banner err" style="margin-top:12px">Not saved: ${esc(e.message)}</div>`; }
+    return;
+  }
+  try {
+    const card = await createCard({ battery_id: bid, brand: brandOf(bid), status: 'diagnosis', warehouse: g('warehouse'), region: st?.region || 'Central', station_id: st?.id || null, field_tech_id: st?.field_tech_id || null,
+      data: { receive: { by: S.me.id, at: now(), fault: g('fault'), voltage: g('voltage'), soc: g('soc'), damage: g('damage') } } });
+    if (needs.includes('iot')) await createIot({ battery_id: bid, warehouse: g('warehouse'), reason: g('offline') || g('fault'), source: 'receiving', job_card_id: card.id });
+    S.dirty = false; toast('Job card ' + card.jc_no + ' opened' + (needs.includes('iot') ? ' and sent to IoT' : '') + (card.is_repeat ? ' — REPEAT REPAIR (back within ' + REPEAT_DAYS + ' days)' : ''), true); renderMain(); openCard(card.id);
+  } catch(e){ b.disabled = false; msg.innerHTML = `<div class="banner err" style="margin-top:12px">Not saved: ${esc(e.message)}</div>`; }
+};
+ACT['recv-log'] = async a => {
+  const l = S.logs.find(x => x.id === a.dataset.id); if (!l) return;
+  const dup = openCardFor(l.battery_id); a.disabled = true;
+  try {
+    let card = dup;
+    if (!card){
+      const st = S.stations.find(s => s.id === l.station_id);
+      card = await createCard({ battery_id: l.battery_id, brand: l.brand || brandOf(l.battery_id), status: 'diagnosis', warehouse: myWh() || lsGet('bo_wh', 'Main warehouse'), region: l.region || st?.region,
+        station_id: l.station_id, field_tech_id: l.tech_id, field_log_id: l.id,
+        data: { field: { logId: l.id, at: ms(l.created_at), tech: l.tech_id, fault: l.fault, reported: l.reported_by, voltage: l.voltage, soc: l.soc, damage: l.damage, lat: l.lat, lng: l.lng },
+                receive: { by: S.me.id, at: now(), fault: l.fault } } });
+    }
+    const { error } = await S.sb.from('field_logs').update({ status: 'received', job_card_id: card.id }).eq('id', l.id);
+    if (error) throw error; l.status = 'received'; l.job_card_id = card.id;
+    toast((dup ? 'Linked to open job card ' : 'Job card opened: ') + card.jc_no + (card.is_repeat ? ' — REPEAT REPAIR' : ''), true); renderMain(); renderNav();
+  } catch(e){ a.disabled = false; toast('Not saved: ' + e.message, true); }
+};
+
+// ================= WORK QUEUE =================
+function cardItem(c){
+  const s = ST[c.status] || ST.diagnosis;
+  const arr = c.status === 'diagnosis' ? c.data?.diagnosis : c.status === 'repair' ? c.data?.repairs : c.status === 'qc' ? c.data?.qcs : c.status === 'test' ? c.data?.tests : null;
+  const open = openEntry(arr);
+  const end = c.status === 'closed' ? ms(c.closed_at) : now();
+  const rework = (c.data?.qcs || []).some(q => q.verdict === 'fail') || (c.data?.tests || []).some(t => !(t.airResult === 'pass' && t.insResult === 'pass'));
+  return `<div class="item" data-act="open-card" data-id="${c.id}" style="border-left-color:${s.color}">
+    <div class="grow"><div class="row" style="gap:6px"><span class="id">${esc(c.battery_id)}</span>${brandChip(c.brand)}${stageChip(c.status)}
+      ${open ? chip('In progress · ' + nameOf(open.who).split(' ')[0], '#FFF4E5', '#7A4A00') : ''}${c.is_repeat ? chip('REPEAT', '#FDECEA', '#B42318') : ''}${rework ? chip('Rework', '#FDECEA', '#B42318') : ''}</div>
+      <div class="meta">${esc(c.jc_no)} · ${esc(c.warehouse || '')}${c.station_id ? ' · from ' + esc(stationName(c.station_id)) : ''}${c.assigned_to ? ' · ' + esc(nameOf(c.assigned_to)) : ''}</div></div>
+    <div class="small muted" style="text-align:right">Received ${fmtDT(c.received_at)}<br>${c.status === 'closed' ? 'Turnaround' : 'Waiting'} <b>${fmtDur(end - ms(c.received_at))}</b></div></div>`;
+}
+VIEWS.work = () => {
+  const sections = [];
+  const add = (title, list, color, note) => sections.push(`<div class="panel" style="border-top:5px solid ${color}"><h3>${title} <span class="chip" style="background:${color};color:#fff">${list.length}</span></h3>${note ? `<p class="small muted" style="margin-top:-6px">${note}</p>` : ''}<div class="list">${list.length ? list.map(cardItem).join('') : '<div class="empty">Nothing waiting.</div>'}</div></div>`);
+  const by = st => S.cards.filter(c => c.status === st).sort((a, b) => ms(a.received_at) - ms(b.received_at));
+  if (hasAny(['diagnosis','admin'])) add('Waiting for diagnosis', by('diagnosis'), ST.diagnosis.color);
+  if (has('spoc') || isAdmin()) add(isAdmin() ? 'Waiting for brand SPOC to assign' : `${esc(S.me.team)} batteries to assign`, by('assign').filter(c => isAdmin() || c.brand === S.me.team), ST.assign.color, 'Open a battery and choose which technician repairs it.');
+  if (has('repair_tech')) add('My repairs', by('repair').filter(c => c.assigned_to === S.me.id), ST.repair.color);
+  if (has('spoc') && !isAdmin()) add(`${esc(S.me.team)} repairs in progress`, by('repair').filter(c => c.brand === S.me.team && c.assigned_to !== S.me.id), ST.repair.color);
+  if (isAdmin()) add('In repair', by('repair'), ST.repair.color);
+  const sp = by('spares').filter(c => isAdmin() || whOk(c) || c.assigned_to === S.me.id || (has('spoc') && c.brand === S.me.team) || hasAny(['store','receiving']));
+  if (sp.length || has('spoc')) add('Waiting for spares', sp, ST.spares.color, 'Open a battery and press "Spares received" when the part arrives.');
+  if (hasAny(['qc','admin'])) add('Waiting for QC', by('qc'), ST.qc.color);
+  if (hasAny(['tester','admin'])) add('Waiting for air leak & insulation test', by('test'), ST.test.color);
+  if (hasAny(['dispatch','admin','receiving','store'])) add('Ready for dispatch', by('dispatch'), ST.dispatch.color);
+  if (has('wh_tech')) STAGES.filter(s => s.key !== 'closed').forEach(s => { const l = by(s.key).filter(whOk); if (l.length) add(`${esc(myWh())} · ${s.label}`, l, s.color); });
+  if (has('wh_tech') && !S.cards.some(c => whOk(c) && c.status !== 'closed')) add(`${esc(myWh())}`, [], '#1F3864', 'No open job cards at your warehouse. Receive a battery to start one.');
+  if (has('fabrication') && !sections.length) add('Open job cards (add your work as a note)', S.cards.filter(c => c.status !== 'closed'), '#1F3864');
+  return `<h2 class="pg">My work</h2><p class="pgsub">Batteries waiting for you, oldest first. Open one, press Start when you pick it up and Submit when you hand it on.</p>${sections.join('') || '<div class="panel empty">You have no warehouse queue.</div>'}`;
+};
+
+// ================= JOB CARD DETAIL =================
+ACT['open-card'] = a => openCard(a.dataset.id);
+function openCard(id){ S.openCard = id; S.cardSig = null; S.cardDirty = false; renderCard(true); }
+function closeCard(){ S.openCard = null; S.cardSig = null; $('#modal').innerHTML = ''; document.body.style.overflow = ''; if (!S.dirty) renderMain(); renderNav(); }
+ACT['close-card'] = () => closeCard();
+ACT['ov-bg'] = (a, e) => { if (e.target === a) closeCard(); };
+document.addEventListener('input', e => { if (e.target.closest('#modal form')) S.cardDirty = true; });
+function sigOf(c){ return c ? [c.status, c.assigned_to, c.updated_at].join('|') : ''; }
+function renderCard(force){
+  const c = S.cards.find(x => x.id === S.openCard); if (!c){ closeCard(); return; }
+  const sig = sigOf(c);
+  if (!force && (sig === S.cardSig || S.cardDirty)) return;
+  S.cardSig = sig; S.cardDirty = false; document.body.style.overflow = 'hidden';
+  const end = c.status === 'closed' ? ms(c.closed_at) : now();
+  $('#modal').innerHTML = `<div class="ov" data-act="ov-bg"><div class="sheet">
+    <div class="hd"><div><div class="small" style="opacity:.8">${esc(c.jc_no)} · ${esc(c.warehouse || '')}</div>
+      <div style="font-size:22px;font-weight:700">${esc(c.battery_id)}</div>
+      <div class="row" style="gap:6px;margin-top:4px">${brandChip(c.brand)}${stageChip(c.status)}${c.is_repeat ? chip('REPEAT REPAIR', '#B42318') : ''}<span class="small" style="opacity:.85">${c.status === 'closed' ? 'Turnaround' : 'In warehouse'} ${fmtDur(end - ms(c.received_at))}</span></div></div>
+      <div class="row" style="margin-left:auto;gap:6px;flex-wrap:nowrap"><button class="xbtn" style="margin-left:0" data-act="battery" data-id="${esc(c.battery_id)}">🔎 Battery history</button><button class="xbtn" style="margin-left:0" data-act="close-card">Close ✕</button></div></div>
+    <div class="bd">${cardHistory(c)}${cardAction(c)}${notesBlock(c)}</div></div></div>`;
+}
+function kv(pairs){ return `<div class="kv">${pairs.filter(p => p[1] !== undefined && p[1] !== null && p[1] !== '' && !(Array.isArray(p[1]) && !p[1].length)).map(([k, v, w]) => `<div class="${w ? 'wide' : ''}"><b>${esc(k)}:</b> ${esc(Array.isArray(v) ? v.join(', ') : v)}</div>`).join('')}</div>`; }
+function histBox(color, label, sub, body){ return { html: `<div class="hist" style="border-left-color:${color}"><h4>${chip(label, color)} <span class="muted small">${sub}</span></h4>${body}</div>` }; }
+function cardHistory(c){
+  const d = c.data || {}; const items = [];
+  if (c.is_repeat && c.repeat_of){ const p = S.cards.find(x => x.id === c.repeat_of); items.push({ t:0, html:`<div class="banner err"><b>Repeat repair.</b> This battery was closed ${p ? fmtDT(p.closed_at) + ' on ' + esc(p.jc_no) : 'recently'}${p && lastDone(p.data?.repairs) ? ', repaired by ' + esc(nameOf(lastDone(p.data.repairs).who)) : ''}. ${p ? `<a href="#" data-act="open-card" data-id="${p.id}">Open previous job card</a>` : ''}</div>` }); }
+  if (d.field) items.push({ t: d.field.at || 1, ...histBox('#0F7C8C', 'SWAP STATION', `${fmtDT(d.field.at)} · ${nameOf(d.field.tech)} · ${esc(stationName(c.station_id))}`,
+    kv([['Fault reported', d.field.fault, true], ['Reported by', d.field.reported], ['Voltage', d.field.voltage ? d.field.voltage + ' V' : ''], ['SoC', d.field.soc ? d.field.soc + '%' : ''], ['Damage', d.field.damage]]) + (d.field.lat ? `<div class="small"><a href="https://maps.google.com/?q=${d.field.lat},${d.field.lng}" target="_blank" rel="noopener">📍 Where it was logged</a></div>` : '')) });
+  if (d.receive) items.push({ t: d.receive.at || 2, ...histBox('#44546A', 'RECEIVED', `${fmtDT(d.receive.at)} · ${esc(nameOf(d.receive.by))}`, kv([['Fault reported', d.receive.fault, true], ['Voltage', d.receive.voltage ? d.receive.voltage + ' V' : ''], ['SoC', d.receive.soc ? d.receive.soc + '%' : ''], ['Damage', d.receive.damage]])) });
+  (d.diagnosis || []).forEach(e => e.outAt && items.push({ t: e.outAt, ...histBox(ST.diagnosis.color, 'DIAGNOSIS', `${esc(nameOf(e.who))} · ${fmtDT(e.inAt)} → ${fmtDT(e.outAt)} · <b>${Math.round(mins(e))} min</b>`,
+    kv([['Fault codes', (e.faults || []).map(f => f + ' ' + (FAULT_NAME[f] || ''))], ['Warranty', WARRANTY[e.warranty]], ['Findings', e.findings, true], ['Tools', e.tools, true]])) }));
+  (d.assignments || []).forEach(e => items.push({ t: e.at, ...histBox(ST.assign.color, 'ASSIGNED', `${fmtDT(e.at)} · by ${esc(nameOf(e.by))}`, `<div class="small">To ${who(e.to)}</div>`) }));
+  (d.repairs || []).forEach((e, i) => e.outAt && items.push({ t: e.outAt, ...histBox(ST.repair.color, 'REPAIR · attempt ' + (i + 1), `${esc(nameOf(e.who))} · ${fmtDT(e.inAt)} → ${fmtDT(e.outAt)} · <b>${Math.round(mins(e))} min</b> · ${e.result === 'repaired' ? 'sent to QC' : e.result === 'vendor' ? 'return to vendor' : e.result === 'spares' ? 'waiting for spares' : 'scrap'}`,
+    kv([['Fault codes', (e.faults || []).map(f => f + ' ' + (FAULT_NAME[f] || ''))], ['Issue found', e.issue, true], ['Action taken', e.action, true], ['Tools', e.tools, true], ['Spares', e.spares, true], ['Voltage after', e.voltAfter ? e.voltAfter + ' V' : ''], ['Cell delta', e.delta ? e.delta + ' mV' : '']])) }));
+  (d.spares || []).forEach(e => items.push({ t: e.at + 1, ...histBox(ST.spares.color, e.receivedAt ? 'SPARES RECEIVED' : 'WAITING FOR SPARES', `${fmtDT(e.at)} · ${esc(nameOf(e.by))}${e.receivedAt ? ' · received ' + fmtDT(e.receivedAt) + ' by ' + esc(nameOf(e.receivedBy)) + ' · waited ' + fmtDur(e.receivedAt - e.at) : ''}`, kv([['Spare needed', e.part + (e.qty ? ' × ' + e.qty : '')], ['Note', e.note, true]])) }));
+  (d.qcs || []).forEach((e, i) => e.outAt && items.push({ t: e.outAt, ...histBox(ST.qc.color, 'QC · round ' + (i + 1), `${esc(nameOf(e.who))} · ${fmtDT(e.outAt)} · <b>${Math.round(mins(e))} min</b> · ${e.verdict === 'pass' ? '<b style="color:#2F7D4F">PASS</b>' : '<b style="color:#B42318">FAIL</b>'}`,
+    kv([['Checks', e.checks, true], ['Pack voltage', e.v ? e.v + ' V' : ''], ['Cell delta', e.delta ? e.delta + ' mV' : ''], ['Temp', e.temp ? e.temp + ' °C' : ''], ['Findings', e.findings, true], ['Reason for return', e.reason, true]])) }));
+  (d.tests || []).forEach((e, i) => e.outAt && items.push({ t: e.outAt, ...histBox(ST.test.color, 'AIR LEAK & INSULATION · round ' + (i + 1), `${esc(nameOf(e.who))} · ${fmtDT(e.outAt)} · <b>${Math.round(mins(e))} min</b> · Air ${e.airResult === 'pass' ? 'PASS' : 'FAIL'} · Insulation ${e.insResult === 'pass' ? 'PASS' : 'FAIL'}`,
+    kv([['Test pressure', e.pressure], ['Hold time', e.hold ? e.hold + ' s' : ''], ['Leak / drop', e.leak], ['Test voltage', e.insV], ['Insulation', e.insReading ? e.insReading + ' MΩ' : ''], ['Minimum', e.insMin ? e.insMin + ' MΩ' : '']])) }));
+  if (d.dispatch) items.push({ t: d.dispatch.at, ...histBox(ST.closed.color, 'DISPATCHED & CLOSED', `${fmtDT(d.dispatch.at)} · ${esc(nameOf(d.dispatch.who))}`,
+    kv([['Final status', { deploy:'Ready for deployment', vendor:'Returned to vendor (warranty claim)', scrap:'Scrapped' }[d.dispatch.finalStatus]], ['Destination', d.dispatch.destination], ['Hands-on time', Math.round(handsOn(c)) + ' min'], ['Turnaround', fmtDur(ms(c.closed_at) - ms(c.received_at))], ['Note', d.dispatch.note, true]])) });
+  items.sort((a, b) => a.t - b.t);
+  return items.map(i => i.html).join('');
+}
+function handsOn(c){ const d = c.data || {}; return [...(d.diagnosis || []), ...(d.repairs || []), ...(d.qcs || []), ...(d.tests || [])].map(mins).filter(v => v != null).reduce((a, b) => a + b, 0); }
+function canAct(c){
+  if (isAdmin()) return true;
+  if (c.status !== 'closed' && whOk(c)) return true;
+  if (c.status === 'diagnosis') return has('diagnosis');
+  if (c.status === 'assign') return has('spoc') && c.brand === S.me.team;
+  if (c.status === 'repair') return c.assigned_to === S.me.id;
+  if (c.status === 'spares') return c.assigned_to === S.me.id || (has('spoc') && c.brand === S.me.team) || hasAny(['store']);
+  if (c.status === 'qc') return has('qc') && (c.warehouse === 'Main warehouse' || !c.warehouse || !S.peopleList.some(p => (p.roles || []).includes('wh_tech') && p.warehouse === c.warehouse));
+  if (c.status === 'test') return has('tester');
+  if (c.status === 'dispatch') return hasAny(['dispatch','receiving','store']);
+  return false;
+}
+function stageField(c){ return { diagnosis:'diagnosis', repair:'repairs', qc:'qcs', test:'tests' }[c.status]; }
+function startBlock(c, color, title){
+  return `<div class="action" style="border-color:${color}"><h3 style="color:${color}">${title}</h3>
+    <button class="btn p big" data-act="stage-start" data-id="${c.id}">▶ Start — I am picking up this battery</button>
+    <div class="small muted" style="margin-top:6px">The clock runs from Start until you submit. Your name is recorded automatically.</div></div>`;
+}
+function runHead(e, color){ return `<div class="row" style="margin-bottom:12px;background:var(--soft);border-radius:10px;padding:10px 12px"><div class="grow">${who(e.who, 'sm')} <span class="small muted">started ${fmtDT(e.inAt)}</span></div><div style="text-align:right"><div class="small muted">Time on this battery</div><div class="timer" style="color:${color}" data-since="${e.inAt}">0:00</div></div></div>`; }
+function cardAction(c){
+  if (c.status === 'closed') return `<div class="banner ok b">This job card is closed.</div>`;
+  if (!canAct(c)) return `<div class="banner warn">Now at <b>${esc(ST[c.status].label)}</b>${c.assigned_to ? ' · assigned to ' + esc(nameOf(c.assigned_to)) : ''}. Only the responsible person can work on this stage.</div>`;
+  const d = c.data || {}; const sf = stageField(c); const e = sf ? openEntry(d[sf]) : null;
+  const othersRunning = e && e.who !== S.me.id && !isAdmin();
+  if (othersRunning) return `<div class="banner warn">${esc(nameOf(e.who))} is working on this battery (started ${fmtDT(e.inAt)}).</div>`;
+  if (c.status === 'diagnosis'){
+    if (!e) return startBlock(c, ST.diagnosis.color, 'Diagnosis');
+    return `<div class="action" style="border-color:${ST.diagnosis.color}"><h3 style="color:${ST.diagnosis.color}">Diagnosis</h3>${runHead(e, ST.diagnosis.color)}
+      <form data-form="diag" data-id="${c.id}"><div class="grid">
+      <div class="wide"><label class="f">Fault codes *</label>${checks('faults', FAULTS.map(f => f[0] + ' ' + f[1]))}</div>
+      <div class="wide"><label class="f">Findings *</label><textarea name="findings" required placeholder="What did you find? e.g. cell 7 at 2.6 V, BMS cut-off"></textarea></div>
+      <div class="wide"><label class="f">Warranty *</label>${radios('warranty', Object.entries(WARRANTY), '')}</div>
+      <div class="wide"><label class="f">Tools used</label>${checks('tools', TOOLS_DIAG)}</div>
+      </div><div class="row" style="margin-top:12px"><button class="btn p big" type="submit">Submit — send to ${esc(c.brand)} team</button></div></form></div>`;
+  }
+  if (c.status === 'assign'){
+    const techs = S.peopleList.filter(p => p.active && (((p.roles || []).includes('repair_tech') && p.team === c.brand && (c.warehouse === 'Main warehouse' || !c.warehouse)) || ((p.roles || []).includes('wh_tech') && p.warehouse === c.warehouse)));
+    const load = id => S.cards.filter(x => x.status === 'repair' && x.assigned_to === id).length;
+    return `<div class="action" style="border-color:${ST.assign.color}"><h3>Assign to a ${esc(c.brand)} technician</h3>
+      <form data-form="assign" data-id="${c.id}"><div class="list">${techs.map(p => `<label class="item" style="border-left-color:${BRAND_COLOR[c.brand]}"><input type="radio" name="tech" value="${p.id}" required> ${avatarP(p, 'sm')}<div class="grow"><b>${esc(p.full_name)}</b><div class="meta">${esc(p.title || '')}</div></div><span class="small muted">${load(p.id)} in hand</span></label>`).join('') || '<div class="empty">No technicians in this team yet.</div>'}</div>
+      <div class="row" style="margin-top:12px"><button class="btn p big" type="submit">Assign</button></div></form></div>`;
+  }
+  if (c.status === 'repair'){
+    const att = (d.repairs || []).filter(x => x.outAt).length + 1;
+    const lastFail = [...(d.qcs || []).filter(q => q.verdict === 'fail').map(q => ({ t:q.outAt, r:'QC: ' + (q.reason || '') })), ...(d.tests || []).filter(t => !(t.airResult === 'pass' && t.insResult === 'pass')).map(t => ({ t:t.outAt, r:'Air leak / insulation test failed' }))].sort((a, b) => b.t - a.t)[0];
+    const note = att > 1 && lastFail ? `<div class="banner err"><b>Rework (attempt ${att}).</b> Returned because: ${esc(lastFail.r)}</div>` : '';
+    const diag = lastDone(d.diagnosis);
+    if (!e) return note + startBlock(c, ST.repair.color, 'Repair' + (att > 1 ? ' · attempt ' + att : ''));
+    return `${note}<div class="action" style="border-color:${ST.repair.color}"><h3 style="color:${ST.repair.color}">Repair · attempt ${att}</h3>${runHead(e, ST.repair.color)}
+      <form data-form="repair" data-id="${c.id}"><div class="grid">
+      <div class="wide"><label class="f">Fault codes *</label>${checks('faults', FAULTS.map(f => f[0] + ' ' + f[1]), (diag?.faults || []).map(f => f + ' ' + FAULT_NAME[f]))}</div>
+      <div class="wide"><label class="f">Issue found *</label><textarea name="issue" required>${esc(diag?.findings || '')}</textarea></div>
+      <div class="wide"><label class="f">Action taken *</label><textarea name="action" required></textarea></div>
+      <div class="wide"><label class="f">Tools used *</label>${checks('tools', TOOLS_REPAIR)}</div>
+      <div class="wide"><label class="f">Spares used (part + qty)</label><input type="text" name="spares"></div>
+      <div><label class="f">Voltage after (V)</label><input type="number" step="0.01" name="voltAfter"></div>
+      <div><label class="f">Cell delta after (mV)</label><input type="number" name="delta"></div>
+      <div class="wide"><label class="f">Result *</label>${radios('result', [['repaired','Repaired — send to QC'],['spares','Waiting for spares'],['vendor','Cannot repair — return to vendor (warranty)'],['scrap','Scrap']], '')}</div>
+      <div><label class="f">If waiting: spare needed</label><select name="sparePart">${options(SPARES, '', '— choose —')}</select></div>
+      <div><label class="f">Quantity</label><input type="number" name="spareQty" min="1" value="1"></div>
+      </div><div class="row" style="margin-top:12px"><button class="btn p big" type="submit">Submit</button></div></form></div>`;
+  }
+  if (c.status === 'spares'){
+    const w = (d.spares || []).filter(x => !x.receivedAt).at(-1);
+    return `<div class="action" style="border-color:${ST.spares.color}"><h3 style="color:${ST.spares.color}">Waiting for spares</h3>
+      <div class="kv" style="margin-bottom:12px"><div><b>Spare needed:</b> ${esc(w?.part || '—')}${w?.qty ? ' × ' + esc(w.qty) : ''}</div><div><b>Waiting since:</b> ${fmtDT(w?.at)} (${fmtDur(now() - (w?.at || now()))})</div><div><b>Technician:</b> ${esc(nameOf(c.assigned_to))}</div></div>
+      <button class="btn ok big" data-act="spares-in" data-id="${c.id}">✔ Spares received — continue repair</button></div>`;
+  }
+  if (c.status === 'qc'){
+    if (!e) return startBlock(c, ST.qc.color, 'Quality check');
+    return `<div class="action" style="border-color:${ST.qc.color}"><h3 style="color:${ST.qc.color}">Quality check</h3>${runHead(e, ST.qc.color)}
+      <form data-form="qc" data-id="${c.id}"><div class="grid">
+      <div class="wide"><label class="f">Checks done *</label>${checks('checks', QC_CHECKS)}</div>
+      <div><label class="f">Pack voltage (V)</label><input type="number" step="0.01" name="v"></div><div><label class="f">Cell delta (mV)</label><input type="number" name="delta"></div><div><label class="f">Temperature (°C)</label><input type="number" step="0.1" name="temp"></div>
+      <div class="wide"><label class="f">Tools used</label>${checks('tools', TOOLS_QC)}</div>
+      <div class="wide"><label class="f">Findings</label><textarea name="findings"></textarea></div>
+      <div class="wide"><label class="f">Verdict *</label>${radios('verdict', [['pass','PASS — send to air leak & insulation'],['fail','FAIL — back to technician']], '')}</div>
+      <div class="wide"><label class="f">Reason for return (required if FAIL)</label><textarea name="reason" placeholder='Be specific, e.g. "cell delta 120 mV after balancing"'></textarea></div>
+      </div><div class="row" style="margin-top:12px"><button class="btn p big" type="submit">Submit</button></div></form></div>`;
+  }
+  if (c.status === 'test'){
+    if (!e) return startBlock(c, ST.test.color, 'Air leak & insulation test');
+    const prev = lastDone(d.tests) || {};
+    return `<div class="action" style="border-color:${ST.test.color}"><h3 style="color:${ST.test.color}">Air leak & insulation test</h3>${runHead(e, ST.test.color)}
+      <form data-form="test" data-id="${c.id}"><div class="grid">
+      <div><label class="f">Air leak: test pressure</label><input type="text" name="pressure" value="${esc(prev.pressure || lsGet('bo_pressure', ''))}"></div>
+      <div><label class="f">Hold time (s)</label><input type="number" name="hold" value="${esc(prev.hold || lsGet('bo_hold', ''))}"></div>
+      <div><label class="f">Leak / pressure drop</label><input type="text" name="leak"></div>
+      <div class="wide"><label class="f">Air leak result *</label>${radios('airResult', [['pass','PASS'],['fail','FAIL']], '')}</div>
+      <div><label class="f">Insulation: test voltage</label><input type="text" name="insV" value="${esc(prev.insV || lsGet('bo_insV', ''))}"></div>
+      <div><label class="f">Reading (MΩ)</label><input type="number" step="0.01" name="insReading"></div>
+      <div><label class="f">Minimum required (MΩ)</label><input type="number" step="0.01" name="insMin" value="${esc(prev.insMin || lsGet('bo_insMin', ''))}"></div>
+      <div class="wide"><label class="f">Insulation result *</label>${radios('insResult', [['pass','PASS'],['fail','FAIL']], '')}</div>
+      <div class="wide"><label class="f">Tools used</label>${checks('tools', TOOLS_TEST)}</div>
+      <div class="wide"><label class="f">If failed, what next?</label>${radios('failAction', [['tech','Back to technician'],['reseal','Reseal & retest'],['vendor','Return to vendor']], '', false)}</div>
+      </div><div class="row" style="margin-top:12px"><button class="btn p big" type="submit">Submit</button></div></form></div>`;
+  }
+  if (c.status === 'dispatch'){
+    const lr = lastDone(d.repairs); const lt = lastDone(d.tests);
+    const def = lr?.result === 'scrap' ? 'scrap' : (lr?.result === 'vendor' || lt?.failAction === 'vendor') ? 'vendor' : 'deploy';
+    return `<div class="action" style="border-color:${ST.dispatch.color}"><h3 style="color:${ST.dispatch.color}">Dispatch & close</h3>
+      <form data-form="dispatch" data-id="${c.id}"><div class="grid">
+      <div class="wide"><label class="f">Final status *</label>${radios('final', [['deploy','Ready for deployment'],['vendor','Return to vendor (warranty claim)'],['scrap','Scrap']], def)}</div>
+      <div><label class="f">Destination</label><select name="dest">${options([['Warehouse stock','Warehouse stock'], ...S.stations.map(s => [s.name, s.name])], c.station_id ? stationName(c.station_id) : 'Warehouse stock')}</select></div>
+      <div class="wide"><label class="f">Note</label><input type="text" name="note"></div>
+      </div><div class="row" style="margin-top:12px"><button class="btn p big" type="submit">Close job card</button></div></form></div>`;
+  }
+  return '';
+}
+function notesBlock(c){
+  const notes = c.data?.notes || [];
+  const canNote = canAct(c) || hasAny(['iot','fabrication','wh_tech','spoc','admin','diagnosis','qc','tester']);
+  return `<div class="panel" style="margin-top:12px"><h3>Notes</h3>
+    ${notes.length ? notes.map(n => `<div class="row small" style="padding:6px 0;border-bottom:1px solid var(--line)">${who(n.who)}<span class="muted">${fmtDT(n.at)}</span><div style="flex-basis:100%">${esc(n.text)}</div></div>`).join('') : '<div class="small muted">No notes.</div>'}
+    ${c.status !== 'closed' && hasAny(['iot','admin','receiving','store','diagnosis','wh_tech']) && !S.iot.some(x => x.job_card_id === c.id && x.status !== 'online' && x.status !== 'escalated') ? `<div class="row" style="margin-top:10px"><button class="btn sm" data-act="card-iot" data-id="${c.id}">📡 Battery is offline — send to IoT team</button></div>` : ''}
+    ${S.iot.filter(x => x.job_card_id === c.id).map(x => `<div class="banner warn" style="margin-top:10px">📡 IoT case: <b>${esc(IOT_ST[x.status]?.label || x.status)}</b> · <a href="#" data-act="open-iot" data-id="${x.id}">open</a></div>`).join('')}
+    ${canNote && c.status !== 'closed' ? `<form data-form="note" data-id="${c.id}" class="row" style="margin-top:10px"><input type="text" name="text" class="grow" required placeholder="Add a note, e.g. IoT reflash done, threading done, spare requested"><button class="btn" type="submit">Add</button></form>` : ''}
+    ${isAdmin() ? `<div class="row" style="margin-top:12px"><span class="small muted">Admin:</span><select data-chg="admin-stage" data-id="${c.id}" style="width:auto">${options(STAGES.map(s => [s.key, 'Move to: ' + s.label]), c.status)}</select></div>` : ''}</div>`;
+}
+async function saveCardData(c, patch, msg){
+  const next = { ...patch, data: { ...(c.data || {}), ...(patch.data || {}) } };
+  const { data, error } = await S.sb.from('job_cards').update(next).eq('id', c.id).select().single();
+  if (error){ toast('Not saved: ' + error.message, true); return false; }
+  upsertLocal('cards', data); S.cardDirty = false; if (msg) toast(msg); renderCard(true); renderNav(); if (!S.dirty) renderMain(); return true;
+}
+const cardOf = el => S.cards.find(c => c.id === el.dataset.id);
+const codes = arr => arr.map(x => x.split(' ')[0]);
+ACT['stage-start'] = async a => {
+  const c = cardOf(a); const sf = stageField(c); a.disabled = true;
+  const arr = [...(c.data?.[sf] || []), { who: S.me.id, inAt: now() }];
+  const patch = { data: { [sf]: arr } };
+  if (c.status === 'repair' && !(c.tech_ids || []).includes(S.me.id)) patch.tech_ids = [...(c.tech_ids || []), S.me.id];
+  if (!(await saveCardData(c, patch))) a.disabled = false;
+};
+function finishEntry(c, sf, fields){ const arr = [...(c.data?.[sf] || [])]; arr[arr.length - 1] = { ...arr.at(-1), outAt: now(), ...fields }; return arr; }
+FORM.diag = async f => { const c = cardOf(f), g = fd(f); if (!g.all('faults').length) return toast('Tick at least one fault code (F12 if no fault found).');
+  await saveCardData(c, { status:'assign', data:{ diagnosis: finishEntry(c, 'diagnosis', { faults: codes(g.all('faults')), findings: g('findings'), tools: g.all('tools'), warranty: g('warranty') }), warranty: g('warranty') } }, 'Sent to the ' + c.brand + ' team'); };
+FORM.assign = async f => { const c = cardOf(f), g = fd(f); const to = g('tech'); if (!to) return;
+  await saveCardData(c, { status:'repair', assigned_to: to, tech_ids: [...new Set([...(c.tech_ids || []), to])], data:{ assignments: [...(c.data?.assignments || []), { by: S.me.id, to, at: now() }] } }, 'Assigned to ' + nameOf(to)); };
+FORM.repair = async f => { const c = cardOf(f), g = fd(f); if (!g.all('faults').length) return toast('Tick at least one fault code.');
+  const res = g('result'); if (res !== 'spares' && !g.all('tools').length) return toast('Tick the tools you used.');
+  if (res === 'spares' && !g('sparePart')) return toast('Choose the spare part you are waiting for.');
+  const sparesArr = res === 'spares' ? [...(c.data?.spares || []), { part: g('sparePart'), qty: g('spareQty'), by: S.me.id, at: now(), note: g('action') }] : (c.data?.spares || []);
+  await saveCardData(c, { status: res === 'repaired' ? 'qc' : res === 'spares' ? 'spares' : 'dispatch', data:{ spares: sparesArr, repairs: finishEntry(c, 'repairs', { faults: codes(g.all('faults')), issue: g('issue'), action: g('action'), tools: g.all('tools'), spares: g('spares'), voltAfter: g('voltAfter'), delta: g('delta'), result: res }) } }, res === 'repaired' ? 'Sent to QC' : res === 'spares' ? 'Marked as waiting for spares' : 'Sent to dispatch'); };
+FORM.qc = async f => { const c = cardOf(f), g = fd(f); if (!g.all('checks').length) return toast('Tick the checks you did.'); if (g('verdict') === 'fail' && !g('reason')) return toast('Write the reason for returning the battery.');
+  await saveCardData(c, { status: g('verdict') === 'pass' ? 'test' : 'repair', data:{ qcs: finishEntry(c, 'qcs', { checks: g.all('checks'), v: g('v'), delta: g('delta'), temp: g('temp'), tools: g.all('tools'), findings: g('findings'), verdict: g('verdict'), reason: g('verdict') === 'fail' ? g('reason') : '' }) } }, g('verdict') === 'pass' ? 'Passed — sent to testing' : 'Returned to technician'); };
+FORM.test = async f => { const c = cardOf(f), g = fd(f); const pass = g('airResult') === 'pass' && g('insResult') === 'pass'; if (!pass && !g('failAction')) return toast('Choose what happens after the failed test.');
+  ['pressure','hold','insV','insMin'].forEach(k => lsSet('bo_' + k, g(k)));
+  const st = pass ? 'dispatch' : g('failAction') === 'tech' ? 'repair' : g('failAction') === 'vendor' ? 'dispatch' : 'test';
+  await saveCardData(c, { status: st, data:{ tests: finishEntry(c, 'tests', { pressure: g('pressure'), hold: g('hold'), leak: g('leak'), airResult: g('airResult'), insV: g('insV'), insReading: g('insReading'), insMin: g('insMin'), insResult: g('insResult'), tools: g.all('tools'), failAction: pass ? '' : g('failAction') }) } }, pass ? 'Passed — ready for dispatch' : 'Saved'); };
+FORM.dispatch = async f => { const c = cardOf(f), g = fd(f);
+  await saveCardData(c, { status:'closed', closed_at: new Date().toISOString(), final_status: g('final'), data:{ dispatch: { who: S.me.id, at: now(), finalStatus: g('final'), destination: g('dest'), note: g('note') } } }, 'Job card closed'); };
+FORM.note = async f => { const c = cardOf(f), g = fd(f); await saveCardData(c, { data:{ notes: [...(c.data?.notes || []), { who: S.me.id, at: now(), text: g('text') }] } }, 'Note added'); };
+CHANGE['admin-stage'] = async el => { const c = cardOf(el); const st = el.value; if (st === c.status) return;
+  const patch = { status: st, data:{ notes: [...(c.data?.notes || []), { who: S.me.id, at: now(), text: `Admin moved this job card from ${ST[c.status].label} to ${ST[st].label}` }] } };
+  if (st === 'closed'){ patch.closed_at = new Date().toISOString(); patch.final_status = c.final_status || 'deploy'; } else { patch.closed_at = null; }
+  await saveCardData(c, patch, 'Moved to ' + ST[st].label); };
+
+ACT['spares-in'] = async a => { const c = cardOf(a); a.disabled = true;
+  const arr = (c.data?.spares || []).map(x => x.receivedAt ? x : { ...x, receivedAt: now(), receivedBy: S.me.id });
+  if (!(await saveCardData(c, { status: 'repair', data: { spares: arr } }, 'Back to repair'))) a.disabled = false; };
+
+// ================= FILTERS =================
+S.f = { range:'7', from:'', to:'', region:'', warehouse:'', brand:'', status:'', person:'', station:'', q:'', repeat:'', team:'' };
+const inTeam = id => S.f.team !== 'mine' || reportsToMe(person(id));
+function filterBar(fields){
+  const f = S.f; const parts = [];
+  const sel = (k, label, items, blank) => `<div><label>${label}</label><select data-chg="flt" data-k="${k}">${options(items, f[k], blank)}</select></div>`;
+  if (fields.includes('range')){
+    parts.push(sel('range', 'Period', [['today','Today'],['yesterday','Yesterday'],['7','Last 7 days'],['30','Last 30 days'],['month','This month'],['lastmonth','Last month'],['all','All time'],['custom','Custom dates']]));
+    if (f.range === 'custom') parts.push(`<div><label>From</label><input type="date" data-chg="flt" data-k="from" value="${esc(f.from)}"></div><div><label>To</label><input type="date" data-chg="flt" data-k="to" value="${esc(f.to)}"></div>`);
+  }
+  if (fields.includes('team') && S.peopleList.some(reportsToMe)) parts.push(sel('team', 'People', [['mine','Only people who report to me']], 'Everyone'));
+  if (fields.includes('region')) parts.push(sel('region', 'Region', REGIONS, 'All regions'));
+  if (fields.includes('warehouse')) parts.push(sel('warehouse', 'Warehouse', [...new Set([...WAREHOUSES, ...S.cards.map(c => c.warehouse).filter(Boolean)])], 'All warehouses'));
+  if (fields.includes('brand')) parts.push(sel('brand', 'Brand', BRANDS, 'All brands'));
+  if (fields.includes('status')) parts.push(sel('status', 'Stage', [['open','All open'], ...STAGES.map(s => [s.key, s.label])], 'Any stage'));
+  if (fields.includes('person')) parts.push(sel('person', 'Person', S.peopleList.map(p => [p.id, p.full_name]), 'Anyone'));
+  if (fields.includes('station')) parts.push(sel('station', 'Station', S.stations.map(s => [s.id, s.name]), 'All stations'));
+  if (fields.includes('repeat')) parts.push(sel('repeat', 'Repeat repairs', [['yes','Repeat repairs only'],['no','Exclude repeats']], 'Include all'));
+  if (fields.includes('q')) parts.push(`<div><label>Battery ID / job card</label><input type="search" data-chg="flt" data-k="q" value="${esc(f.q)}" placeholder="Search"></div>`);
+  return `<div class="filters">${parts.join('')}</div>`;
+}
+CHANGE.flt = el => { S.f[el.dataset.k] = el.value; S.dirty = false; renderMain(); };
+function inRange(t){ const [a, b] = rangeOf(S.f.range, S.f.from, S.f.to); const x = ms(t); return x && x >= a && x < b; }
+function touchedBy(c, pid){ const d = c.data || {}; return c.assigned_to === pid || (c.tech_ids || []).includes(pid) || c.field_tech_id === pid || d.receive?.by === pid || d.dispatch?.who === pid ||
+  [...(d.diagnosis || []), ...(d.repairs || []), ...(d.qcs || []), ...(d.tests || [])].some(e => e.who === pid); }
+function filterCards(useRange = true){
+  const f = S.f; const q = f.q.trim().toUpperCase();
+  return S.cards.filter(c => {
+    if (useRange && !inRange(c.received_at) && !(c.closed_at && inRange(c.closed_at))) return false;
+    if (f.region && c.region !== f.region) return false;
+    if (f.warehouse && c.warehouse !== f.warehouse) return false;
+    if (f.brand && c.brand !== f.brand) return false;
+    if (f.status === 'open' && c.status === 'closed') return false;
+    if (f.status && f.status !== 'open' && c.status !== f.status) return false;
+    if (f.station && c.station_id !== f.station) return false;
+    if (f.repeat === 'yes' && !c.is_repeat) return false;
+    if (f.repeat === 'no' && c.is_repeat) return false;
+    if (f.person && !touchedBy(c, f.person)) return false;
+    if (q && !(`${c.battery_id} ${c.jc_no}`.toUpperCase().includes(q))) return false;
+    return true;
+  });
+}
+
+// ================= JOB CARDS LIST =================
+VIEWS.cards = () => {
+  const list = filterCards(S.f.range !== 'all');
+  const counts = {}; STAGES.forEach(s => counts[s.key] = 0); S.cards.forEach(c => counts[c.status]++);
+  return `<h2 class="pg">Job cards</h2><p class="pgsub">${isAdmin() || hasAny(['data_view']) ? 'Every job card in every warehouse.' : 'The job cards you are allowed to see.'}</p>
+  <div class="tiles">${STAGES.map(s => `<div class="tile link" style="border-top-color:${s.color}" data-act="flt-stage" data-v="${s.key}"><div class="v">${counts[s.key]}</div><div class="k">${s.label}</div></div>`).join('')}</div>
+  <div class="panel">${filterBar(['range','q','status','brand','region','warehouse','station','person','repeat'])}
+    <div class="row small muted" style="margin-bottom:8px">${list.length} job card${list.length === 1 ? '' : 's'}${list.length > 300 ? ' (showing the newest 300 — download for all)' : ''}<button class="btn sm right" data-act="xl-cards">⬇ Download Excel</button></div>
+    <div class="list">${list.slice(0, 300).map(cardItem).join('') || '<div class="empty">No job cards match.</div>'}</div></div>`;
+};
+ACT['flt-stage'] = a => { S.f.status = a.dataset.v; S.f.range = 'all'; renderMain(); };
+
+// ================= METRICS =================
+function metrics(){
+  const cards = filterCards(false); const f = S.f;
+  const techs = {}, qcs = {}, testers = {}, diags = {}, faults = {}, days = {};
+  const T = (id, brand) => techs[id] ||= { id, brand, cards:new Set(), attempts:0, minutes:[], returned:0, fp:0, fpBase:0, repeats:0, assigned:0, pending:0 };
+  const D = k => days[k] ||= { day:k, received:0, closed:0, repairs:0, qcPass:0, qcFail:0, tests:0, repeats:0 };
+  let received = 0, closed = [], repeatsList = [];
+  for (const c of cards){
+    const d = c.data || {}; const reps = (d.repairs || []).filter(e => e.outAt); const qr = (d.qcs || []).filter(e => e.outAt); const tr = (d.tests || []).filter(e => e.outAt);
+    const techBefore = t => [...reps].reverse().find(e => e.outAt <= t)?.who;
+    if (inRange(c.received_at)){ received++; D(dayKey(c.received_at)).received++; if (c.is_repeat){ D(dayKey(c.received_at)).repeats++; repeatsList.push(c); } }
+    if (c.status === 'repair' && c.assigned_to) T(c.assigned_to, c.brand).pending++;
+    (d.assignments || []).forEach(a => { if (inRange(a.at)) T(a.to, c.brand).assigned++; });
+    for (const e of (d.diagnosis || []).filter(e => e.outAt)){ if (!inRange(e.outAt)) continue; const o = diags[e.who] ||= { id:e.who, done:0, minutes:[] }; o.done++; const m = mins(e); if (m != null) o.minutes.push(m); (e.faults || []).forEach(x => faults[x] = (faults[x] || 0) + 1); }
+    for (const e of reps){
+      if (!inRange(e.outAt)) continue;
+      const t = T(e.who, c.brand); t.attempts++; t.cards.add(c.id); const m = mins(e); if (m != null) t.minutes.push(m); D(dayKey(e.outAt)).repairs++;
+      if (!(d.diagnosis || []).length) (e.faults || []).forEach(x => faults[x] = (faults[x] || 0) + 1);
+      if (e.result === 'repaired'){ t.fpBase++; const nq = qr.find(q => q.outAt >= e.outAt); if (nq && nq.verdict === 'pass') t.fp++; }
+    }
+    for (const q of qr){ if (!inRange(q.outAt)) continue; const o = qcs[q.who] ||= { id:q.who, checked:0, passed:0, failed:0, minutes:[], reasons:{} }; o.checked++;
+      if (q.verdict === 'pass'){ o.passed++; D(dayKey(q.outAt)).qcPass++; } else { o.failed++; D(dayKey(q.outAt)).qcFail++; if (q.reason) o.reasons[q.reason] = (o.reasons[q.reason] || 0) + 1; const tb = techBefore(q.outAt); if (tb) T(tb, c.brand).returned++; }
+      const m = mins(q); if (m != null) o.minutes.push(m); }
+    for (const x of tr){ if (!inRange(x.outAt)) continue; const o = testers[x.who] ||= { id:x.who, tested:0, airPass:0, insPass:0, failed:0, minutes:[] }; o.tested++; D(dayKey(x.outAt)).tests++;
+      if (x.airResult === 'pass') o.airPass++; if (x.insResult === 'pass') o.insPass++;
+      if (!(x.airResult === 'pass' && x.insResult === 'pass')){ o.failed++; const tb = techBefore(x.outAt); if (tb) T(tb, c.brand).returned++; }
+      const m = mins(x); if (m != null) o.minutes.push(m); }
+    if (c.status === 'closed' && inRange(c.closed_at)){ closed.push(c); D(dayKey(c.closed_at)).closed++; }
+    if (c.is_repeat && inRange(c.received_at) && c.repeat_of){ const p = S.cards.find(x => x.id === c.repeat_of); const lt = p && lastDone(p.data?.repairs); if (lt) T(lt.who, p.brand).repeats++; }
+  }
+  const tat = closed.map(c => hrs(c.received_at, c.closed_at)).filter(v => v != null);
+  const fieldTat = closed.filter(c => c.data?.field?.at).map(c => hrs(c.data.field.at, c.closed_at));
+  const hands = closed.map(handsOn);
+  // field
+  const logs = S.logs.filter(l => inRange(l.created_at) && (!f.region || l.region === f.region) && (!f.station || l.station_id === f.station) && (!f.person || l.tech_id === f.person));
+  const cis = S.checkins.filter(l => inRange(l.created_at) && (!f.region || l.region === f.region) && (!f.station || l.station_id === f.station) && (!f.person || l.tech_id === f.person));
+  const ft = {};
+  const FT = id => ft[id] ||= { id, logs:0, fixed:0, sent:0, checkins:0, stations:new Set(), noGps:0, last:null };
+  logs.forEach(l => { const o = FT(l.tech_id); o.logs++; if (l.action === 'fixed') o.fixed++; else o.sent++; if (!l.lat) o.noGps++; if (!o.last || ms(l.created_at) > ms(o.last.created_at)) o.last = l; });
+  cis.forEach(c => { const o = FT(c.tech_id); o.checkins++; if (c.station_id) o.stations.add(c.station_id); if (!c.lat) o.noGps++; if (!o.last || ms(c.created_at) > ms(o.last.created_at)) o.last = c; });
+  const tf = a => a.filter(x => inTeam(x.id));
+  return { cards, received, closed, tat, fieldTat, hands, techs:tf(Object.values(techs)), qcs:tf(Object.values(qcs)), testers:tf(Object.values(testers)), diags:tf(Object.values(diags)), faults, days:Object.values(days).sort((a, b) => a.day < b.day ? 1 : -1), repeatsList, logs, cis, ft:tf(Object.values(ft)), iot:tf(iotMetrics()),
+    qcRate: (() => { const a = Object.values(qcs); const n = a.reduce((s, x) => s + x.checked, 0); return n ? a.reduce((s, x) => s + x.passed, 0) / n : null; })(),
+    testRate: (() => { const a = Object.values(testers); const n = a.reduce((s, x) => s + x.tested, 0); return n ? a.reduce((s, x) => s + x.tested - x.failed, 0) / n : null; })() };
+}
+
+// ================= REPORTS =================
+VIEWS.reports = () => {
+  if (has('spoc') && !hasAny(['admin','rm','data_view'])) S.f.brand = S.me.team;
+  const M = metrics();
+  const t = tabs('rep', [['summary','Summary'],['tech','Technicians'],['daily','Repairs by date'],['tat','Turnaround'],['repeat','Repeat repairs'],['spares','Spares & warranty'],['field','Field technicians'],['racks','Smart racks'],['iot','IoT'],['faults','Faults']], 'summary');
+  const tiles = [['Batteries received', M.received, '#44546A'], ['Job cards closed', M.closed.length, '#2F7D4F'], ['Avg turnaround (warehouse)', M.tat.length ? num1(avg(M.tat)) + ' h' : '—', '#7030A0'],
+    ['Avg station → closed', M.fieldTat.length ? num1(avg(M.fieldTat)) + ' h' : '—', '#0F7C8C'], ['Avg hands-on per battery', M.hands.length ? Math.round(avg(M.hands)) + ' min' : '—', '#2E75B6'],
+    ['QC pass rate', pct(M.qcRate), '#C55A11'], ['Test pass rate', pct(M.testRate), '#548235'], ['Repeat repairs', M.repeatsList.length, '#B42318'], ['Field batteries logged', M.logs.length, '#0F7C8C'], ['Station check-ins', M.cis.length, '#548235']];
+  let body = '';
+  if (t.cur === 'summary') body = `<div class="tiles">${tiles.map(([k, v, c]) => `<div class="tile" style="border-top-color:${c}"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}</div>
+    <div class="panel"><h3>Queue right now</h3><div class="tiles" style="margin:0">${STAGES.filter(s => s.key !== 'closed').map(s => `<div class="tile" style="border-top-color:${s.color}"><div class="v">${S.cards.filter(c => c.status === s.key && (!S.f.brand || c.brand === S.f.brand) && (!S.f.region || c.region === S.f.region)).length}</div><div class="k">${s.label}</div></div>`).join('')}</div>
+    <div class="small muted" style="margin-top:8px">If turnaround is long but hands-on minutes are short, batteries are waiting in a queue — that is where to add people.</div></div>`;
+  if (t.cur === 'tech') body = techTable(M);
+  if (t.cur === 'daily') body = `<div class="panel"><h3>Repairs by date</h3><div class="tw"><table class="t"><tr><th>Date</th><th class="n">Received</th><th class="n">Repairs done</th><th class="n">QC pass</th><th class="n">QC fail</th><th class="n">Tests</th><th class="n">Closed</th><th class="n">Repeats</th></tr>
+    ${M.days.map(d => `<tr><td>${fmtD(Date.parse(d.day + 'T12:00'))}</td><td class="n">${d.received}</td><td class="n">${d.repairs}</td><td class="n">${d.qcPass}</td><td class="n">${d.qcFail}</td><td class="n">${d.tests}</td><td class="n"><b>${d.closed}</b></td><td class="n">${d.repeats}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">No activity in this period.</td></tr>'}</table></div></div>`;
+  if (t.cur === 'tat'){
+    const rows = M.closed.map(c => ({ c, tat: hrs(c.received_at, c.closed_at), hands: handsOn(c), field: c.data?.field?.at ? hrs(c.data.field.at, c.closed_at) : null })).sort((a, b) => b.tat - a.tat);
+    const byBrand = BRANDS.map(b => { const r = rows.filter(x => x.c.brand === b); return [b, r.length, avg(r.map(x => x.tat)), avg(r.map(x => x.hands))]; });
+    body = `<div class="panel"><h3>Turnaround by brand</h3><div class="tw"><table class="t"><tr><th>Brand</th><th class="n">Closed</th><th class="n">Avg turnaround (h)</th><th class="n">Avg hands-on (min)</th><th class="n">Waiting share</th></tr>
+      ${byBrand.map(([b, n, t1, h]) => `<tr><td>${brandChip(b)}</td><td class="n">${n}</td><td class="n">${num1(t1)}</td><td class="n">${h == null ? '—' : Math.round(h)}</td><td class="n">${t1 ? pct(1 - (h / 60) / t1) : '—'}</td></tr>`).join('')}</table></div></div>
+      <div class="panel"><h3>Slowest job cards</h3><div class="tw"><table class="t"><tr><th>Battery</th><th>Job card</th><th>Received</th><th>Closed</th><th class="n">Turnaround</th><th class="n">Hands-on</th><th class="n">Station → closed</th></tr>
+      ${rows.slice(0, 50).map(r => `<tr class="click" data-act="open-card" data-id="${r.c.id}"><td><b>${esc(r.c.battery_id)}</b> ${brandChip(r.c.brand)}</td><td>${esc(r.c.jc_no)}</td><td>${fmtDT(r.c.received_at)}</td><td>${fmtDT(r.c.closed_at)}</td><td class="n">${num1(r.tat)} h</td><td class="n">${Math.round(r.hands)} min</td><td class="n">${r.field == null ? '—' : num1(r.field) + ' h'}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">No closed job cards in this period.</td></tr>'}</table></div></div>`;
+  }
+  if (t.cur === 'repeat') body = `<div class="panel"><h3>Repeat repairs (back within ${REPEAT_DAYS} days)</h3><div class="tw"><table class="t"><tr><th>Battery</th><th>Received again</th><th>Previous job card</th><th>Previously closed</th><th>Last repaired by</th><th class="n">Days apart</th></tr>
+    ${M.repeatsList.map(c => { const p = S.cards.find(x => x.id === c.repeat_of); const lt = p && lastDone(p.data?.repairs); return `<tr class="click" data-act="open-card" data-id="${c.id}"><td><b>${esc(c.battery_id)}</b> ${brandChip(c.brand)}</td><td>${fmtDT(c.received_at)}</td><td>${esc(p?.jc_no || '')}</td><td>${p ? fmtDT(p.closed_at) : ''}</td><td>${lt ? who(lt.who) : '—'}</td><td class="n">${p ? num1(hrs(p.closed_at, c.received_at) / 24) : ''}</td></tr>`; }).join('') || '<tr><td colspan="6" class="empty">No repeat repairs in this period.</td></tr>'}</table></div></div>`;
+  if (t.cur === 'field') body = fieldTable(M);
+  if (t.cur === 'spares'){
+    const waiting = S.cards.filter(c => c.status === 'spares').map(c => ({ c, w: (c.data?.spares || []).filter(x => !x.receivedAt).at(-1) })).filter(x => x.w);
+    const byPart = {}; waiting.forEach(x => { byPart[x.w.part] = (byPart[x.w.part] || 0) + Number(x.w.qty || 1); });
+    const used = {}; M.cards.forEach(c => (c.data?.spares || []).filter(x => x.receivedAt && inRange(x.receivedAt)).forEach(x => used[x.part] = (used[x.part] || 0) + Number(x.qty || 1)));
+    const war = { in:0, out:0, unknown:0 }; M.cards.filter(c => inRange(c.received_at) && c.data?.warranty).forEach(c => war[c.data.warranty]++);
+    body = `<div class="panel"><h3 style="color:#A15C00">Spares needed now (for procurement)</h3>${Object.keys(byPart).length ? `<div class="tw"><table class="t"><tr><th>Spare part</th><th class="n">Quantity needed</th><th class="n">Batteries waiting</th></tr>${Object.entries(byPart).sort((a, b) => b[1] - a[1]).map(([p, n]) => `<tr><td><b>${esc(p)}</b></td><td class="n">${n}</td><td class="n">${waiting.filter(x => x.w.part === p).length}</td></tr>`).join('')}</table></div>` : '<div class="empty">No batteries are waiting for spares.</div>'}</div>
+    ${waiting.length ? `<div class="panel"><h3>Batteries waiting for spares</h3><div class="tw"><table class="t"><tr><th>Battery</th><th>Spare</th><th>Technician</th><th>Waiting since</th><th class="n">Days</th></tr>${waiting.sort((a, b) => a.w.at - b.w.at).map(x => `<tr class="click" data-act="open-card" data-id="${x.c.id}"><td><b>${esc(x.c.battery_id)}</b> ${brandChip(x.c.brand)}</td><td>${esc(x.w.part)}${x.w.qty ? ' × ' + esc(x.w.qty) : ''}</td><td>${who(x.c.assigned_to)}</td><td>${fmtDT(x.w.at)}</td><td class="n" style="${now() - x.w.at > 3 * 864e5 ? 'color:#B42318;font-weight:700' : ''}">${num1((now() - x.w.at) / 864e5)}</td></tr>`).join('')}</table></div></div>` : ''}
+    <div class="panel"><h3>Spares used in this period</h3>${Object.keys(used).length ? Object.entries(used).sort((a, b) => b[1] - a[1]).map(([p, n]) => `<div class="row small" style="padding:4px 0;border-bottom:1px solid var(--line)"><b class="grow">${esc(p)}</b>${n}</div>`).join('') : '<div class="empty">None recorded.</div>'}</div>
+    <div class="panel"><h3>Warranty (batteries received this period)</h3><div class="tiles" style="margin:0"><div class="tile" style="border-top-color:#2F7D4F"><div class="v">${war.in}</div><div class="k">Under warranty</div></div><div class="tile" style="border-top-color:#5B6B85"><div class="v">${war.out}</div><div class="k">Out of warranty</div></div><div class="tile" style="border-top-color:#8A6D00"><div class="v">${war.unknown}</div><div class="k">Not known</div></div><div class="tile" style="border-top-color:#7030A0"><div class="v">${M.closed.filter(c => c.final_status === 'vendor').length}</div><div class="k">Returned to vendor</div></div><div class="tile" style="border-top-color:#555"><div class="v">${M.closed.filter(c => c.final_status === 'scrap').length}</div><div class="k">Scrapped</div></div></div></div>`;
+  }
+  if (t.cur === 'racks'){
+    const checks = S.checkins.filter(c => c.rack_status && inRange(c.created_at) && (!S.f.region || c.region === S.f.region));
+    const issues = S.issues.filter(i => i.kind === 'rack' && (inRange(i.created_at) || (i.resolved_at && inRange(i.resolved_at))) && (!S.f.region || i.region === S.f.region));
+    const res = issues.filter(i => i.status === 'resolved');
+    const byReg = REGIONS.map(r => { const ch = checks.filter(c => c.region === r); const st = new Set(ch.map(c => c.station_id)); return [r, st.size, S.stations.filter(s => s.region === r).length, ch.filter(c => c.rack_status === 'down').length, issues.filter(i => i.region === r && i.status !== 'resolved').length, res.filter(i => i.region === r).length]; });
+    body = `<div class="panel"><h3>Smart rack checks by region</h3><div class="tw"><table class="t"><tr><th>Region</th><th class="n">Stations checked</th><th class="n">Total stations</th><th class="n">Checks: not working</th><th class="n">Rack issues open</th><th class="n">Rack issues fixed</th></tr>${byReg.map(r => `<tr><td><b>${r[0]}</b></td><td class="n">${r[1]}</td><td class="n">${r[2]}</td><td class="n">${r[3]}</td><td class="n">${r[4]}</td><td class="n">${r[5]}</td></tr>`).join('')}</table></div>
+    <div class="small muted" style="margin-top:8px">Average time to fix a rack: <b>${res.length ? fmtDur(avg(res.map(i => ms(i.resolved_at) - ms(i.created_at)))) : '—'}</b></div></div>
+    <div class="panel"><h3>Rack issues</h3><div class="list">${issues.map(issueItem).join('') || '<div class="empty">No rack issues in this period.</div>'}</div></div>`;
+  }
+  if (t.cur === 'iot') body = `<div class="panel"><h3 style="color:#0F7C8C">IoT team — offline batteries</h3><div class="tw"><table class="t"><tr><th>Person</th><th class="n">Batteries worked on</th><th class="n">Back online</th><th class="n">Sent to repair</th><th class="n">SIM swaps</th><th class="n">Firmware upgrades</th><th class="n">Avg min</th></tr>
+    ${M.iot.map(r => `<tr class="click" data-act="person" data-id="${r.id}"><td>${who(r.id, 'sm')}</td><td class="n"><b>${r.sessions}</b></td><td class="n">${r.online}</td><td class="n">${r.escalated}</td><td class="n">${r.sims}</td><td class="n">${r.fw}</td><td class="n">${r.minutes.length ? Math.round(avg(r.minutes)) : '—'}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">No IoT work in this period.</td></tr>'}</table></div>
+    <div class="small muted" style="margin-top:8px">Offline right now: <b>${S.iot.filter(x => x.status === 'isolated' || x.status === 'in_progress').length}</b></div></div>`;
+  if (t.cur === 'faults'){ const fe = Object.entries(M.faults).sort((a, b) => b[1] - a[1]); const mx = fe[0]?.[1] || 1;
+    body = `<div class="panel"><h3>Most common faults</h3>${fe.map(([k, v]) => `<div class="row" style="margin-bottom:6px;flex-wrap:nowrap"><div style="width:250px" class="small"><b>${esc(k)}</b> ${esc(FAULT_NAME[k] || '')}</div><div class="grow"><div class="bar" style="width:${Math.max(4, v / mx * 100)}%"></div></div><div style="width:40px;text-align:right"><b>${v}</b></div></div>`).join('') || '<div class="empty">No faults recorded in this period.</div>'}</div>`; }
+  return `<h2 class="pg">Reports</h2><p class="pgsub">Pick a period and filters, then download everything to Excel.</p>
+  <div class="panel">${filterBar(['range','team','region','warehouse','brand','station','person'])}<div class="row"><button class="btn p" data-act="xl-report">⬇ Download Excel report</button><span class="small muted">Includes all tabs below for the selected filters.</span></div></div>${t.html}${body}`;
+};
+function techTable(M){
+  const by = {}; M.techs.forEach(t => (by[t.brand] ||= []).push(t));
+  let html = '';
+  for (const b of [...BRANDS, ...Object.keys(by).filter(x => !BRANDS.includes(x))]){
+    const list = (by[b] || []).sort((x, y) => y.cards.size - x.cards.size); if (!list.length) continue;
+    html += `<div class="panel"><h3>${brandChip(b)} repair technicians</h3><div class="tw"><table class="t"><tr><th>Technician</th><th class="n">Assigned</th><th class="n">Batteries closed</th><th class="n">Pending now</th><th class="n">Returned (QC/test)</th><th class="n">Repeat repairs</th><th class="n">Avg min / battery</th><th class="n">QC first-pass</th></tr>
+      ${list.map(t => { const fp = t.fpBase ? t.fp / t.fpBase : null; return `<tr class="click" data-act="person" data-id="${t.id}"><td>${who(t.id, 'sm')}</td><td class="n">${t.assigned}</td><td class="n"><b>${t.cards.size}</b></td><td class="n">${t.pending}</td><td class="n" style="${t.returned ? 'color:#B42318;font-weight:700' : ''}">${t.returned}</td><td class="n" style="${t.repeats ? 'color:#B42318;font-weight:700' : ''}">${t.repeats}</td><td class="n">${t.minutes.length ? Math.round(avg(t.minutes)) : '—'}</td><td class="n" style="color:${fp == null ? 'inherit' : fp >= .85 ? '#2F7D4F' : '#B42318'};font-weight:700">${pct(fp)}</td></tr>`; }).join('')}</table></div></div>`;
+  }
+  const simple = (title, color, rows, cols) => rows.length ? `<div class="panel"><h3 style="color:${color}">${title}</h3><div class="tw"><table class="t"><tr>${cols.map((c, i) => `<th class="${i ? 'n' : ''}">${c[0]}</th>`).join('')}</tr>${rows.map(r => `<tr class="click" data-act="person" data-id="${r.id}">${cols.map((c, i) => `<td class="${i ? 'n' : ''}">${c[1](r)}</td>`).join('')}</tr>`).join('')}</table></div></div>` : '';
+  html += simple('Diagnosis', ST.diagnosis.color, M.diags, [['Person', r => who(r.id, 'sm')], ['Diagnosed', r => `<b>${r.done}</b>`], ['Avg min', r => r.minutes.length ? Math.round(avg(r.minutes)) : '—']]);
+  html += simple('QC engineers', ST.qc.color, M.qcs, [['Person', r => who(r.id, 'sm')], ['Checked', r => `<b>${r.checked}</b>`], ['Passed', r => r.passed], ['Failed', r => r.failed], ['Pass rate', r => pct(r.checked ? r.passed / r.checked : null)], ['Avg min', r => r.minutes.length ? Math.round(avg(r.minutes)) : '—']]);
+  html += simple('Air leak & insulation', ST.test.color, M.testers, [['Person', r => who(r.id, 'sm')], ['Tested', r => `<b>${r.tested}</b>`], ['Air pass', r => r.airPass], ['Insulation pass', r => r.insPass], ['Failed', r => r.failed], ['Avg min', r => r.minutes.length ? Math.round(avg(r.minutes)) : '—']]);
+  return html || '<div class="panel empty">No warehouse work in this period yet.</div>';
+}
+function fieldTable(M){
+  const all = S.peopleList.filter(p => (p.roles || []).includes('field_tech') && p.active && inTeam(p.id) && (!S.f.region || p.region === S.f.region) && (!S.f.person || p.id === S.f.person));
+  const byId = Object.fromEntries(M.ft.map(x => [x.id, x]));
+  const rows = all.map(p => ({ p, o: byId[p.id] || { logs:0, fixed:0, sent:0, checkins:0, stations:new Set(), noGps:0, last:null }, total: S.stations.filter(s => s.field_tech_id === p.id).length })).sort((a, b) => (b.o.checkins + b.o.logs) - (a.o.checkins + a.o.logs));
+  return `<div class="panel"><h3>Field technicians</h3><div class="tw"><table class="t"><tr><th>Field technician</th><th>Region</th><th class="n">Stations</th><th class="n">Check-ins</th><th class="n">Stations visited</th><th class="n">Batteries logged</th><th class="n">Fixed on site</th><th class="n">Sent to warehouse</th><th class="n">No GPS</th><th>Last seen</th></tr>
+    ${rows.map(({ p, o, total }) => `<tr class="click" data-act="person" data-id="${p.id}"><td>${who(p.id, 'sm')}</td><td>${esc(p.sub_region || p.region || '')}</td><td class="n">${total}</td><td class="n"><b>${o.checkins}</b></td><td class="n">${o.stations.size}${total ? ` <span class="muted small">(${pct(o.stations.size / total)})</span>` : ''}</td><td class="n">${o.logs}</td><td class="n">${o.fixed}</td><td class="n">${o.sent}</td><td class="n" style="${o.noGps ? 'color:#B42318' : ''}">${o.noGps}</td><td class="small">${o.last ? fmtDT(o.last.created_at) + ' · ' + esc(stationName(o.last.station_id)) : '<span class="muted">no activity</span>'}</td></tr>`).join('')}</table></div></div>`;
+}
+
+// ================= EXCEL =================
+function cardRow(c){
+  const d = c.data || {}; const lr = lastDone(d.repairs); const lq = lastDone(d.qcs); const lt = lastDone(d.tests); const dg = lastDone(d.diagnosis);
+  return { 'Job card': c.jc_no, 'Battery ID': c.battery_id, Brand: c.brand, Stage: ST[c.status]?.label, Warehouse: c.warehouse, Region: c.region, Station: stationName(c.station_id), 'Field technician': c.field_tech_id ? nameOf(c.field_tech_id) : '',
+    'Logged at station': d.field?.at ? fmtDT(d.field.at) : '', Received: fmtDT(c.received_at), 'Received by': d.receive ? nameOf(d.receive.by) : '', 'Fault reported': d.receive?.fault || d.field?.fault || '',
+    'Diagnosed by': dg ? nameOf(dg.who) : '', 'Fault codes': (lr?.faults || dg?.faults || []).join(', '), 'Assigned to': c.assigned_to ? nameOf(c.assigned_to) : '', 'Repair attempts': (d.repairs || []).filter(e => e.outAt).length,
+    'Issue found': lr?.issue || '', 'Action taken': lr?.action || '', 'Tools used': (lr?.tools || []).join(', '), Spares: lr?.spares || '',
+    'QC by': lq ? nameOf(lq.who) : '', 'QC result': lq?.verdict || '', 'QC fails': (d.qcs || []).filter(q => q.verdict === 'fail').length, 'Tested by': lt ? nameOf(lt.who) : '', 'Air leak': lt?.airResult || '', Insulation: lt?.insResult || '', 'Insulation MΩ': lt?.insReading || '',
+    'Warranty': WARRANTY[d.warranty] || '', 'Spares': (d.spares || []).map(x => x.part + (x.qty ? ' x' + x.qty : '') + (x.receivedAt ? ' (received ' + fmtD(x.receivedAt) + ')' : ' (waiting)')).join('; '),
+    'Final status': c.final_status || '', Closed: c.closed_at ? fmtDT(c.closed_at) : '', 'Turnaround (h)': c.closed_at ? Math.round(hrs(c.received_at, c.closed_at) * 10) / 10 : '', 'Hands-on (min)': Math.round(handsOn(c)), 'Repeat repair': c.is_repeat ? 'Yes' : '' };
+}
+function xlDownload(sheets, name){
+  if (!window.XLSX) return toast('Excel download is not available — check your connection');
+  const wb = XLSX.utils.book_new();
+  for (const [title, rows] of sheets){ const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ Note:'No data for the selected filters' }]); ws['!cols'] = Object.keys(rows[0] || { Note:1 }).map(k => ({ wch: Math.min(40, Math.max(10, k.length + 2)) })); XLSX.utils.book_append_sheet(wb, ws, title.slice(0, 31)); }
+  XLSX.writeFile(wb, name);
+}
+const stamp = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+ACT['xl-cards'] = () => xlDownload([['Job cards', filterCards(S.f.range !== 'all').map(cardRow)]], `Job_cards_${stamp()}.xlsx`);
+ACT['xl-report'] = () => {
+  const M = metrics(); const [a, b] = rangeOf(S.f.range, S.f.from, S.f.to);
+  const summary = [{ Item:'Period', Value: `${fmtD(a)} to ${fmtD(b - 1)}` }, { Item:'Filters', Value: [S.f.region, S.f.warehouse, S.f.brand, S.f.station && stationName(S.f.station), S.f.person && nameOf(S.f.person)].filter(Boolean).join(', ') || 'None' },
+    { Item:'Batteries received', Value: M.received }, { Item:'Job cards closed', Value: M.closed.length }, { Item:'Avg turnaround (h)', Value: M.tat.length ? Math.round(avg(M.tat) * 10) / 10 : '' },
+    { Item:'Avg station to closed (h)', Value: M.fieldTat.length ? Math.round(avg(M.fieldTat) * 10) / 10 : '' }, { Item:'Avg hands-on per battery (min)', Value: M.hands.length ? Math.round(avg(M.hands)) : '' },
+    { Item:'QC pass rate', Value: pct(M.qcRate) }, { Item:'Test pass rate', Value: pct(M.testRate) }, { Item:'Repeat repairs', Value: M.repeatsList.length }, { Item:'Field batteries logged', Value: M.logs.length }, { Item:'Station check-ins', Value: M.cis.length },
+    { Item:'Downloaded by', Value: S.me.full_name + ' · ' + fmtDT(now()) }];
+  const techs = M.techs.map(t => ({ Brand: t.brand, Technician: nameOf(t.id), 'Staff ID': person(t.id)?.staff_id || '', Assigned: t.assigned, 'Batteries closed': t.cards.size, 'Repair attempts': t.attempts, 'Pending now': t.pending, 'Returned (QC/test)': t.returned, 'Repeat repairs': t.repeats, 'Avg min / battery': t.minutes.length ? Math.round(avg(t.minutes)) : '', 'QC first-pass': pct(t.fpBase ? t.fp / t.fpBase : null) }));
+  const others = [...M.diags.map(r => ({ Stage:'Diagnosis', Person:nameOf(r.id), Done:r.done, 'Avg min':r.minutes.length ? Math.round(avg(r.minutes)) : '' })), ...M.qcs.map(r => ({ Stage:'QC', Person:nameOf(r.id), Done:r.checked, Passed:r.passed, Failed:r.failed, 'Avg min':r.minutes.length ? Math.round(avg(r.minutes)) : '' })), ...M.testers.map(r => ({ Stage:'Air leak & insulation', Person:nameOf(r.id), Done:r.tested, Passed:r.tested - r.failed, Failed:r.failed, 'Avg min':r.minutes.length ? Math.round(avg(r.minutes)) : '' }))];
+  const daily = M.days.map(d => ({ Date: d.day, Received: d.received, 'Repairs done': d.repairs, 'QC pass': d.qcPass, 'QC fail': d.qcFail, Tests: d.tests, Closed: d.closed, 'Repeat repairs': d.repeats }));
+  const repeats = M.repeatsList.map(c => { const p = S.cards.find(x => x.id === c.repeat_of); const lt = p && lastDone(p.data?.repairs); return { 'Battery ID': c.battery_id, Brand: c.brand, 'Received again': fmtDT(c.received_at), 'Job card': c.jc_no, 'Previous job card': p?.jc_no || '', 'Previously closed': p ? fmtDT(p.closed_at) : '', 'Last repaired by': lt ? nameOf(lt.who) : '' }; });
+  const field = M.ft.map(o => ({ 'Field technician': nameOf(o.id), Region: person(o.id)?.region || '', 'Check-ins': o.checkins, 'Stations visited': o.stations.size, 'Batteries logged': o.logs, 'Fixed on site': o.fixed, 'Sent to warehouse': o.sent, 'Actions without GPS': o.noGps }));
+  const logs = M.logs.map(l => ({ When: fmtDT(l.created_at), 'Field technician': nameOf(l.tech_id), Station: stationName(l.station_id), 'Battery ID': l.battery_id, Brand: l.brand, Fault: l.fault, Action: l.action, Status: l.status, Latitude: l.lat, Longitude: l.lng, 'Accuracy (m)': l.accuracy }));
+  const cis = M.cis.map(c => ({ When: fmtDT(c.created_at), 'Field technician': nameOf(c.tech_id), Station: stationName(c.station_id), Note: c.note, Latitude: c.lat, Longitude: c.lng, 'Accuracy (m)': c.accuracy }));
+  const iot = M.iot.map(r => ({ Person: nameOf(r.id), 'Batteries worked on': r.sessions, 'Back online': r.online, 'Sent to repair': r.escalated, 'SIM swaps': r.sims, 'Firmware upgrades': r.fw, 'Avg min': r.minutes.length ? Math.round(avg(r.minutes)) : '' }));
+  const iotCases = S.iot.filter(x => inRange(x.created_at) || (x.closed_at && inRange(x.closed_at))).map(x => { const l = lastDone(x.data?.sessions); return { 'Battery ID': x.battery_id, Brand: x.brand, Warehouse: x.warehouse, Status: IOT_ST[x.status]?.label, Flagged: fmtDT(x.created_at), 'Flagged by': nameOf(x.created_by), Reason: x.reason, 'Worked on by': l ? nameOf(l.who) : '', 'What was done': (l?.actions || []).join(', '), 'Old SIM': l?.oldSim || '', 'New SIM': l?.newSim || '', Finished: x.closed_at ? fmtDT(x.closed_at) : '' }; });
+  const spares = S.cards.filter(c => c.status === 'spares').map(c => { const w = (c.data?.spares || []).filter(x => !x.receivedAt).at(-1) || {}; return { 'Battery ID': c.battery_id, Brand: c.brand, 'Spare needed': w.part, Qty: w.qty, Technician: nameOf(c.assigned_to), 'Waiting since': fmtDT(w.at), 'Days waiting': w.at ? Math.round((now() - w.at) / 864e5 * 10) / 10 : '' }; });
+  const stIssues = S.issues.filter(i => inRange(i.created_at) || (i.resolved_at && inRange(i.resolved_at))).map(i => ({ Station: stationName(i.station_id), Region: i.region, Problem: ISSUE_KIND[i.kind], Priority: PRIORITY[i.priority]?.[0], Status: i.status, Reported: fmtDT(i.created_at), 'Reported by': nameOf(i.reported_by), 'Assigned to': i.assigned_to ? nameOf(i.assigned_to) : '', 'Assigned by': i.assigned_by ? nameOf(i.assigned_by) : '', Resolved: i.resolved_at ? fmtDT(i.resolved_at) : '', 'What was done': i.data?.resolution || '' }));
+  const faults = Object.entries(M.faults).sort((x, y) => y[1] - x[1]).map(([k, v]) => ({ Code: k, Fault: FAULT_NAME[k] || '', Count: v }));
+  xlDownload([['Summary', summary], ['Repairs by date', daily], ['Repair technicians', techs], ['Diagnosis QC testing', others], ['Repeat repairs', repeats], ['Job cards', M.cards.filter(c => inRange(c.received_at) || (c.closed_at && inRange(c.closed_at))).map(cardRow)], ['Field technicians', field], ['Field battery logs', logs], ['Station check-ins', cis], ['IoT team', iot], ['IoT cases', iotCases], ['Waiting for spares', spares], ['Station issues', stIssues], ['Faults', faults]], `Battery_Ops_report_${stamp()}.xlsx`);
+};
+
+// ================= FIELD ACTIVITY (MAP) =================
+VIEWS.activity = () => {
+  const M = metrics();
+  return `<h2 class="pg">Field activity</h2><p class="pgsub">Where field technicians checked in and logged batteries. Each dot is a GPS point taken by their phone at that moment.</p>
+  <div class="panel">${filterBar(['range','team','region','person','station'])}<div id="map"></div>
+    <div class="row small muted" style="margin-top:6px"><span>🟢 check-in</span><span>🔵 battery logged</span><span class="right">${M.cis.filter(c => c.lat).length + M.logs.filter(l => l.lat).length} points</span></div></div>
+  ${fieldTable(M)}
+  <div class="panel"><h3>Recent check-ins</h3>${checkinTable(M.cis.slice(0, 100), true)}</div>
+  <div class="panel"><h3>Recent batteries logged</h3>${logTable(M.logs.slice(0, 100), true)}</div>`;
+};
+VIEWS.activity_after = () => {
+  if (!window.L || !$('#map')) return;
+  const M = metrics(); M.cis = M.cis.filter(c => inTeam(c.tech_id)); M.logs = M.logs.filter(l => inTeam(l.tech_id)); if (S._map){ try { S._map.remove(); } catch(e){} }
+  const map = L.map('map').setView([1.3733, 32.2903], 7); S._map = map;
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+  const pts = [];
+  M.cis.filter(c => c.lat).forEach(c => { pts.push([c.lat, c.lng]); L.circleMarker([c.lat, c.lng], { radius: 7, color: '#2F7D4F', fillColor: '#2F7D4F', fillOpacity: .7, weight: 1 }).addTo(map).bindPopup(`<b>${esc(nameOf(c.tech_id))}</b><br>Check-in: ${esc(stationName(c.station_id))}<br>${fmtDT(c.created_at)}${c.note ? '<br>' + esc(c.note) : ''}`); });
+  M.logs.filter(l => l.lat).forEach(l => { pts.push([l.lat, l.lng]); L.circleMarker([l.lat, l.lng], { radius: 7, color: '#2E75B6', fillColor: '#2E75B6', fillOpacity: .7, weight: 1 }).addTo(map).bindPopup(`<b>${esc(nameOf(l.tech_id))}</b><br>Battery ${esc(l.battery_id)} at ${esc(stationName(l.station_id))}<br>${fmtDT(l.created_at)}<br>${esc(l.fault || '')}`); });
+  if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 14 });
+};
+
+// ================= PERFORMANCE =================
+VIEWS.performance = () => {
+  const mine = S.peopleList.some(reportsToMe);
+  if (S.perfTeam == null) S.perfTeam = has('rm') && mine ? 'mine' : 'all';
+  const saved = { ...S.f }; S.f = { ...S.f, range: S.perfRange, region:'', warehouse:'', brand:'', station:'', person:'', status:'', q:'', repeat:'', team: S.perfTeam };
+  const M = metrics(); S.f = saved;
+  const t = tabs('perfR', [['month','This month'],['lastmonth','Last month'],['7','Last 7 days']], S.perfRange); S.perfRange = t.cur;
+  const lb = (title, rows, val, sub, color) => `<div class="panel"><h3 style="color:${color}">${title}</h3>${rows.length ? rows.slice(0, 12).map((r, i) => `<div class="lb" data-act="person" data-id="${r.id}" style="cursor:pointer"><span class="rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span>${avatar(r.id)}<div class="grow"><b>${esc(nameOf(r.id))}</b><div class="small muted">${sub(r)}</div></div><div class="b" style="font-size:18px">${val(r)}</div></div>`).join('') : '<div class="empty">No activity yet.</div>'}</div>`;
+  const brandBoards = BRANDS.map(b => lb(`${b} — batteries repaired`, M.techs.filter(x => x.brand === b).sort((x, y) => y.cards.size - x.cards.size), r => r.cards.size, r => `First-pass ${pct(r.fpBase ? r.fp / r.fpBase : null)}${r.minutes.length ? ' · ' + Math.round(avg(r.minutes)) + ' min avg' : ''}${r.returned ? ' · ' + r.returned + ' returned' : ''}${r.repeats ? ' · ' + r.repeats + ' repeat' : ''}`, BRAND_COLOR[b])).join('');
+  const qc = lb('Diagnosis, QC & testing', [...M.qcs.map(x => ({ id:x.id, n:x.checked, s:'QC checks · ' + pct(x.passed / x.checked) + ' passed' })), ...M.testers.map(x => ({ id:x.id, n:x.tested, s:'Air leak & insulation tests' })), ...M.diags.map(x => ({ id:x.id, n:x.done, s:'Diagnoses' }))].sort((a, b) => b.n - a.n), r => r.n, r => r.s, '#C55A11');
+  const iot = lb('IoT — back online', M.iot.sort((a, b) => b.online - a.online), r => r.online, r => `${r.sessions} worked on · ${r.sims} SIM swaps · ${r.fw} firmware`, '#0F7C8C');
+  const fieldAll = S.peopleList.filter(p => (p.roles || []).includes('field_tech') && p.active && (S.perfTeam !== 'mine' || reportsToMe(p)));
+  const ftById = Object.fromEntries(M.ft.map(x => [x.id, x]));
+  const field = lb('Field technicians — station visits', fieldAll.map(p => ({ id:p.id, ...(ftById[p.id] || { checkins:0, logs:0, stations:new Set() }), total:S.stations.filter(s => s.field_tech_id === p.id).length })).sort((a, b) => b.checkins - a.checkins), r => r.checkins, r => `${r.stations.size}/${r.total} stations visited · ${r.logs} batteries logged`, '#548235');
+  const showWh = S.perfTeam !== 'mine' || M.techs.length || M.qcs.length;
+  return `<h2 class="pg">Performance</h2><p class="pgsub">Tap anyone to see their personal scorecard.</p>
+  <div class="row" style="margin-bottom:6px">${t.html}${mine ? `<div class="tabs right"><button data-act="perf-team" data-v="mine" class="${S.perfTeam === 'mine' ? 'on' : ''}">People who report to me</button><button data-act="perf-team" data-v="all" class="${S.perfTeam !== 'mine' ? 'on' : ''}">Everyone</button></div>` : ''}</div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">${field}${showWh ? brandBoards + qc + iot : ''}</div>`;
+};
+ACT['perf-team'] = a => { S.perfTeam = a.dataset.v; renderMain(); };
+const _tab = ACT.tab; ACT.tab = a => { if (a.dataset.group === 'perfR') S.perfRange = a.dataset.v; _tab(a); };
+
+// ---- personal scorecard ----
+ACT.person = a => showPerson(a.dataset.id);
+function showPerson(id){
+  const p = person(id); if (!p) return;
+  const saved = { ...S.f }; S.f = { ...S.f, range: S.perfRange || 'month', region:'', warehouse:'', brand:'', station:'', person:'', status:'', q:'', repeat:'', team:'' };
+  const M = metrics(); const [a0, b0] = rangeOf(S.f.range); S.f = saved;
+  const f = (arr) => arr.find(x => x.id === id);
+  const tile = (k, v, c) => `<div class="tile" style="border-top-color:${c}"><div class="v">${v}</div><div class="k">${k}</div></div>`;
+  let tiles = [], recent = '';
+  const roles = p.roles || [];
+  if (roles.includes('field_tech')){
+    const o = f(M.ft) || { checkins:0, logs:0, fixed:0, sent:0, stations:new Set(), noGps:0 }; const total = S.stations.filter(s => s.field_tech_id === id).length;
+    tiles.push(tile('Check-ins', o.checkins, '#548235'), tile('Stations visited', `${o.stations.size}/${total}`, '#0F7C8C'), tile('Batteries logged', o.logs, '#2E75B6'), tile('Fixed on site', o.fixed, '#2F7D4F'), tile('Sent to warehouse', o.sent, '#C55A11'), tile('Actions without GPS', o.noGps, '#B42318'));
+    const ev = [...S.checkins.filter(c => c.tech_id === id).map(c => ({ t:c.created_at, s:`✅ Check-in at ${stationName(c.station_id)}${c.note ? ' — ' + c.note : ''}`, gps:c.lat })), ...S.logs.filter(l => l.tech_id === id).map(l => ({ t:l.created_at, s:`🔋 ${l.battery_id} at ${stationName(l.station_id)} — ${l.action === 'fixed' ? 'fixed on site' : 'sent to warehouse'}`, gps:l.lat }))].sort((x, y) => ms(y.t) - ms(x.t)).slice(0, 15);
+    recent = ev.map(e => `<div class="small" style="padding:5px 0;border-bottom:1px solid var(--line)"><span class="muted">${fmtDT(e.t)}</span> · ${esc(e.s)} ${e.gps ? '' : '<span style="color:#B42318">(no GPS)</span>'}</div>`).join('');
+  }
+  const t = f(M.techs); if (t) tiles.push(tile('Batteries repaired', t.cards.size, '#2E75B6'), tile('Avg min / battery', t.minutes.length ? Math.round(avg(t.minutes)) : '—', '#1F3864'), tile('QC first-pass', pct(t.fpBase ? t.fp / t.fpBase : null), '#2F7D4F'), tile('Returned by QC/test', t.returned, '#B42318'), tile('Repeat repairs', t.repeats, '#B42318'), tile('In hand now', t.pending, '#8A6D00'));
+  const d = f(M.diags); if (d) tiles.push(tile('Diagnoses', d.done, '#8A6D00'));
+  const q = f(M.qcs); if (q) tiles.push(tile('QC checks', q.checked, '#C55A11'), tile('QC fails found', q.failed, '#B42318'));
+  const ts = f(M.testers); if (ts) tiles.push(tile('Air leak / insulation tests', ts.tested, '#548235'));
+  const io = f(M.iot); if (io) tiles.push(tile('IoT batteries worked on', io.sessions, '#0F7C8C'), tile('Back online', io.online, '#2F7D4F'), tile('SIM swaps', io.sims, '#2E75B6'));
+  if (!recent){
+    const cards = S.cards.filter(c => touchedBy(c, id)).sort((x, y) => ms(y.updated_at) - ms(x.updated_at)).slice(0, 8);
+    recent = cards.map(cardItem).join('');
+  }
+  $('#modal').innerHTML = `<div class="ov" data-act="ov-close"><div class="sheet" style="max-width:760px"><div class="hd">${avatarP(p, 'lg')}<div><div style="font-size:20px;font-weight:700">${esc(p.full_name)}</div><div class="small" style="opacity:.85">${esc(p.title || '')} · ${esc(p.staff_id)}</div><div class="small" style="opacity:.85">Reports to ${esc(p.reports_to || '—')}${p.region ? ' · ' + esc(p.region) : ''}${p.warehouse ? ' · ' + esc(p.warehouse) : ''}</div></div><button class="xbtn" data-act="modal-close">Close ✕</button></div>
+  <div class="bd"><div class="small muted" style="margin-bottom:8px">${fmtD(a0)} to ${fmtD(b0 - 1)} · last seen ${p.last_seen ? fmtDT(p.last_seen) : 'never'}</div>
+  <div class="tiles">${tiles.join('') || '<div class="empty">No activity in this period yet.</div>'}</div>
+  ${recent ? `<div class="panel"><h3>Recent activity</h3><div class="list">${recent}</div></div>` : ''}</div></div></div>`;
+}
+
+// ================= USERS (ADMIN) =================
+S.userQ = '';
+VIEWS.users = () => {
+  const q = S.userQ.toLowerCase();
+  const list = S.peopleList.filter(p => !q || `${p.full_name} ${p.staff_id} ${p.phone} ${(p.roles || []).join(' ')} ${p.team} ${p.region}`.toLowerCase().includes(q));
+  const reqs = S.requests.filter(r => r.status === 'pending');
+  return `<h2 class="pg">Users</h2><p class="pgsub">${S.peopleList.length} accounts. Only people listed here can sign in. Add people, change roles and reset PINs.</p>
+  <div class="panel"><div class="row" style="margin-bottom:10px"><input type="search" class="grow" placeholder="Search name, staff ID, role, team, region" value="${esc(S.userQ)}" data-chg="userq" style="max-width:420px"><button class="btn p right" data-act="user-new">+ Add user</button><button class="btn" data-act="xl-users">⬇ Excel</button></div>
+  <div class="tw"><table class="t"><tr><th>Person</th><th>Staff ID</th><th>Roles</th><th>Team</th><th>Region / warehouse</th><th>Phone</th><th>Last seen</th><th>Status</th></tr>
+  ${list.map(p => `<tr class="click" data-act="user-edit" data-id="${p.id}"><td><span class="person">${avatarP(p, 'sm')}${esc(p.full_name)}</span></td><td>${esc(p.staff_id)}</td><td class="small">${(p.roles || []).map(r => ROLE_LABEL[r]).join(', ')}</td><td>${esc(p.team || '')}</td><td class="small">${esc([p.region, p.warehouse].filter(Boolean).join(' · '))}</td><td>${esc(p.phone || '')}</td><td class="small">${p.last_seen ? fmtDT(p.last_seen) : '<span class="muted">never</span>'}</td><td>${p.active ? (p.must_change_pin ? chip('Not logged in yet', '#FFF4E5', '#7A4A00') : chip('Active', '#DCF0E3', '#1f5d38')) : chip('Off', '#eee', '#555')}</td></tr>`).join('')}</table></div></div>`;
+};
+CHANGE.userq = el => { S.userQ = el.value; renderMain(); const n = $('main input[type=search]'); if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } };
+document.addEventListener('input', e => { if (e.target.matches('[data-chg=userq]')){ clearTimeout(S._uq); S._uq = setTimeout(() => CHANGE.userq(e.target), 300); } });
+const genPin = () => String(100000 + Math.floor(Math.random() * 900000));
+function userForm(p, req){
+  const isNew = !p; p = p || { roles: req ? [req.role_wanted] : [], team:'All', active:true, full_name: req?.full_name || '', staff_id: req?.staff_id || '', phone: req?.phone || '' };
+  $('#modal').innerHTML = `<div class="ov" data-act="ov-close"><div class="sheet" style="max-width:640px"><div class="hd"><div style="font-size:18px;font-weight:700">${isNew ? 'Add user' : esc(p.full_name)}</div><button class="xbtn" data-act="modal-close">Close ✕</button></div>
+  <div class="bd"><form data-form="user" data-id="${p.id || ''}" data-req="${req?.id || ''}"><div class="grid">
+    <div><label class="f">Staff ID *</label><input type="text" name="sid" required value="${esc(p.staff_id)}" ${isNew ? '' : 'readonly'} style="text-transform:uppercase"></div>
+    <div><label class="f">Full name *</label><input type="text" name="name" required value="${esc(p.full_name)}"></div>
+    <div><label class="f">Phone</label><input type="tel" name="phone" value="${esc(p.phone || '')}"></div>
+    <div><label class="f">Job title</label><input type="text" name="title" value="${esc(p.title || '')}"></div>
+    <div class="wide"><label class="f">Roles * (tick all that apply)</label>${checks('roles', ROLES, p.roles || [])}<div class="tiny muted" style="margin-top:4px">Use the role codes: ${ROLES.map(r => r + ' = ' + ROLE_LABEL[r]).join(' · ')}</div></div>
+    <div><label class="f">Team / brand</label><select name="team">${options(['All', ...BRANDS], p.team || 'All')}</select></div>
+    <div><label class="f">Region</label><select name="region">${options(REGIONS, p.region || '', '—')}</select></div>
+    <div><label class="f">Warehouse</label><input type="text" name="warehouse" value="${esc(p.warehouse || '')}"></div>
+    <div><label class="f">Reports to</label><input type="text" name="reports" value="${esc(p.reports_to || '')}"></div>
+    ${isNew ? '' : `<div class="wide"><div class="opts"><label><input type="checkbox" name="active" value="1" ${p.active ? 'checked' : ''}>Account switched on</label></div></div>`}
+  </div><div id="userMsg"></div><div class="row" style="margin-top:14px"><button class="btn p" type="submit">${isNew ? 'Create account' : 'Save changes'}</button>
+  ${isNew ? '' : `<button class="btn right" type="button" data-act="user-pin" data-id="${p.id}">🔒 Reset PIN</button>`}</div></form>
+  ${isNew ? '' : `<div class="panel" style="margin-top:14px"><h3>Stations (field technicians)</h3><div class="small">${S.stations.filter(s => s.field_tech_id === p.id).map(s => esc(s.name)).join(', ') || '<span class="muted">None</span>'}</div></div>`}
+  </div></div></div>`;
+}
+ACT['modal-close'] = () => { $('#modal').innerHTML = ''; };
+ACT['ov-close'] = (a, e) => { if (e.target === a) $('#modal').innerHTML = ''; };
+ACT['user-new'] = () => userForm(null);
+ACT['user-edit'] = a => userForm(S.people[a.dataset.id]);
+ACT['req-approve'] = a => userForm(null, S.requests.find(r => r.id === a.dataset.id));
+ACT['req-reject'] = async a => { const { error } = await S.sb.from('access_requests').update({ status:'rejected' }).eq('id', a.dataset.id); if (error) return toast('Not saved'); S.requests.find(r => r.id === a.dataset.id).status = 'rejected'; renderMain(); renderNav(); };
+FORM.user = async f => {
+  const g = fd(f); const id = f.dataset.id; const roles = g.all('roles'); const msg = $('#userMsg');
+  if (!roles.length){ msg.innerHTML = '<div class="banner err" style="margin-top:10px">Tick at least one role.</div>'; return; }
+  const b = f.querySelector('button[type=submit]'); b.disabled = true;
+  if (!id){
+    const pin = genPin();
+    const { error } = await S.sb.rpc('admin_create_user', { p_staff_id: g('sid').toUpperCase(), p_name: g('name'), p_phone: g('phone'), p_roles: roles, p_team: g('team'), p_region: g('region') || null, p_warehouse: g('warehouse') || null, p_reports_to: g('reports') || null, p_title: g('title') || null, p_pin: pin });
+    if (error){ b.disabled = false; msg.innerHTML = `<div class="banner err" style="margin-top:10px">${esc(error.message)}</div>`; return; }
+    if (f.dataset.req) await S.sb.from('access_requests').update({ status:'approved' }).eq('id', f.dataset.req);
+    await loadAll();
+    $('#modal').querySelector('.bd').innerHTML = `<div class="banner ok"><b>Account created.</b></div><div class="panel"><div class="kv"><div><b>Staff ID:</b> ${esc(g('sid').toUpperCase())}</div><div><b>First-time PIN:</b> <span style="font-size:20px;font-weight:700;letter-spacing:2px">${pin}</span></div></div>
+      <p class="small muted">Give this PIN to ${esc(g('name'))} privately. They will choose their own PIN and add a photo when they first sign in. This PIN is not shown again.</p></div><button class="btn p" data-act="modal-close">Done</button>`;
+    renderMain(); renderNav(); return;
+  }
+  const { error } = await S.sb.rpc('admin_update_user', { p_user: id, p_name: g('name'), p_phone: g('phone'), p_roles: roles, p_team: g('team'), p_region: g('region') || null, p_warehouse: g('warehouse') || null, p_reports_to: g('reports') || null, p_title: g('title') || null, p_active: g('active') === '1' });
+  if (error){ b.disabled = false; msg.innerHTML = `<div class="banner err" style="margin-top:10px">${esc(error.message)}</div>`; return; }
+  await loadAll(); $('#modal').innerHTML = ''; toast('Saved'); renderMain();
+};
+ACT['user-pin'] = async a => {
+  const pin = genPin(); const { error } = await S.sb.rpc('admin_reset_pin', { p_user: a.dataset.id, p_pin: pin });
+  if (error) return toast('Not reset: ' + error.message, true);
+  const p = S.people[a.dataset.id]; if (p) p.must_change_pin = true;
+  $('#modal').querySelector('.bd').innerHTML = `<div class="banner ok"><b>PIN reset for ${esc(p?.full_name || '')}.</b></div><div class="panel"><div class="kv"><div><b>Staff ID:</b> ${esc(p?.staff_id || '')}</div><div><b>New first-time PIN:</b> <span style="font-size:20px;font-weight:700;letter-spacing:2px">${pin}</span></div></div><p class="small muted">They must choose a new PIN when they sign in. This PIN is not shown again.</p></div><button class="btn p" data-act="modal-close">Done</button>`;
+};
+ACT['xl-users'] = () => xlDownload([['Users', S.peopleList.map(p => ({ 'Staff ID': p.staff_id, Name: p.full_name, Phone: p.phone, Roles: (p.roles || []).map(r => ROLE_LABEL[r]).join(', '), Team: p.team, Region: p.region, Warehouse: p.warehouse, 'Reports to': p.reports_to, Title: p.title, Active: p.active ? 'Yes' : 'No', 'Logged in yet': p.must_change_pin ? 'No' : 'Yes', 'Last seen': p.last_seen ? fmtDT(p.last_seen) : '' }))]], `Users_${stamp()}.xlsx`);
+
+
+// ================= IoT — OFFLINE BATTERIES =================
+const IOT_ST = {
+  isolated:    { label:'Isolated — waiting', color:'#8A6D00', tint:'#FFF2CC' },
+  in_progress: { label:'Being worked on', color:'#2E75B6', tint:'#DEEBF7' },
+  online:      { label:'Back online', color:'#2F7D4F', tint:'#DCF0E3' },
+  escalated:   { label:'Needs repair', color:'#B42318', tint:'#FDECEA' },
+};
+const IOT_ACTIONS = ['Opened and checked IoT unit','Firmware upgrade','SIM card swap','IoT module replaced','Antenna / cable fixed','Re-configured / re-registered on platform'];
+async function createIot(row){
+  const bid = row.battery_id.toUpperCase();
+  const open = S.iot.find(x => x.battery_id === bid && (x.status === 'isolated' || x.status === 'in_progress'));
+  if (open) return open;
+  const { data, error } = await S.sb.from('iot_cases').insert({ ...row, battery_id: bid, brand: brandOf(bid), status: 'isolated', created_by: S.me.id, data: { flagged: { by: S.me.id, at: now() } } }).select().single();
+  if (error) throw error; upsertLocal('iot', data); return data;
+}
+function iotItem(x){
+  const st = IOT_ST[x.status] || IOT_ST.isolated; const s = openEntry(x.data?.sessions);
+  const end = x.closed_at ? ms(x.closed_at) : now();
+  return `<div class="item" data-act="open-iot" data-id="${x.id}" style="border-left-color:${st.color}">
+    <div class="grow"><div class="row" style="gap:6px"><span class="id">${esc(x.battery_id)}</span>${brandChip(x.brand)}${chip(st.label, st.color)}${s ? chip('In progress · ' + nameOf(s.who).split(' ')[0], '#FFF4E5', '#7A4A00') : ''}${x.job_card_id ? chip('Also in repair', '#E8EEF8', '#1F3864') : ''}</div>
+      <div class="meta">${esc(x.warehouse || '')}${x.reason ? ' · ' + esc(x.reason.slice(0, 70)) : ''}</div></div>
+    <div class="small muted" style="text-align:right">Flagged ${fmtDT(x.created_at)}<br>${x.closed_at ? 'Took' : 'Waiting'} <b>${fmtDur(end - ms(x.created_at))}</b></div></div>`;
+}
+VIEWS.iot = () => {
+  const canWork = hasAny(['iot','admin']);
+  const t = tabs('iot', [['queue','Offline queue'],['add','Register offline battery'],['done','Done']], 'queue');
+  const open = S.iot.filter(x => x.status === 'isolated' || x.status === 'in_progress').sort((a, b) => ms(a.created_at) - ms(b.created_at));
+  const done = S.iot.filter(x => x.status === 'online' || x.status === 'escalated');
+  const [m0] = rangeOf('month');
+  const tiles = [['Offline now', open.length, '#8A6D00'], ['Back online this month', done.filter(x => x.status === 'online' && ms(x.closed_at) >= m0).length, '#2F7D4F'],
+    ['SIM swaps this month', done.filter(x => ms(x.closed_at) >= m0).reduce((n, x) => n + (x.data?.sessions || []).filter(s => (s.actions || []).includes('SIM card swap')).length, 0), '#2E75B6'],
+    ['Sent to repair this month', done.filter(x => x.status === 'escalated' && ms(x.closed_at) >= m0).length, '#B42318']];
+  let body = '';
+  if (t.cur === 'queue') body = `<div class="list">${open.map(iotItem).join('') || '<div class="panel empty">No offline batteries waiting. 🎉</div>'}</div>`;
+  if (t.cur === 'done') body = `<div class="list">${done.slice(0, 200).map(iotItem).join('') || '<div class="panel empty">Nothing finished yet.</div>'}</div>`;
+  if (t.cur === 'add') body = `<div class="panel" style="border-top:5px solid var(--teal)"><h3>Register an offline battery</h3><p class="small muted" style="margin-top:-6px">Use this when a battery is not sending IoT data. It goes into the IoT team's queue.</p>
+    <form data-form="iot-add" autocomplete="off"><div class="grid">
+      <div><label class="f">Battery ID *</label><div class="row" style="flex-wrap:nowrap;gap:6px"><input type="text" name="battery" required style="text-transform:uppercase" data-chg="bid"><button type="button" class="btn" data-act="scan" data-target="battery">📷</button></div></div>
+      <div><label class="f">Brand</label><input type="text" id="flBrand" readonly placeholder="Set from battery ID"></div>
+      <div><label class="f">Warehouse *</label><select name="warehouse">${options(WAREHOUSES, myWh() || 'Main warehouse')}</select></div>
+      <div class="wide"><label class="f">What was seen?</label><input type="text" name="reason" placeholder="e.g. offline on dashboard since Monday, SIM not registering"></div>
+    </div><div class="row" style="margin-top:12px"><button class="btn p big" type="submit">Add to IoT queue</button></div></form></div>`;
+  return `<h2 class="pg">Offline batteries (IoT)</h2><p class="pgsub">Isolate offline batteries, fix them (firmware, SIM swap, IoT unit) and confirm they are back online.${canWork ? '' : ' You can view and register offline batteries; the IoT team works on them.'}</p>
+  <div class="tiles">${tiles.map(([k, v, c]) => `<div class="tile" style="border-top-color:${c}"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}</div>${t.html}${body}`;
+};
+FORM['iot-add'] = async f => {
+  const g = fd(f); const b = f.querySelector('button[type=submit]'); b.disabled = true;
+  try { const x = await createIot({ battery_id: g('battery'), warehouse: g('warehouse'), reason: g('reason'), source: 'iot' }); S.dirty = false; toast('Added to the IoT queue'); S.tab.iot = 'queue'; renderMain(); openIot(x.id); }
+  catch(e){ b.disabled = false; toast('Not saved: ' + e.message, true); }
+};
+ACT['card-iot'] = async a => {
+  const c = S.cards.find(x => x.id === a.dataset.id); a.disabled = true;
+  try { await createIot({ battery_id: c.battery_id, warehouse: c.warehouse, reason: 'Sent from job card ' + c.jc_no, source: 'job_card', job_card_id: c.id }); toast('Sent to the IoT team'); renderCard(true); }
+  catch(e){ a.disabled = false; toast('Not saved: ' + e.message, true); }
+};
+ACT['open-iot'] = a => openIot(a.dataset.id);
+function openIot(id){ S.openCard = null; S.openIot = id; renderIot(); }
+function renderIot(){
+  const x = S.iot.find(y => y.id === S.openIot); if (!x){ $('#modal').innerHTML = ''; return; }
+  const st = IOT_ST[x.status]; const d = x.data || {}; const sess = d.sessions || []; const s = openEntry(sess);
+  const canWork = hasAny(['iot','admin']) && (x.status === 'isolated' || x.status === 'in_progress');
+  const jc = x.job_card_id && S.cards.find(c => c.id === x.job_card_id);
+  const hist = sess.filter(e => e.outAt).map((e, i) => `<div class="hist" style="border-left-color:#0F7C8C"><h4>${chip('IoT work · ' + (i + 1), '#0F7C8C')} <span class="muted small">${esc(nameOf(e.who))} · ${fmtDT(e.inAt)} → ${fmtDT(e.outAt)} · <b>${Math.round(mins(e))} min</b> · ${e.result === 'online' ? '<b style="color:#2F7D4F">Back online</b>' : e.result === 'escalate' ? '<b style="color:#B42318">Needs repair</b>' : 'Still offline'}</span></h4>
+    ${kv([['Done', e.actions, true], ['Firmware', e.fwFrom || e.fwTo ? `${e.fwFrom || '?'} → ${e.fwTo || '?'}` : ''], ['Old SIM', e.oldSim], ['New SIM', e.newSim], ['Notes', e.notes, true]])}</div>`).join('');
+  let action = '';
+  if (canWork && !s) action = `<div class="action" style="border-color:#0F7C8C"><h3 style="color:#0F7C8C">Work on this battery</h3><button class="btn p big" data-act="iot-start" data-id="${x.id}">▶ Start — I am working on it</button><div class="small muted" style="margin-top:6px">The clock runs until you submit.</div></div>`;
+  else if (canWork && s && (s.who === S.me.id || isAdmin())) action = `<div class="action" style="border-color:#0F7C8C"><h3 style="color:#0F7C8C">IoT work</h3>${runHead(s, '#0F7C8C')}
+    <form data-form="iot-done" data-id="${x.id}"><div class="grid">
+      <div class="wide"><label class="f">What did you do? *</label>${checks('actions', IOT_ACTIONS)}</div>
+      <div><label class="f">Firmware before</label><input type="text" name="fwFrom"></div><div><label class="f">Firmware after</label><input type="text" name="fwTo"></div>
+      <div><label class="f">Old SIM number (if swapped)</label><input type="text" name="oldSim"></div><div><label class="f">New SIM number (if swapped)</label><input type="text" name="newSim"></div>
+      <div class="wide"><label class="f">Notes</label><input type="text" name="notes"></div>
+      <div class="wide"><label class="f">Result *</label>${radios('result', [['online','Back online — verified on the platform'],['offline','Still offline — I will continue later'],['escalate','Not an IoT problem / needs repair']], '')}</div>
+    </div><div class="row" style="margin-top:12px"><button class="btn p big" type="submit">Submit</button></div></form></div>`;
+  else if (s) action = `<div class="banner warn">${esc(nameOf(s.who))} is working on this battery (started ${fmtDT(s.inAt)}).</div>`;
+  $('#modal').innerHTML = `<div class="ov" data-act="ov-close-iot"><div class="sheet"><div class="hd"><div><div class="small" style="opacity:.8">IoT case · ${esc(x.warehouse || '')}</div><div style="font-size:22px;font-weight:700">${esc(x.battery_id)}</div>
+    <div class="row" style="gap:6px;margin-top:4px">${brandChip(x.brand)}${chip(st.label, st.color)}</div></div><button class="xbtn" data-act="close-iot">Close ✕</button></div>
+    <div class="bd"><div class="hist" style="border-left-color:#8A6D00"><h4>${chip('FLAGGED OFFLINE', '#8A6D00')} <span class="muted small">${fmtDT(x.created_at)} · ${esc(nameOf(x.created_by))}</span></h4>${kv([['What was seen', x.reason, true]])}
+    ${jc ? `<div class="small">Also has job card <a href="#" data-act="open-card" data-id="${jc.id}">${esc(jc.jc_no)}</a> (${esc(ST[jc.status].label)})</div>` : ''}</div>${hist}${action}
+    ${x.status === 'escalated' && !jc ? '<div class="banner err">Needs repair: receiving should open a job card for this battery.</div>' : ''}</div></div></div>`;
+}
+ACT['close-iot'] = () => { S.openIot = null; $('#modal').innerHTML = ''; if (!S.dirty) renderMain(); renderNav(); };
+ACT['ov-close-iot'] = (a, e) => { if (e.target === a) ACT['close-iot'](); };
+async function saveIot(x, patch, msg){
+  const { data, error } = await S.sb.from('iot_cases').update({ ...patch, data: { ...(x.data || {}), ...(patch.data || {}) } }).eq('id', x.id).select().single();
+  if (error){ toast('Not saved: ' + error.message, true); return false; }
+  upsertLocal('iot', data); if (msg) toast(msg); renderIot(); renderNav(); return true;
+}
+ACT['iot-start'] = async a => { const x = S.iot.find(y => y.id === a.dataset.id); a.disabled = true;
+  if (!(await saveIot(x, { status: 'in_progress', data: { sessions: [...(x.data?.sessions || []), { who: S.me.id, inAt: now() }] } }))) a.disabled = false; };
+FORM['iot-done'] = async f => {
+  const x = S.iot.find(y => y.id === f.dataset.id); const g = fd(f);
+  if (!g.all('actions').length) return toast('Tick what you did.');
+  const sess = [...(x.data?.sessions || [])]; sess[sess.length - 1] = { ...sess.at(-1), outAt: now(), actions: g.all('actions'), fwFrom: g('fwFrom'), fwTo: g('fwTo'), oldSim: g('oldSim'), newSim: g('newSim'), notes: g('notes'), result: g('result') };
+  const r = g('result');
+  await saveIot(x, { status: r === 'online' ? 'online' : r === 'escalate' ? 'escalated' : 'isolated', closed_at: r === 'offline' ? null : new Date().toISOString(), data: { sessions: sess } }, r === 'online' ? 'Back online ✔' : r === 'escalate' ? 'Marked as needing repair' : 'Saved — still in the queue');
+};
+function iotMetrics(){
+  const by = {}; const P = id => by[id] ||= { id, sessions:0, online:0, escalated:0, sims:0, fw:0, minutes:[] };
+  S.iot.forEach(x => (x.data?.sessions || []).filter(e => e.outAt && inRange(e.outAt)).forEach(e => { const o = P(e.who); o.sessions++; if (e.result === 'online') o.online++; if (e.result === 'escalate') o.escalated++;
+    if ((e.actions || []).includes('SIM card swap')) o.sims++; if ((e.actions || []).includes('Firmware upgrade')) o.fw++; const m = mins(e); if (m != null) o.minutes.push(m); }));
+  return Object.values(by);
+}
+
+// ================= SEARCH & BATTERY HISTORY =================
+S.searchQ = ''; S.battery = null;
+function cardText(c){ const d = c.data || {};
+  return [c.battery_id, c.jc_no, d.receive?.fault, d.field?.fault, ...(d.diagnosis || []).map(e => [e.findings, ...(e.faults || []).map(f => f + ' ' + (FAULT_NAME[f] || ''))].join(' ')),
+    ...(d.repairs || []).map(e => [e.issue, e.action, e.spares, ...(e.faults || []).map(f => f + ' ' + (FAULT_NAME[f] || ''))].join(' ')), ...(d.qcs || []).map(e => [e.findings, e.reason].join(' ')),
+    ...(d.spares || []).map(e => e.part), ...(d.notes || []).map(n => n.text)].filter(Boolean).join(' ').toLowerCase(); }
+function batteriesMatching(q){
+  const Q = q.trim().toUpperCase(); const ql = q.trim().toLowerCase(); if (!Q) return { ids:[], cards:[], logs:[], iot:[] };
+  const ids = new Set();
+  [...S.cards, ...S.logs, ...S.iot].forEach(x => { if (x.battery_id && x.battery_id.includes(Q)) ids.add(x.battery_id); });
+  const cards = S.cards.filter(c => !c.battery_id.includes(Q) && cardText(c).includes(ql));
+  const logs = S.logs.filter(l => !l.battery_id.includes(Q) && `${l.fault || ''} ${l.fix_note || ''}`.toLowerCase().includes(ql));
+  const iot = S.iot.filter(x => !x.battery_id.includes(Q) && `${x.reason || ''} ${(x.data?.sessions || []).map(s => (s.actions || []).join(' ') + ' ' + (s.notes || '')).join(' ')}`.toLowerCase().includes(ql));
+  return { ids:[...ids].sort(), cards, logs, iot };
+}
+function batterySummary(bid){
+  const cards = S.cards.filter(c => c.battery_id === bid); const logs = S.logs.filter(l => l.battery_id === bid); const iot = S.iot.filter(x => x.battery_id === bid);
+  const lastRepair = cards.flatMap(c => (c.data?.repairs || []).filter(e => e.outAt && e.result === 'repaired').map(e => ({ ...e, c }))).sort((a, b) => b.outAt - a.outAt)[0];
+  const warranty = cards.map(c => c.data?.warranty).filter(Boolean).at(0);
+  return { cards, logs, iot, lastRepair, warranty,
+    scrapped: cards.some(c => c.final_status === 'scrap'), vendor: cards.filter(c => c.final_status === 'vendor').length,
+    spares: cards.filter(c => c.status === 'spares').map(c => (c.data?.spares || []).filter(x => !x.receivedAt).at(-1)).filter(Boolean),
+    repeats: cards.filter(c => c.is_repeat).length, fixedOnSite: logs.filter(l => l.action === 'fixed').length };
+}
+VIEWS.search = () => {
+  if (S.battery) return batteryView(S.battery);
+  const q = S.searchQ || ''; const R = batteriesMatching(q);
+  const idRows = R.ids.slice(0, 100).map(bid => { const s = batterySummary(bid); const open = s.cards.find(c => c.status !== 'closed');
+    return `<div class="item" data-act="battery" data-id="${esc(bid)}" style="border-left-color:${BRAND_COLOR[brandOf(bid)] || '#666'}"><div class="grow"><div class="row" style="gap:6px"><span class="id">${esc(bid)}</span>${brandChip(brandOf(bid))}${open ? stageChip(open.status) : chip('No open job card', '#E8EEF8', '#1F3864')}${s.scrapped ? chip('SCRAPPED', '#555') : ''}${s.spares.length ? chip('Waiting: ' + s.spares[0].part, '#FFE9CC', '#7A4A00') : ''}${s.repeats ? chip(s.repeats + ' repeat', '#FDECEA', '#B42318') : ''}</div>
+      <div class="meta">${s.cards.length} warehouse job card${s.cards.length === 1 ? '' : 's'} · ${s.logs.length} swap station record${s.logs.length === 1 ? '' : 's'}${s.iot.length ? ' · ' + s.iot.length + ' IoT' : ''}${s.lastRepair ? ' · last repaired ' + fmtD(s.lastRepair.outAt) + ' by ' + esc(nameOf(s.lastRepair.who)) : ''}</div></div><span class="muted">›</span></div>`; }).join('');
+  return `<h2 class="pg">Battery history</h2><p class="pgsub">Search any battery ID or an issue (for example "charging port", "F04" or "BMS").</p>
+  <div class="panel"><form data-form="search2" class="row"><input type="search" name="q" class="grow" value="${esc(q)}" placeholder="Battery ID or issue" autofocus><button type="button" class="btn" data-act="scan" data-target="q2">📷 Scan</button><button class="btn p" type="submit">Search</button></form></div>
+  ${q ? `<div class="panel"><h3>Batteries (${R.ids.length})</h3><div class="list">${idRows || '<div class="empty">No battery ID matches.</div>'}</div></div>
+  ${R.cards.length ? `<div class="panel"><h3>Job cards mentioning "${esc(q)}" (${R.cards.length})</h3><div class="list">${R.cards.slice(0, 100).map(cardItem).join('')}</div></div>` : ''}
+  ${R.logs.length ? `<div class="panel"><h3>Swap station records mentioning "${esc(q)}" (${R.logs.length})</h3>${logTable(R.logs.slice(0, 100), true)}</div>` : ''}
+  ${R.iot.length ? `<div class="panel"><h3>IoT cases mentioning "${esc(q)}" (${R.iot.length})</h3><div class="list">${R.iot.slice(0, 100).map(iotItem).join('')}</div></div>` : ''}` : '<div class="panel empty">Type a battery ID or issue above, or tap 📷 to scan the battery label.</div>'}`;
+};
+FORM.search2 = f => { S.searchQ = fd(f)('q'); S.battery = null; const R = batteriesMatching(S.searchQ); if (R.ids.length === 1 && R.ids[0] === S.searchQ.trim().toUpperCase()) S.battery = R.ids[0]; renderMain(); };
+const _fs = FORM.search; FORM.search = f => { const q = fd(f)('q').trim(); S.battery = null; const R = batteriesMatching(q); if (R.ids.length === 1 && R.ids[0] === q.toUpperCase()) S.battery = R.ids[0]; _fs(f); };
+ACT.battery = a => { S.battery = a.dataset.id; closeAnyModal(); if (location.hash !== '#search') location.hash = '#search'; else renderMain(); window.scrollTo(0, 0); };
+ACT['battery-back'] = () => { S.battery = null; renderMain(); };
+function closeAnyModal(){ S.openCard = null; S.openIot = null; $('#modal').innerHTML = ''; document.body.style.overflow = ''; }
+function batteryView(bid){
+  const s = batterySummary(bid);
+  const ev = [];
+  s.logs.forEach(l => ev.push({ t: ms(l.created_at), where:'station', color:'#0F7C8C', html:`<b>${l.action === 'fixed' ? '🔧 Repaired at swap station' : '🚚 Tagged faulty at swap station — sent to warehouse'}</b> · ${esc(stationName(l.station_id))}<div class="small muted">${fmtDT(l.created_at)} · tagged by ${esc(nameOf(l.tech_id))}${l.reported_by ? ' · reported by ' + esc(l.reported_by) : ''}${l.lat ? ` · <a href="https://maps.google.com/?q=${l.lat},${l.lng}" target="_blank" rel="noopener">📍 GPS</a>` : ''}</div><div class="small">Fault: ${esc(l.fault || '')}${l.fix_note ? ' · Fix: ' + esc(l.fix_note) : ''}</div>` }));
+  s.cards.forEach(c => { const d = c.data || {}; const reps = (d.repairs || []).filter(e => e.outAt); const lr = reps.at(-1);
+    const end = { deploy:'✅ Ready for deployment', vendor:'↩ Returned to vendor (warranty)', scrap:'🗑 Scrapped' }[c.final_status] || '';
+    ev.push({ t: ms(c.received_at), where:'warehouse', color: ST[c.status].color, card: c.id, html:`<b>🏭 Warehouse job card ${esc(c.jc_no)}</b> · ${esc(c.warehouse || '')} ${stageChip(c.status)}${c.is_repeat ? ' ' + chip('REPEAT', '#B42318') : ''}
+      <div class="small muted">Received ${fmtDT(c.received_at)} by ${esc(nameOf(d.receive?.by))}${c.closed_at ? ' · closed ' + fmtDT(c.closed_at) + ' · turnaround ' + fmtDur(ms(c.closed_at) - ms(c.received_at)) : ''}</div>
+      <div class="small">${d.warranty ? 'Warranty: ' + esc(WARRANTY[d.warranty]) + ' · ' : ''}${lastDone(d.diagnosis) ? 'Diagnosed by ' + esc(nameOf(lastDone(d.diagnosis).who)) + ': ' + esc((lastDone(d.diagnosis).faults || []).map(f => FAULT_NAME[f] || f).join(', ')) : ''}</div>
+      ${reps.map((e, i) => `<div class="small">Repair ${i + 1}: <b>${esc(nameOf(e.who))}</b> on ${fmtD(e.outAt)} — ${esc(e.action || e.issue || '')}${e.spares ? ' · spares: ' + esc(e.spares) : ''}</div>`).join('')}
+      ${(d.spares || []).map(x => `<div class="small" style="color:#A15C00">Spares: ${esc(x.part)}${x.qty ? ' × ' + esc(x.qty) : ''} — ${x.receivedAt ? 'received ' + fmtD(x.receivedAt) : 'still waiting (' + fmtDur(now() - x.at) + ')'}</div>`).join('')}
+      ${(d.qcs || []).filter(q => q.verdict === 'fail').map(q => `<div class="small" style="color:#B42318">QC fail ${fmtD(q.outAt)}: ${esc(q.reason || '')}</div>`).join('')}
+      ${end ? `<div class="small b">${end}${lr ? ' · last repaired by ' + esc(nameOf(lr.who)) : ''}</div>` : ''}` }); });
+  s.iot.forEach(x => { const l = lastDone(x.data?.sessions); ev.push({ t: ms(x.created_at), where:'iot', color:'#0F7C8C', iot: x.id, html:`<b>📡 IoT case — ${esc(IOT_ST[x.status].label)}</b> · ${esc(x.warehouse || '')}<div class="small muted">Flagged ${fmtDT(x.created_at)} by ${esc(nameOf(x.created_by))}${x.closed_at ? ' · finished ' + fmtDT(x.closed_at) : ''}</div>${l ? `<div class="small">${esc(nameOf(l.who))}: ${esc((l.actions || []).join(', '))}${l.newSim ? ' · new SIM ' + esc(l.newSim) : ''}</div>` : ''}` }); });
+  ev.sort((a, b) => b.t - a.t);
+  const f = S.battFilter || 'all';
+  const shown = ev.filter(e => f === 'all' || e.where === f);
+  const tile = (k, v, c) => `<div class="tile" style="border-top-color:${c}"><div class="v">${v}</div><div class="k">${k}</div></div>`;
+  return `<div class="row" style="margin-bottom:8px"><button class="btn sm" data-act="battery-back">‹ Back to search</button></div>
+  <div class="panel" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><div><div class="small muted">BATTERY</div><div style="font-size:26px;font-weight:700">${esc(bid)}</div><div class="row" style="gap:6px">${brandChip(brandOf(bid))}${s.scrapped ? chip('SCRAPPED', '#555') : ''}${s.warranty ? chip(WARRANTY[s.warranty], s.warranty === 'in' ? '#2F7D4F' : '#5B6B85') : ''}</div></div>
+    <div class="grow"></div>${s.cards.some(c => c.status !== 'closed') ? `<button class="btn p" data-act="open-card" data-id="${s.cards.find(c => c.status !== 'closed').id}">Open current job card</button>` : ''}</div>
+  <div class="tiles">${tile('Warehouse repairs', s.cards.filter(c => (c.data?.repairs || []).some(e => e.outAt)).length, '#2E75B6')}${tile('Fixed at swap station', s.fixedOnSite, '#0F7C8C')}${tile('Times sent to warehouse', s.logs.filter(l => l.action === 'sent').length + s.cards.filter(c => !c.field_log_id).length, '#44546A')}
+    ${tile('Repeat repairs', s.repeats, '#B42318')}${tile('Returned to vendor', s.vendor, '#7030A0')}${tile('Last repaired', s.lastRepair ? fmtD(s.lastRepair.outAt) : '—', '#2F7D4F')}${s.spares.length ? tile('Waiting for spares', esc(s.spares.map(x => x.part).join(', ')), '#A15C00') : ''}</div>
+  <div class="panel"><h3>History</h3><div class="tabs">${[['all','Everything'],['station','Swap station'],['warehouse','Warehouse'],['iot','IoT']].map(([v, l]) => `<button data-act="batt-f" data-v="${v}" class="${f === v ? 'on' : ''}">${l} (${v === 'all' ? ev.length : ev.filter(e => e.where === v).length})</button>`).join('')}</div>
+  <div class="tl">${shown.map(e => `<div class="ev" style="--dot:${e.color}">${e.card ? `<div class="hist" style="border-left-color:${e.color};cursor:pointer" data-act="open-card" data-id="${e.card}">` : e.iot ? `<div class="hist" style="border-left-color:${e.color};cursor:pointer" data-act="open-iot" data-id="${e.iot}">` : `<div class="hist" style="border-left-color:${e.color}">`}${e.html}</div></div>`).join('') || '<div class="empty">No records.</div>'}</div></div>`;
+}
+ACT['batt-f'] = a => { S.battFilter = a.dataset.v; renderMain(); };
+// ================= BARCODE SCANNER =================
+ACT.scan = async a => {
+  const target = a.dataset.target;
+  const findInput = () => target === 'topq' ? $('.topsearch input') : target === 'q2' ? $('form[data-form=search2] input') : a.closest('form')?.querySelector(`input[name="${target}"]`);
+  if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia){ toast('Scanning is not supported on this phone or browser — please type the battery ID.', true); findInput()?.focus(); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); }
+  catch(e){ toast('Camera permission was refused.', true); return; }
+  const prev = $('#modal').innerHTML;
+  $('#modal').insertAdjacentHTML('beforeend', `<div class="ov" id="scanOv"><div class="sheet" style="max-width:460px"><div class="hd"><div class="b">Scan battery label</div><button class="xbtn" id="scanX">Close ✕</button></div><div class="bd"><div class="scanbox"><video id="scanV" playsinline muted></video><div class="aim"></div></div><div class="small muted" style="margin-top:8px">Point the camera at the barcode or QR code on the battery.</div></div></div></div>`);
+  const v = $('#scanV'); v.srcObject = stream; await v.play().catch(() => {});
+  let done = false; const stop = () => { done = true; stream.getTracks().forEach(t => t.stop()); $('#scanOv')?.remove(); };
+  $('#scanX').onclick = stop;
+  const det = new BarcodeDetector();
+  const tick = async () => { if (done) return; try { const r = await det.detect(v); if (r.length){ const val = r[0].rawValue.trim().toUpperCase(); stop(); const inp = findInput(); if (inp){ inp.value = val; inp.dispatchEvent(new Event('input', { bubbles: true })); }
+        toast('Scanned ' + val); if (target === 'topq' || target === 'q2') inp?.form?.requestSubmit(); return; } } catch(e){} setTimeout(tick, 250); };
+  tick();
+};
+
+// ================= STATIONS & SMART RACKS =================
+const CRIT_FAULTY_7D = 5; // faulty batteries in 7 days that makes a station critical
+function stationHealth(){
+  const [t7] = rangeOf('7'); const [t30] = rangeOf('30');
+  const lastCheck = {}; S.checkins.forEach(c => { if (!c.station_id) return; if (!lastCheck[c.station_id] || ms(c.created_at) > ms(lastCheck[c.station_id].created_at)) lastCheck[c.station_id] = c; });
+  const lastRack = {}; S.checkins.filter(c => c.rack_status).forEach(c => { if (!lastRack[c.station_id] || ms(c.created_at) > ms(lastRack[c.station_id].created_at)) lastRack[c.station_id] = c; });
+  return S.stations.map(st => {
+    const logs = S.logs.filter(l => l.station_id === st.id);
+    const f7 = logs.filter(l => ms(l.created_at) >= t7).length, f30 = logs.filter(l => ms(l.created_at) >= t30).length;
+    const openIssues = S.issues.filter(i => i.station_id === st.id && i.status !== 'resolved');
+    const rack = lastRack[st.id]?.rack_status || null;
+    const rackDown = rack === 'down' || openIssues.some(i => i.kind === 'rack');
+    const critical = f7 >= CRIT_FAULTY_7D || rackDown || openIssues.some(i => i.priority === 'critical');
+    const last = lastCheck[st.id];
+    return { st, f7, f30, openIssues, rack, rackDown, critical, last, daysSince: last ? Math.floor((now() - ms(last.created_at)) / 864e5) : null };
+  });
+}
+function issueItem(i){
+  const [pl, pc] = PRIORITY[i.priority] || PRIORITY.normal;
+  const stc = i.status === 'resolved' ? chip('Resolved', '#DCF0E3', '#1f5d38') : i.status === 'assigned' ? chip('Assigned to ' + nameOf(i.assigned_to).split(' ')[0], '#DEEBF7', '#1F3864') : chip('Not assigned', '#FDECEA', '#B42318');
+  return `<div class="item" data-act="open-issue" data-id="${i.id}" style="border-left-color:${pc}"><div class="grow"><div class="row" style="gap:6px"><span class="id" style="font-size:14px">${esc(stationName(i.station_id))}</span>${chip(pl, pc)}${stc}</div>
+    <div class="meta">${esc(ISSUE_KIND[i.kind] || i.kind)}${i.title ? ' · ' + esc(i.title) : ''}${i.due_date ? ' · due ' + fmtD(i.due_date + 'T12:00') : ''}</div></div>
+    <div class="small muted" style="text-align:right">${fmtDT(i.created_at)}<br>by ${esc(nameOf(i.reported_by).split(' ')[0])}</div></div>`;
+}
+VIEWS.stations = () => {
+  const H = stationHealth().filter(h => (!S.stReg || h.st.region === S.stReg) && (S.stTeam !== 'mine' || reportsToMe(person(h.st.field_tech_id))));
+  const t = tabs('st', [['critical','Critical stations'],['all','All stations'],['issues','Open issues'],['resolved','Resolved']], 'critical');
+  const open = S.issues.filter(i => i.status !== 'resolved' && (!S.stReg || i.region === S.stReg));
+  const tiles = [['Critical stations', H.filter(h => h.critical).length, '#B42318'], ['Smart racks down', H.filter(h => h.rackDown).length, '#7030A0'], ['Issues not assigned', open.filter(i => i.status === 'open').length, '#C55A11'],
+    ['Assigned, in progress', open.filter(i => i.status === 'assigned').length, '#2E75B6'], ['Not visited in 7+ days', H.filter(h => h.daysSince == null || h.daysSince >= 7).length, '#8A6D00'], ['Faulty batteries (7 days)', H.reduce((n, h) => n + h.f7, 0), '#0F7C8C']];
+  const row = h => `<tr${h.critical ? ' style="background:#FFF7F6"' : ''}><td><b>${esc(h.st.name)}</b>${h.critical ? ' ' + chip('CRITICAL', '#B42318') : ''}</td><td>${esc(h.st.sub_region || h.st.region || '')}</td><td>${h.st.field_tech_id ? who(h.st.field_tech_id) : '<span class="muted">none</span>'}</td>
+    <td class="n" style="${h.f7 >= CRIT_FAULTY_7D ? 'color:#B42318;font-weight:700' : ''}">${h.f7}</td><td class="n">${h.f30}</td><td>${h.rack === 'down' ? chip('Down', '#B42318') : h.rack === 'partial' ? chip('Partly', '#C55A11') : h.rack === 'working' ? chip('Working', '#2F7D4F') : '<span class="muted small">not checked</span>'}</td>
+    <td class="n">${h.openIssues.length}</td><td class="small">${h.last ? fmtD(h.last.created_at) + ` <span class="muted">(${h.daysSince}d)</span>` : '<span class="muted">never</span>'}</td>
+    <td><button class="btn sm p" data-act="assign-station" data-id="${h.st.id}">Assign tech</button></td></tr>`;
+  const table = list => `<div class="tw"><table class="t"><tr><th>Station</th><th>Region</th><th>Field tech</th><th class="n">Faulty (7d)</th><th class="n">Faulty (30d)</th><th>Smart rack</th><th class="n">Open issues</th><th>Last visit</th><th></th></tr>${list.map(row).join('') || '<tr><td colspan="9" class="empty">No stations here.</td></tr>'}</table></div>`;
+  let body = '';
+  if (t.cur === 'critical') body = `<div class="panel"><h3>Critical stations</h3><p class="small muted" style="margin-top:-6px">A station is critical when it has ${CRIT_FAULTY_7D}+ faulty batteries in 7 days, a smart rack down, or a critical issue open.</p>${table(H.filter(h => h.critical).sort((a, b) => b.f7 - a.f7))}</div>`;
+  if (t.cur === 'all') body = `<div class="panel">${table(H.sort((a, b) => (b.critical - a.critical) || (b.f7 - a.f7) || a.st.name.localeCompare(b.st.name)))}</div>`;
+  if (t.cur === 'issues') body = `<div class="list">${open.sort((a, b) => (a.status === 'open' ? -1 : 1) - (b.status === 'open' ? -1 : 1) || ms(a.created_at) - ms(b.created_at)).map(issueItem).join('') || '<div class="panel empty">No open issues.</div>'}</div>`;
+  if (t.cur === 'resolved') body = `<div class="list">${S.issues.filter(i => i.status === 'resolved').slice(0, 200).map(issueItem).join('') || '<div class="panel empty">Nothing resolved yet.</div>'}</div>`;
+  return `<h2 class="pg">Stations & smart racks</h2><p class="pgsub">Find stations with problems and send a technician. The technician sees it as a task and closes it with a GPS check-in.</p>
+  <div class="tiles">${tiles.map(([k, v, c]) => `<div class="tile" style="border-top-color:${c}"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}</div>
+  <div class="row" style="margin-bottom:8px"><select data-chg="streg" style="width:auto">${options(REGIONS, S.stReg || '', 'All regions')}</select>${S.peopleList.some(reportsToMe) ? `<select data-chg="stteam" style="width:auto">${options([['mine','My technicians only']], S.stTeam || '', 'All technicians')}</select>` : ''}
+    <button class="btn p right" data-act="assign-station" data-id="">+ New task / issue</button></div>${t.html}${body}`;
+};
+CHANGE.streg = el => { S.stReg = el.value; renderMain(); };
+CHANGE.stteam = el => { S.stTeam = el.value; renderMain(); };
+ACT['assign-station'] = a => assignForm(a.dataset.id || '', null);
+function assignForm(stationId, issue){
+  const st = S.stations.find(s => s.id === (issue?.station_id || stationId));
+  const h = st && stationHealth().find(x => x.st.id === st.id);
+  const techs = S.peopleList.filter(p => p.active && (p.roles || []).includes('field_tech')).sort((a, b) => (b.region === st?.region) - (a.region === st?.region) || a.full_name.localeCompare(b.full_name));
+  const defKind = issue?.kind || (h?.rackDown ? 'rack' : h && h.f7 >= CRIT_FAULTY_7D ? 'faulty' : 'visit');
+  $('#modal').innerHTML = `<div class="ov" data-act="ov-close"><div class="sheet" style="max-width:620px"><div class="hd"><div style="font-size:18px;font-weight:700">${issue ? 'Assign technician' : 'Send a technician to a station'}</div><button class="xbtn" data-act="modal-close">Close ✕</button></div>
+  <div class="bd">${h ? `<div class="banner ${h.critical ? 'err' : 'warn'}"><b>${esc(st.name)}</b>: ${h.f7} faulty batteries in 7 days · smart rack ${h.rack || 'not checked'} · ${h.openIssues.length} open issue(s) · last visit ${h.last ? fmtD(h.last.created_at) : 'never'}</div>` : ''}
+  <form data-form="assign-task" data-issue="${issue?.id || ''}"><div class="grid">
+    <div class="wide"><label class="f">Station *</label><select name="station" required ${issue ? 'disabled' : ''}>${options(S.stations.map(s => [s.id, s.name + (s.sub_region ? ' (' + s.sub_region + ')' : '')]), st?.id || '', '— choose station —')}</select></div>
+    <div><label class="f">Problem *</label><select name="kind" ${issue ? 'disabled' : ''}>${options(Object.entries(ISSUE_KIND), defKind)}</select></div>
+    <div><label class="f">Priority *</label><select name="priority">${options(Object.entries(PRIORITY).map(([k, v]) => [k, v[0]]), issue?.priority || (h?.critical ? 'critical' : 'high'))}</select></div>
+    <div class="wide"><label class="f">Technician *</label><select name="tech" required>${options(techs.map(p => [p.id, p.full_name + ' · ' + (p.sub_region || p.region || '') + (st && p.id === st.field_tech_id ? ' (station tech)' : '') + ' · ' + S.issues.filter(i => i.assigned_to === p.id && i.status === 'assigned').length + ' open tasks']), issue?.assigned_to || st?.field_tech_id || '', '— choose technician —')}</select></div>
+    <div><label class="f">Do it by</label><input type="date" name="due" value="${issue?.due_date || new Date(now() + 864e5).toISOString().slice(0, 10)}"></div>
+    <div class="wide"><label class="f">Instructions</label><input type="text" name="title" value="${esc(issue?.title || '')}" placeholder="e.g. 3 racks not charging, check power and slots"></div>
+  </div><div class="row" style="margin-top:14px"><button class="btn p big" type="submit">Assign</button></div></form></div></div></div>`;
+}
+FORM['assign-task'] = async f => {
+  const g = fd(f); const id = f.dataset.issue; const b = f.querySelector('button[type=submit]'); b.disabled = true;
+  const patch = { assigned_to: g('tech'), assigned_by: S.me.id, assigned_at: new Date().toISOString(), status: 'assigned', priority: g('priority'), due_date: g('due') || null, title: g('title') || null };
+  let res;
+  if (id) res = await S.sb.from('station_issues').update(patch).eq('id', id).select().single();
+  else { const st = S.stations.find(s => s.id === g('station')); if (!st){ b.disabled = false; return toast('Choose a station'); }
+    res = await S.sb.from('station_issues').insert({ ...patch, station_id: st.id, region: st.region, kind: g('kind'), reported_by: S.me.id, data: {} }).select().single(); }
+  if (res.error){ b.disabled = false; return toast('Not saved: ' + res.error.message, true); }
+  upsertLocal('issues', res.data); $('#modal').innerHTML = ''; toast('Assigned to ' + nameOf(g('tech'))); renderMain(); renderNav();
+};
+ACT['open-issue'] = a => showIssue(a.dataset.id);
+function showIssue(id){
+  const i = S.issues.find(x => x.id === id); if (!i) return;
+  const [pl, pc] = PRIORITY[i.priority] || PRIORITY.normal; const d = i.data || {};
+  const canResolve = i.status !== 'resolved' && (i.assigned_to === S.me.id || hasAny(['admin','rm']));
+  const canAssign = i.status !== 'resolved' && hasAny(['admin','rm']);
+  $('#modal').innerHTML = `<div class="ov" data-act="ov-close"><div class="sheet" style="max-width:640px"><div class="hd"><div><div class="small" style="opacity:.8">${esc(ISSUE_KIND[i.kind] || i.kind)}</div><div style="font-size:20px;font-weight:700">${esc(stationName(i.station_id))}</div><div class="row" style="gap:6px;margin-top:4px">${chip(pl, pc)}${chip(i.status === 'resolved' ? 'Resolved' : i.status === 'assigned' ? 'Assigned' : 'Not assigned', '#E8EEF8', '#1F3864')}</div></div><button class="xbtn" data-act="modal-close">Close ✕</button></div>
+  <div class="bd"><div class="hist" style="border-left-color:${pc}">${kv([['Reported', fmtDT(i.created_at) + ' by ' + nameOf(i.reported_by)], ['Details', i.title || d.note, true], ['Rack', d.rack ? { working:'Working', partial:'Partly working', down:'Not working' }[d.rack] : ''], ['Slots affected', d.slots], ['Assigned to', i.assigned_to ? nameOf(i.assigned_to) + ' by ' + nameOf(i.assigned_by) + ' on ' + fmtDT(i.assigned_at) : ''], ['Do it by', i.due_date ? fmtD(i.due_date + 'T12:00') : '']])}</div>
+  ${i.status === 'resolved' ? `<div class="hist" style="border-left-color:#2F7D4F">${kv([['Resolved', fmtDT(i.resolved_at) + ' by ' + nameOf(d.resolvedBy)], ['What was done', d.resolution, true], ['Rack now', d.rackAfter ? { working:'Working', partial:'Partly working', down:'Still not working' }[d.rackAfter] : ''], ['Took', fmtDur(ms(i.resolved_at) - ms(i.created_at))]])}${d.lat ? `<div class="small"><a href="https://maps.google.com/?q=${d.lat},${d.lng}" target="_blank" rel="noopener">📍 Where it was closed</a></div>` : ''}</div>` : ''}
+  ${canAssign ? `<button class="btn" data-act="reassign" data-id="${i.id}">${i.assigned_to ? 'Change technician' : 'Assign technician'}</button>` : ''}
+  ${canResolve ? `<div class="action" style="border-color:#2F7D4F;margin-top:12px"><h3 style="color:#2F7D4F">Close this task</h3><form data-form="resolve-issue" data-id="${i.id}"><div class="grid">
+    <div class="wide"><label class="f">What did you do? *</label><textarea name="res" required placeholder="e.g. replaced fuse on rack 2, collected 4 faulty batteries"></textarea></div>
+    ${i.kind === 'rack' ? `<div class="wide"><label class="f">Smart rack now *</label>${radios('rackAfter', [['working','Working'],['partial','Partly working'],['down','Still not working']], '')}</div>` : ''}
+    <div class="wide gpsbox">${gpsBadge()}</div></div><div class="row" style="margin-top:12px"><button class="btn ok big" type="submit">✔ Mark as done</button></div></form></div>` : ''}</div></div></div>`;
+}
+ACT.reassign = a => assignForm('', S.issues.find(x => x.id === a.dataset.id));
+FORM['resolve-issue'] = async f => {
+  const i = S.issues.find(x => x.id === f.dataset.id); const g = fd(f); const b = f.querySelector('button[type=submit]'); b.disabled = true; b.textContent = 'Getting location…';
+  const gps = await ensureGPS(); const rackAfter = g('rackAfter');
+  const { data, error } = await S.sb.from('station_issues').update({ status: rackAfter === 'down' ? 'assigned' : 'resolved', resolved_at: rackAfter === 'down' ? null : new Date().toISOString(),
+    data: { ...(i.data || {}), resolution: g('res'), rackAfter, resolvedBy: S.me.id, lat: gps.lat ?? null, lng: gps.lng ?? null, accuracy: gps.accuracy ?? null, updates: [...(i.data?.updates || []), { by: S.me.id, at: now(), text: g('res'), rack: rackAfter }] } }).eq('id', i.id).select().single();
+  if (error){ b.disabled = false; b.textContent = '✔ Mark as done'; return toast('Not saved: ' + error.message, true); }
+  upsertLocal('issues', data);
+  if (has('field_tech') && i.station_id) await S.sb.from('checkins').insert({ tech_id: S.me.id, station_id: i.station_id, region: i.region, lat: gps.lat ?? null, lng: gps.lng ?? null, accuracy: gps.accuracy ?? null, note: 'Task: ' + g('res'), rack_status: rackAfter || null }).select().single().then(r => { if (!r.error) upsertLocal('checkins', r.data); });
+  $('#modal').innerHTML = ''; toast(rackAfter === 'down' ? 'Saved — still open because the rack is not working' : 'Task closed ✔', true); renderMain(); renderNav();
+};
+async function reportRack(stationId, rack, note, slots){
+  const st = S.stations.find(s => s.id === stationId);
+  const open = S.issues.find(i => i.station_id === stationId && i.kind === 'rack' && i.status !== 'resolved');
+  if (open) return open;
+  const { data, error } = await S.sb.from('station_issues').insert({ station_id: stationId, region: st?.region, kind: 'rack', priority: rack === 'down' ? 'critical' : 'high', status: 'open', title: note || null, reported_by: S.me.id, data: { rack, note, slots } }).select().single();
+  if (error) throw error; upsertLocal('issues', data); return data;
+}
+
+boot();
+
+</script>
+</body>
+</html>
