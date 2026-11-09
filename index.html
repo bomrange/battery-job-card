@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warehouse Battery Job Card</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1F3864; --recv:#44546A; --repair:#2E75B6; --qc:#C55A11; --test:#548235; --close:#7030A0; --done:#2F7D4F;
+  --recv-t:#E7EAEE; --repair-t:#DEEBF7; --qc-t:#FBE5D6; --test-t:#E2EFDA; --close-t:#EADCF4; --done-t:#DCF0E3;
+  --bg:#F4F6F9; --card:#fff; --ink:#1d2433; --muted:#5f6b7d; --line:#dde2ea; --danger:#B42318;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+header{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20}
+.hwrap{max-width:1180px;margin:0 auto;padding:12px 16px 0}
+.brandline{font-size:11px;letter-spacing:.08em;opacity:.75;font-weight:600}
+h1{margin:2px 0 10px;font-size:20px;font-weight:700}
+nav{display:flex;gap:4px;overflow-x:auto}
+nav a{color:#cfd8ea;text-decoration:none;padding:9px 14px;border-radius:8px 8px 0 0;font-weight:600;white-space:nowrap}
+nav a.on{background:var(--bg);color:var(--navy)}
+main{max-width:1180px;margin:0 auto;padding:16px}
+.banner{padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:13px}
+.banner.warn{background:#FFF4E5;border:1px solid #F5C27A;color:#7A4A00}
+.banner.err{background:#FDECEA;border:1px solid #F4B4AE;color:var(--danger)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.panel h2{margin:0 0 12px;font-size:16px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:#b9c2d0}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.big{padding:12px 18px;font-size:15px}
+.btn.danger{color:var(--danger);border-color:#f0c2bd}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+input[type=text],input[type=number],input[type=datetime-local],input[type=date],select,textarea,input[type=search]{
+  width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fff}
+textarea{min-height:70px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid #9DB9E6;border-color:#9DB9E6}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.grid .wide{grid-column:1/-1}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 11px;cursor:pointer;background:#fff;font-size:13px;user-select:none}
+.opts input{margin:0;accent-color:var(--navy)}
+.opts label:has(input:checked){background:#E8EEF8;border-color:#9DB9E6;font-weight:600}
+/* stage flow */
+.flow{display:flex;gap:6px;align-items:stretch;overflow-x:auto;padding-bottom:4px}
+.flow .st{flex:1;min-width:120px;border-radius:10px;padding:10px 12px;color:#fff;cursor:pointer;border:3px solid transparent}
+.flow .st.sel{border-color:#1d2433}
+.flow .st .n{font-size:24px;font-weight:700;line-height:1}
+.flow .st .l{font-size:11px;font-weight:700;letter-spacing:.04em;opacity:.95}
+.flow .arr{align-self:center;color:#9aa5b5;font-size:18px}
+/* list */
+.list{display:flex;flex-direction:column;gap:8px}
+.jc{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-left:5px solid var(--repair);border-radius:10px;padding:10px 12px;cursor:pointer}
+.jc:hover{box-shadow:0 2px 8px rgba(20,30,50,.08)}
+.jc .id{font-weight:700;font-size:15px}
+.jc .meta{font-size:12px;color:var(--muted)}
+.jc .right{text-align:right;font-size:12px;color:var(--muted)}
+/* detail */
+.overlay{position:fixed;inset:0;background:rgba(15,22,35,.45);z-index:40;display:flex;justify-content:center;overflow-y:auto;padding:24px 12px}
+.sheet{background:var(--bg);border-radius:14px;max-width:880px;width:100%;align-self:flex-start;overflow:hidden}
+.sheet .top{background:var(--navy);color:#fff;padding:14px 18px;display:flex;gap:12px;align-items:flex-start}
+.sheet .body{padding:16px}
+.closex{margin-left:auto;background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600}
+.hist{border-left:5px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;margin-bottom:8px;border:1px solid var(--line)}
+.hist h4{margin:0 0 6px;font-size:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px 14px;font-size:12.5px}
+.kv div b{color:var(--muted);font-weight:600}
+.kv .wide{grid-column:1/-1}
+.action{border:2px solid var(--repair);border-radius:12px;background:#fff;padding:16px;margin-top:6px}
+.action h3{margin:0 0 10px;font-size:15px}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:22px}
+/* performance */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;border-top:4px solid var(--navy)}
+.tile .v{font-size:24px;font-weight:700;line-height:1.1}
+.tile .k{font-size:12px;color:var(--muted);font-weight:600}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:right;font-size:11.5px;color:var(--muted);font-weight:600;padding:7px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+table.t td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+table.t th:first-child,table.t td:first-child{text-align:left}
+table.t tr.tot td{font-weight:700;background:#F7F9FC}
+.tablewrap{overflow-x:auto}
+.bar{height:10px;border-radius:5px;background:var(--repair)}
+.good{color:var(--done);font-weight:700}.bad{color:var(--danger);font-weight:700}
+.empty{text-align:center;padding:30px 10px;color:var(--muted)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1d2433;color:#fff;padding:10px 16px;border-radius:10px;z-index:60;font-weight:600;font-size:13px;display:none}
+.confirm{background:#FDECEA;border:1px solid #F4B4AE;border-radius:10px;padding:12px;margin-top:10px}
+footer{max-width:1180px;margin:0 auto;padding:4px 16px 30px;font-size:11.5px;color:var(--muted)}
+@media (max-width:600px){h1{font-size:17px}.jc{flex-wrap:wrap}.jc .right{text-align:left;width:100%}}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="brandline">SPIRO · BATTERY OPERATIONS</div>
+  <h1>Warehouse Battery Job Card</h1>
+  <nav id="nav">
+    <a href="#cards" data-v="cards">Job cards</a>
+    <a href="#receive" data-v="receive">+ Receive battery</a>
+    <a href="#performance" data-v="performance">Performance</a>
+    <a href="#staff" data-v="staff">Staff list</a>
+  </nav>
+</div></header>
+<main id="main"><div class="empty">Loading…</div></main>
+<footer>One job card per battery: Receiving → Diagnosis &amp; Repair → QC → Air Leak &amp; Insulation → Closure. Times are stamped automatically when a person presses Start and Submit.</footer>
+<div id="overlay"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- constants ----------
+const STAGES = [
+  {key:'receive', label:'RECEIVING', color:'var(--recv)', tint:'var(--recv-t)'},
+  {key:'repair',  label:'DIAGNOSIS & REPAIR', color:'var(--repair)', tint:'var(--repair-t)'},
+  {key:'qc',      label:'QUALITY CHECK', color:'var(--qc)', tint:'var(--qc-t)'},
+  {key:'test',    label:'AIR LEAK & INSULATION', color:'var(--test)', tint:'var(--test-t)'},
+  {key:'closure', label:'CLOSURE', color:'var(--close)', tint:'var(--close-t)'},
+  {key:'closed',  label:'CLOSED', color:'var(--done)', tint:'var(--done-t)'},
+];
+const ST = Object.fromEntries(STAGES.map(s=>[s.key,s]));
+const BRANDS = ['CBAK','Ampace','Greenway','Unique'];
+const PREFIX = {C:'CBAK',A:'Ampace',D:'Greenway',U:'Unique'};
+const BRAND_COLOR = {CBAK:'#2E75B6',Ampace:'#C55A11',Greenway:'#548235',Unique:'#7030A0'};
+const FAULTS = [
+  ['F01','BMS fault / no communication'],['F02','Cell imbalance (high delta)'],['F03','Dead / low-voltage cell'],
+  ['F04','Charging port damage'],['F05','Discharge connector / terminal damage'],['F06','Broken weld / busbar'],
+  ['F07','Fuse / MOSFET failure'],['F08','Water ingress / corrosion'],['F09','Casing / seal damage (air leak)'],
+  ['F10','Insulation failure'],['F11','Firmware / IoT module issue'],['F12','No fault found (NFF)']];
+const FAULT_NAME = Object.fromEntries(FAULTS);
+const TOOLS_REPAIR = ['Multimeter','Battery analyser / cell tester','Laptop + BMS software','Spot welder','Soldering iron','Crimping tool','Heat gun','Torque / screwdriver set','Balancer / charger'];
+const TOOLS_QC = ['Multimeter','Battery analyser','Laptop + BMS software','Charger / discharger','IR thermometer'];
+const TOOLS_TEST = ['Air leak tester','Insulation tester (megger)','Pressure gauge'];
+const QC_CHECKS = ['Pack voltage','Cell balance / delta','BMS communication','Charge / discharge','Temperature','Connectors & casing','Labels / ID'];
+const ROLES = {tech:'Repair technician', qc:'QC engineer', test:'Air leak / insulation tester', recv:'Receiving / store', spoc:'SPOC'};
+
+// ---------- state ----------
+const S = { db:null, user:null, canWrite:true, canAdmin:false, cards:[], staff:[], loaded:false, loadErr:null, stale:false,
+  view:'cards', filter:{stage:'active', q:'', brand:''}, openId:null, detailSig:null,
+  perf:{range:'today', from:'', to:''}, confirmDel:false };
+
+// ---------- helpers ----------
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now = ()=>Date.now();
+const pad = n=>String(n).padStart(2,'0');
+function fmtDT(ms){ if(!ms) return '—'; const d=new Date(ms); return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function fmtDur(ms){ if(ms==null||isNaN(ms)) return '—'; const m=Math.round(ms/60000); if(m<60) return m+' min'; const h=Math.floor(m/60); if(h<48) return h+'h '+(m%60)+'m'; return Math.floor(h/24)+'d '+(h%24)+'h'; }
+function mins(e){ return (e && e.inAt && e.outAt) ? Math.max(0,(e.outAt-e.inAt)/60000) : null; }
+function localInput(ms){ const d=new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function dayStr(ms){ const d=new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none',2600); }
+function lsGet(k,d){ try{ return localStorage.getItem(k) ?? d; }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function chip(text,bg,fg='#fff'){ return `<span class="chip" style="background:${bg};color:${fg}">${esc(text)}</span>`; }
+function brandChip(b){ return b ? chip(b, BRAND_COLOR[b]||'#666') : ''; }
+function stageChip(k){ const s=ST[k]||ST.repair; return chip(s.label, s.color); }
+function staffNames(role, brand){
+  return S.staff.filter(s=>s.active!==false && (!role || s.role===role) && (!brand || !s.brand || s.brand===brand || s.brand==='All')).map(s=>s.name).sort();
+}
+function datalist(id, names){ return `<datalist id="${id}">${names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>`; }
+function checks(name, items, selected=[]){ return `<div class="opts">${items.map(i=>`<label><input type="checkbox" name="${name}" value="${esc(i)}" ${selected.includes(i)?'checked':''}>${esc(i)}</label>`).join('')}</div>`; }
+function radios(name, items, sel, req=true){ return `<div class="opts">${items.map(([v,l],i)=>`<label><input type="radio" name="${name}" value="${esc(v)}" ${sel===v?'checked':''} ${req&&i===0?'required':''}>${esc(l)}</label>`).join('')}</div>`; }
+function openEntry(arr){ const l=(arr||[]).at(-1); return l && !l.outAt ? l : null; }
+function lastDone(arr){ return [...(arr||[])].reverse().find(e=>e.outAt); }
+function genJC(){ const d=new Date(); const r=Math.random().toString(36).slice(2,5).toUpperCase(); return `JC-${String(d.getFullYear()).slice(2)}${pad(d.getMonth()+1)}${pad(d.getDate())}-${r}`; }
+
+// ---------- data (Supabase) ----------
+const SB_URL = 'https://vlpxhjsjjzqnecjdylqt.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZscHhoanNqanpxbmVjamR5bHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQyMzY0NjUsImV4cCI6MjEwOTgxMjQ2NX0.Kn2EOPU7Zsqas9oV9Fq76OF0S1Eoc2Mj8A1rYLTK4x8';
+let sb = null;
+const rowToCard = r => ({...(r.data||{}), id: r.id});
+const cardToRow = c => { const d={...c}; delete d.id; return { data:d, status:d.status, battery_id:d.batteryId, received_at:d.receivedAt, updated_at:d.updatedAt||now() }; };
+function upsertLocal(card){ const i=S.cards.findIndex(c=>c.id===card.id); if(i>=0) S.cards[i]=card; else S.cards.unshift(card); S.cards.sort((a,b)=>(b.receivedAt||0)-(a.receivedAt||0)); }
+async function loadCards(){
+  const { data, error } = await sb.from('jobcards').select('*').order('received_at',{ascending:false}).limit(3000);
+  if(error) throw error;
+  S.cards = data.map(rowToCard);
+}
+async function loadStaff(){
+  const { data, error } = await sb.from('staff').select('*').order('name');
+  if(!error) S.staff = data;
+}
+async function init(){
+  route();
+  window.addEventListener('hashchange', route);
+  if(!window.supabase || SB_URL.startsWith('__')){ S.loadErr='The database is not connected yet.'; S.loaded=true; render(); return; }
+  sb = window.supabase.createClient(SB_URL, SB_KEY);
+  try{ await Promise.all([loadCards(), loadStaff()]); S.loadErr=null; }
+  catch(e){ S.loadErr='Could not load job cards — check your internet connection. ('+(e.message||e)+')'; }
+  S.loaded=true; render();
+  // live updates from other devices
+  sb.channel('jobcard-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'jobcards'}, p=>{ if(p.eventType==='DELETE'){ S.cards=S.cards.filter(c=>c.id!==p.old.id); } else { upsertLocal(rowToCard(p.new)); } render(); })
+    .on('postgres_changes',{event:'*',schema:'public',table:'staff'}, async()=>{ await loadStaff(); if(S.view==='staff') render(); })
+    .subscribe();
+  // safety net: refresh every 60 s in case live updates drop
+  setInterval(async()=>{ try{ await loadCards(); S.stale=false; render(); }catch(e){ S.stale=true; } }, 60000);
+}
+async function saveCard(id, patch){
+  const cur=S.cards.find(c=>c.id===id); if(!cur) return false;
+  const next={...cur, ...patch, updatedAt: now()};
+  for(let attempt=0; attempt<2; attempt++){
+    const { error } = await sb.from('jobcards').update(cardToRow(next)).eq('id', id);
+    if(!error){ upsertLocal(next); render(); return true; }
+    if(attempt===0) await new Promise(r=>setTimeout(r,700));
+    else toast('Not saved — check your connection and try again');
+  }
+  return false;
+}
+async function createCard(doc){
+  const { data, error } = await sb.from('jobcards').insert(cardToRow(doc)).select('id').single();
+  if(error) throw error;
+  const card={...doc, id:data.id}; upsertLocal(card); return card;
+}
+
+// ---------- routing / render ----------
+function route(){
+  const h = location.hash.replace('#','');
+  S.view = ['cards','receive','performance','staff'].includes(h) ? h : 'cards';
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on', a.dataset.v===S.view));
+  render(true);
+}
+function render(force){
+  if(S.view==='receive' && !force && $('#recvForm')) { renderDetail(); return; } // don't wipe a form being filled
+  if(S.view==='staff' && !force && document.activeElement && document.activeElement.closest && document.activeElement.closest('#staffForm')) { return; }
+  const m = $('#main');
+  let html = '';
+  if(S.loadErr) html += `<div class="banner err">${esc(S.loadErr)}</div>`;
+  else if(S.stale) html += `<div class="banner warn">The job cards can't be reached yet — what you see may be out of date.</div>`;
+  if(!S.canWrite) html += `<div class="banner warn">You have view-only access to this page. Ask the owner to give you Contributor access to fill job cards.</div>`;
+  if(!S.loaded){ m.innerHTML = '<div class="empty">Loading job cards…</div>'; return; }
+  if(S.view==='cards') html += viewCards();
+  if(S.view==='receive') html += viewReceive();
+  if(S.view==='performance') html += viewPerformance();
+  if(S.view==='staff') html += viewStaff();
+  m.innerHTML = html;
+  bindView();
+  renderDetail();
+}
+
+// ---------- JOB CARDS ----------
+function viewCards(){
+  const counts = {}; STAGES.forEach(s=>counts[s.key]=0);
+  S.cards.forEach(c=>counts[c.status]=(counts[c.status]||0)+1);
+  const f=S.filter;
+  const flow = STAGES.filter(s=>s.key!=='receive').map((s,i,a)=>`
+    <div class="st ${f.stage===s.key?'sel':''}" style="background:${s.color}" data-stage="${s.key}">
+      <div class="n">${counts[s.key]||0}</div><div class="l">${s.label}</div></div>${i<a.length-1?'<div class="arr">▶</div>':''}`).join('');
+  const q=f.q.trim().toUpperCase();
+  let list = S.cards.filter(c=>{
+    if(f.stage==='active' && c.status==='closed') return false;
+    if(f.stage!=='active' && f.stage!=='all' && c.status!==f.stage) return false;
+    if(f.brand && c.brand!==f.brand) return false;
+    if(q && !(`${c.batteryId} ${c.jcNo} ${c.assignedTech}`.toUpperCase().includes(q))) return false;
+    return true;
+  });
+  const rows = list.slice(0,300).map(c=>{
+    const s=ST[c.status]||ST.repair;
+    const open = openEntry(c.status==='repair'?c.repairs:c.status==='qc'?c.qcs:c.status==='test'?c.tests:null);
+    const who = c.status==='repair' ? (open?.who||c.assignedTech) : open?.who;
+    const end = c.status==='closed' ? c.closure?.at : now();
+    return `<div class="jc" data-open="${esc(c.id)}" style="border-left-color:${s.color}">
+      <div class="grow"><div class="row" style="gap:8px"><span class="id">${esc(c.batteryId)}</span>${brandChip(c.brand)}${stageChip(c.status)}${open?chip('IN PROGRESS','#FFF4E5','#7A4A00'):''}${(c.qcs||[]).concat(c.tests||[]).some(x=>x.verdict==='fail'||x.result==='fail')?chip('REWORK','#FDECEA','#B42318'):''}</div>
+        <div class="meta">${esc(c.jcNo)} · ${esc(c.warehouse||'')} ${who?'· '+esc(who):''} ${c.fieldFault?'· '+esc(c.fieldFault).slice(0,60):''}</div></div>
+      <div class="right">Received ${fmtDT(c.receivedAt)}<br>${c.status==='closed'?'TAT ':'Waiting '} <b>${fmtDur(end-c.receivedAt)}</b></div></div>`;
+  }).join('');
+  return `
+  <div class="panel"><div class="flow">${flow}</div>
+    <div class="row" style="margin-top:12px">
+      <div class="grow" style="min-width:200px"><input type="search" id="q" placeholder="Search battery ID, job card no. or technician" value="${esc(f.q)}"></div>
+      <select id="fbrand" style="width:auto"><option value="">All brands</option>${BRANDS.map(b=>`<option ${f.brand===b?'selected':''}>${b}</option>`).join('')}</select>
+      <select id="fstage" style="width:auto">
+        <option value="active" ${f.stage==='active'?'selected':''}>All open</option>
+        <option value="all" ${f.stage==='all'?'selected':''}>All incl. closed</option>
+        ${STAGES.filter(s=>s.key!=='receive').map(s=>`<option value="${s.key}" ${f.stage===s.key?'selected':''}>${s.label}</option>`).join('')}
+      </select>
+      <a class="btn primary" href="#receive" style="text-decoration:none">+ Receive battery</a>
+    </div></div>
+  <div class="muted small" style="margin:0 0 8px">${list.length} job card${list.length===1?'':'s'}${list.length>300?' (showing first 300)':''}</div>
+  <div class="list">${rows || `<div class="empty panel">${S.cards.length? 'No job cards match this filter.' : 'No job cards yet. Start by receiving a battery.'}</div>`}</div>`;
+}
+
+// ---------- RECEIVE ----------
+function viewReceive(){
+  const wh = lsGet('jc_wh','');
+  const recv = lsGet('jc_recv','');
+  return `<div class="panel" style="border-top:5px solid var(--recv)">
+  <h2>Stage 1 · Receive a battery</h2>
+  <p class="muted small" style="margin-top:-6px">Fill this when the battery arrives at the warehouse. It opens the job card and assigns a technician.</p>
+  <form id="recvForm" autocomplete="off">
+    <div class="grid">
+      <div><label class="f">Battery ID *</label><input type="text" name="batteryId" id="bid" required placeholder="e.g. C123456" style="text-transform:uppercase"></div>
+      <div><label class="f">Warehouse *</label><input type="text" name="warehouse" required value="${esc(wh)}" placeholder="e.g. Kampala Central"></div>
+      <div><label class="f">Date & time received *</label><input type="datetime-local" name="receivedAt" required value="${localInput(now())}"></div>
+      <div><label class="f">Received by *</label><input type="text" name="receivedBy" list="dlRecv" required value="${esc(recv)}"></div>
+      <div class="wide"><label class="f">Brand * <span id="brandHint" class="muted"></span></label>${radios('brand', BRANDS.map(b=>[b,b]), '')}</div>
+      <div class="wide"><label class="f">Source</label>${radios('source', [['station','Swap station'],['field','Field technician'],['other','Other']], 'station', false)}</div>
+      <div><label class="f">Station / field tech name</label><input type="text" name="sourceName"></div>
+      <div><label class="f">Voltage on arrival (V)</label><input type="number" step="0.01" name="arrivalV"></div>
+      <div><label class="f">SoC on arrival (%)</label><input type="number" step="1" min="0" max="100" name="arrivalSoc"></div>
+      <div><label class="f">Physical damage?</label>${radios('damage', [['no','No'],['yes','Yes']], 'no', false)}</div>
+      <div class="wide"><label class="f">Fault reported from the field</label><textarea name="fieldFault" placeholder="What the swap agent / field technician / rider reported"></textarea></div>
+      <div class="wide"><label class="f">Assign to technician *</label><input type="text" name="assignedTech" id="atech" list="dlTech" required placeholder="Pick or type the technician's name">
+        <div class="small muted" style="margin-top:4px">The list shows technicians for the selected brand. Add names under <a href="#staff">Staff list</a>.</div></div>
+    </div>
+    <div id="recvMsg"></div>
+    <div class="row" style="margin-top:14px"><button class="btn primary big" type="submit" ${S.canWrite?'':'disabled'}>Open job card</button><a class="btn" href="#cards" style="text-decoration:none">Cancel</a></div>
+    ${datalist('dlRecv', staffNames('recv').concat(staffNames('spoc')))}
+    <datalist id="dlTech">${staffNames('tech').map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+  </form></div>`;
+}
+
+// ---------- PERFORMANCE ----------
+function rangeBounds(){
+  const p=S.perf, d=new Date(); d.setHours(0,0,0,0);
+  const day=86400000;
+  if(p.range==='today') return [d.getTime(), d.getTime()+day];
+  if(p.range==='yesterday') return [d.getTime()-day, d.getTime()];
+  if(p.range==='7') return [d.getTime()-6*day, d.getTime()+day];
+  if(p.range==='30') return [d.getTime()-29*day, d.getTime()+day];
+  const f = p.from ? new Date(p.from+'T00:00').getTime() : d.getTime();
+  const t = p.to ? new Date(p.to+'T00:00').getTime()+day : d.getTime()+day;
+  return [f,t];
+}
+function computePerf(){
+  const [A,B]=rangeBounds(); const inR = t=> t && t>=A && t<B;
+  const techs={}, qcs={}, testers={}, faults={};
+  const T = (name,brand)=>{ const k=brand+'|'+name; return techs[k] ||= {name, brand, assigned:0, closed:0, cardSet:new Set(), attempts:0, sentQC:0, firstPass:0, firstPassBase:0, returned:0, minutes:[], pending:0}; };
+  let received=0, closedN=0, tat=[], hands=[], qcAll=0, qcPass=0, testAll=0, testPass=0;
+  for(const c of S.cards){
+    const brand=c.brand||'Unknown';
+    if(inR(c.receivedAt)) received++;
+    if(c.assignedTech && inR(c.assignedAt||c.receivedAt)) T(c.assignedTech,brand).assigned++;
+    if(c.status==='repair' && c.assignedTech) T(c.assignedTech,brand).pending++;
+    const reps=(c.repairs||[]).filter(e=>e.outAt), qr=(c.qcs||[]).filter(e=>e.outAt), tr=(c.tests||[]).filter(e=>e.outAt);
+    const techBefore = t => { const r=[...reps].reverse().find(e=>e.outAt<=t); return r?r.who:null; };
+    for(const e of reps){
+      if(!inR(e.outAt)) continue;
+      const t=T(e.who,brand); t.attempts++; t.cardSet.add(c.id); t.closed=t.cardSet.size; const m=mins(e); if(m!=null) t.minutes.push(m);
+      (e.faults||[]).forEach(f=>{ faults[f]=(faults[f]||0)+1; });
+      if(e.result==='repaired'){ t.sentQC++; t.firstPassBase++; const nq=qr.find(q=>q.outAt>=e.outAt); if(nq && nq.verdict==='pass') t.firstPass++; }
+    }
+    for(const q of qr){
+      if(inR(q.outAt)){ const o=qcs[q.who] ||= {name:q.who, checked:0, passed:0, failed:0, minutes:[], reasons:{}}; o.checked++; qcAll++;
+        if(q.verdict==='pass'){o.passed++; qcPass++;} else {o.failed++; if(q.reason) o.reasons[q.reason]=(o.reasons[q.reason]||0)+1;}
+        const m=mins(q); if(m!=null) o.minutes.push(m);
+        if(q.verdict==='fail'){ const tb=techBefore(q.outAt); if(tb) T(tb,brand).returned++; } }
+    }
+    for(const x of tr){
+      if(inR(x.outAt)){ const o=testers[x.who] ||= {name:x.who, tested:0, airPass:0, insPass:0, failed:0, minutes:[]}; o.tested++; testAll++;
+        if(x.airResult==='pass') o.airPass++; if(x.insResult==='pass') o.insPass++;
+        const pass = x.airResult==='pass' && x.insResult==='pass'; if(pass) testPass++; else { o.failed++; const tb=techBefore(x.outAt); if(tb) T(tb,brand).returned++; }
+        const m=mins(x); if(m!=null) o.minutes.push(m); }
+    }
+    if(c.status==='closed' && inR(c.closure?.at)){
+      closedN++; tat.push((c.closure.at-c.receivedAt)/3600000);
+      const h=[...(c.repairs||[]),...(c.qcs||[]),...(c.tests||[])].map(mins).filter(v=>v!=null).reduce((a,b)=>a+b,0); hands.push(h);
+    }
+  }
+  const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const queue={}; S.cards.forEach(c=>{ if(c.status!=='closed') queue[c.status]=(queue[c.status]||0)+1; });
+  return {A,B,techs:Object.values(techs), qcs:Object.values(qcs), testers:Object.values(testers), faults, received, closedN,
+    avgTat:avg(tat), avgHands:avg(hands), qcRate: qcAll? qcPass/qcAll : null, testRate: testAll? testPass/testAll : null,
+    inProgress: S.cards.filter(c=>c.status!=='closed').length, queue, avg};
+}
+const pct = v => v==null ? '—' : Math.round(v*100)+'%';
+const num1 = v => v==null ? '—' : (Math.round(v*10)/10).toString();
+function viewPerformance(){
+  const P=computePerf(), p=S.perf, avg=P.avg;
+  const rangeBtns = [['today','Today'],['yesterday','Yesterday'],['7','Last 7 days'],['30','Last 30 days'],['custom','Custom']]
+    .map(([v,l])=>`<label><input type="radio" name="prange" value="${v}" ${p.range===v?'checked':''}>${l}</label>`).join('');
+  const tiles = [
+    ['Received', P.received, 'var(--recv)'], ['Closed', P.closedN, 'var(--done)'], ['Open now', P.inProgress, 'var(--navy)'],
+    ['Avg turnaround', P.avgTat==null?'—':num1(P.avgTat)+' h', 'var(--close)'], ['Avg hands-on / battery', P.avgHands==null?'—':Math.round(P.avgHands)+' min', 'var(--repair)'],
+    ['QC pass rate', pct(P.qcRate), 'var(--qc)'], ['Air leak + insulation pass', pct(P.testRate), 'var(--test)'],
+  ].map(([k,v,c])=>`<div class="tile" style="border-top-color:${c}"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+
+  const byBrand={}; P.techs.forEach(t=>(byBrand[t.brand] ||= []).push(t));
+  const brandOrder = BRANDS.concat(Object.keys(byBrand).filter(b=>!BRANDS.includes(b)));
+  let techHtml='';
+  for(const b of brandOrder){
+    const list=(byBrand[b]||[]).sort((x,y)=>y.closed-x.closed); if(!list.length) continue;
+    const tot = list.reduce((a,t)=>({assigned:a.assigned+t.assigned, closed:a.closed+t.closed, pending:a.pending+t.pending, returned:a.returned+t.returned, minutes:a.minutes.concat(t.minutes), fp:a.fp+t.firstPass, fpb:a.fpb+t.firstPassBase}), {assigned:0,closed:0,pending:0,returned:0,minutes:[],fp:0,fpb:0});
+    const r = t => { const cr=t.assigned? t.closed/t.assigned : null; const fp=t.firstPassBase? t.firstPass/t.firstPassBase:null;
+      return `<td>${t.assigned}</td><td><b>${t.closed}</b></td><td>${t.pending}</td><td class="${t.returned?'bad':''}">${t.returned}</td><td>${t.minutes.length?Math.round(avg(t.minutes)):'—'}</td><td class="${cr==null?'':cr>=0.9?'good':cr<0.6?'bad':''}">${pct(cr)}</td><td class="${fp==null?'':fp>=0.85?'good':'bad'}">${pct(fp)}</td>`; };
+    techHtml += `<h3 style="margin:14px 0 6px;font-size:14px">${brandChip(b)} technicians</h3><div class="tablewrap"><table class="t">
+      <tr><th>Technician</th><th>Assigned</th><th>Closed</th><th>Pending now</th><th>Returned (QC/test)</th><th>Avg min / battery</th><th>Closure rate</th><th>QC first-pass</th></tr>
+      ${list.map(t=>`<tr><td>${esc(t.name)}</td>${r(t)}</tr>`).join('')}
+      <tr class="tot"><td>Total</td>${r({assigned:tot.assigned, closed:tot.closed, pending:tot.pending, returned:tot.returned, minutes:tot.minutes, firstPass:tot.fp, firstPassBase:tot.fpb})}</tr></table></div>`;
+  }
+  const qcHtml = P.qcs.length ? `<div class="tablewrap"><table class="t"><tr><th>QC engineer</th><th>Checked</th><th>Passed</th><th>Failed</th><th>Pass rate</th><th>Avg min / battery</th><th style="text-align:left">Top fail reason</th></tr>
+    ${P.qcs.sort((a,b)=>b.checked-a.checked).map(q=>{ const top=Object.entries(q.reasons).sort((a,b)=>b[1]-a[1])[0]; return `<tr><td>${esc(q.name)}</td><td><b>${q.checked}</b></td><td>${q.passed}</td><td>${q.failed}</td><td>${pct(q.checked?q.passed/q.checked:null)}</td><td>${q.minutes.length?Math.round(avg(q.minutes)):'—'}</td><td style="text-align:left">${top?esc(top[0]).slice(0,50):'—'}</td></tr>`; }).join('')}</table></div>` : '<div class="muted small">No QC checks in this period.</div>';
+  const testHtml = P.testers.length ? `<div class="tablewrap"><table class="t"><tr><th>Tester</th><th>Tested</th><th>Air leak pass</th><th>Insulation pass</th><th>Failed</th><th>Pass rate</th><th>Avg min / battery</th></tr>
+    ${P.testers.sort((a,b)=>b.tested-a.tested).map(x=>`<tr><td>${esc(x.name)}</td><td><b>${x.tested}</b></td><td>${x.airPass}</td><td>${x.insPass}</td><td>${x.failed}</td><td>${pct(x.tested?(x.tested-x.failed)/x.tested:null)}</td><td>${x.minutes.length?Math.round(avg(x.minutes)):'—'}</td></tr>`).join('')}</table></div>` : '<div class="muted small">No air leak / insulation tests in this period.</div>';
+  const fEntries = Object.entries(P.faults).sort((a,b)=>b[1]-a[1]); const fMax = fEntries[0]?.[1]||1;
+  const faultHtml = fEntries.length ? fEntries.map(([k,v])=>`<div class="row" style="margin-bottom:6px;flex-wrap:nowrap"><div style="width:230px" class="small"><b>${esc(k)}</b> ${esc(FAULT_NAME[k]||'')}</div><div class="grow"><div class="bar" style="width:${Math.max(4,v/fMax*100)}%"></div></div><div style="width:34px;text-align:right"><b>${v}</b></div></div>`).join('') : '<div class="muted small">No faults recorded in this period.</div>';
+  const queue = ['repair','qc','test','closure'].map(k=>`<div class="tile" style="border-top-color:${ST[k].color}"><div class="v">${P.queue[k]||0}</div><div class="k">Waiting at ${ST[k].label.toLowerCase()}</div></div>`).join('');
+
+  return `<div class="panel"><div class="row"><div class="opts" id="prange">${rangeBtns}</div>
+    ${p.range==='custom'?`<div class="row"><input type="date" id="pfrom" value="${esc(p.from)}" style="width:auto"> to <input type="date" id="pto" value="${esc(p.to)}" style="width:auto"></div>`:''}
+    <div class="grow"></div><button class="btn" id="copyCsv">Copy technician table (CSV)</button></div>
+    <div class="small muted" style="margin-top:6px">Period: ${dayStr(P.A)} to ${dayStr(P.B-1)}. A technician's battery counts as closed when they submit it at the repair stage. Returns are charged to the technician who last repaired the battery.</div></div>
+  <div class="tiles">${tiles}</div>
+  <div class="panel"><h2>Technician closures by brand</h2>${techHtml || '<div class="muted small">No repair work in this period yet.</div>'}</div>
+  <div class="panel"><h2 style="color:var(--qc)">QC engineers</h2>${qcHtml}</div>
+  <div class="panel"><h2 style="color:var(--test)">Air leak &amp; insulation testers</h2>${testHtml}</div>
+  <div class="panel"><h2>Most common faults</h2>${faultHtml}</div>
+  <div class="panel"><h2>Queue right now</h2><div class="tiles" style="margin:0">${queue}</div><div class="small muted">If turnaround is long but hands-on minutes are short, batteries are waiting in a queue — that is where to add people.</div></div>`;
+}
+function techCsv(){
+  const P=computePerf(), avg=P.avg; const lines=[['Brand','Technician','Assigned','Closed','Pending','Returned','Avg min','Closure rate','QC first-pass'].join(',')];
+  P.techs.forEach(t=>lines.push([t.brand,`"${t.name.replace(/"/g,'""')}"`,t.assigned,t.closed,t.pending,t.returned,t.minutes.length?Math.round(avg(t.minutes)):'',t.assigned?Math.round(t.closed/t.assigned*100)+'%':'',t.firstPassBase?Math.round(t.firstPass/t.firstPassBase*100)+'%':''].join(',')));
+  return lines.join('\n');
+}
+
+// ---------- STAFF ----------
+function viewStaff(){
+  const groups = Object.keys(ROLES).map(r=>{
+    const list=S.staff.filter(s=>s.role===r && s.active!==false).sort((a,b)=>a.name.localeCompare(b.name));
+    return `<div style="margin-bottom:12px"><div class="small" style="font-weight:700;margin-bottom:6px">${ROLES[r]} (${list.length})</div>
+      ${list.length? list.map(s=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><div class="grow">${esc(s.name)} ${s.brand&&r==='tech'?brandChip(s.brand):''}</div>${S.canWrite?`<button class="btn small" data-delstaff="${esc(s.id)}">Remove</button>`:''}</div>`).join('') : '<div class="muted small">None yet</div>'}</div>`;
+  }).join('');
+  return `<div class="panel"><h2>Add a person</h2>
+    <p class="muted small" style="margin-top:-6px">Names added here appear as suggestions on the job card, so everyone spells them the same way and the performance numbers add up.</p>
+    <form id="staffForm" class="row" autocomplete="off">
+      <div class="grow" style="min-width:180px"><input type="text" name="name" placeholder="Full name" required></div>
+      <select name="role" style="width:auto">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+      <select name="brand" style="width:auto"><option value="All">All brands</option>${BRANDS.map(b=>`<option>${b}</option>`).join('')}</select>
+      <button class="btn primary" type="submit" ${S.canWrite?'':'disabled'}>Add</button>
+    </form></div>
+  <div class="panel"><h2>Team</h2>${groups}</div>`;
+}
+
+// ---------- DETAIL ----------
+function cardSig(c){ return c ? [c.status, (c.repairs||[]).length, (c.qcs||[]).length, (c.tests||[]).length, !!openEntry(c.repairs), !!openEntry(c.qcs), !!openEntry(c.tests)].join('|') : null; }
+function renderDetail(force){
+  const ov=$('#overlay');
+  if(!S.openId){ ov.innerHTML=''; S.detailSig=null; document.body.style.overflow=''; return; }
+  const c=S.cards.find(x=>x.id===S.openId);
+  if(!c){ ov.innerHTML=''; S.openId=null; return; }
+  const sig=cardSig(c)+'|'+S.confirmDel;
+  if(!force && sig===S.detailSig && ov.innerHTML) return; // keep form inputs intact
+  S.detailSig=sig; document.body.style.overflow='hidden';
+  const s=ST[c.status]||ST.repair;
+  const end = c.status==='closed' ? c.closure?.at : now();
+  ov.innerHTML = `<div class="overlay" id="ovbg"><div class="sheet">
+    <div class="top"><div><div class="small" style="opacity:.8">${esc(c.jcNo)} · ${esc(c.warehouse||'')}</div>
+      <div style="font-size:22px;font-weight:700">${esc(c.batteryId)}</div>
+      <div class="row" style="gap:6px;margin-top:4px">${brandChip(c.brand)}${stageChip(c.status)}<span class="small" style="opacity:.85">${c.status==='closed'?'Turnaround':'In warehouse'} ${fmtDur(end-c.receivedAt)}</span></div></div>
+      <button class="closex" id="closeDetail">Close ✕</button></div>
+    <div class="body">
+      ${histReceive(c)}
+      ${historyEntries(c)}
+      ${actionPanel(c)}
+      ${S.canAdmin?`<div style="margin-top:18px">${S.confirmDel?`<div class="confirm">Delete job card ${esc(c.jcNo)} for ${esc(c.batteryId)}? This can't be undone. <div class="row" style="margin-top:8px"><button class="btn danger" id="delYes">Yes, delete</button><button class="btn" id="delNo">Keep it</button></div></div>`:`<button class="btn danger small" id="delCard">Delete job card</button>`}</div>`:''}
+    </div></div></div>`;
+  bindDetail(c);
+}
+function kv(pairs){ return `<div class="kv">${pairs.filter(p=>p[1]!==undefined && p[1]!==null && p[1]!=='' && !(Array.isArray(p[1])&&!p[1].length)).map(([k,v,w])=>`<div class="${w?'wide':''}"><b>${esc(k)}:</b> ${esc(Array.isArray(v)?v.join(', '):v)}</div>`).join('')}</div>`; }
+function histReceive(c){
+  return `<div class="hist" style="border-left:5px solid var(--recv)"><h4>${chip('1 · RECEIVING','var(--recv)')} <span class="muted small">${fmtDT(c.receivedAt)} by ${esc(c.receivedBy)}</span></h4>
+  ${kv([['Source', c.source==='field'?'Field technician':c.source==='other'?'Other':'Swap station'],['From',c.sourceName],['Voltage on arrival',c.arrivalV!=null&&c.arrivalV!==''?c.arrivalV+' V':''],['SoC on arrival',c.arrivalSoc!=null&&c.arrivalSoc!==''?c.arrivalSoc+'%':''],['Physical damage',c.damage==='yes'?'Yes':'No'],['Assigned to',c.assignedTech],['Field fault',c.fieldFault,true]])}</div>`;
+}
+function historyEntries(c){
+  const items=[];
+  (c.repairs||[]).forEach((e,i)=>e.outAt&&items.push({t:e.outAt, html:`<div class="hist" style="border-left:5px solid var(--repair)"><h4>${chip('2 · REPAIR · attempt '+(i+1),'var(--repair)')} <span class="muted small">${esc(e.who)} · ${fmtDT(e.inAt)} → ${fmtDT(e.outAt)} · <b>${Math.round(mins(e))} min</b></span> ${e.result==='repaired'?chip('Sent to QC','var(--done-t)','#1f5d38'):e.result==='vendor'?chip('Return to vendor','#FFF4E5','#7A4A00'):chip('Scrap','#FDECEA','#B42318')}</h4>
+    ${kv([['Fault codes',(e.faults||[]).map(f=>f+' '+(FAULT_NAME[f]||''))],['Issue found',e.issue,true],['Action taken',e.action,true],['Tools',e.tools,true],['Spares',e.spares,true],['Voltage after',e.voltAfter?e.voltAfter+' V':''],['Cell delta',e.delta?e.delta+' mV':'']])}</div>`}));
+  (c.qcs||[]).forEach((e,i)=>e.outAt&&items.push({t:e.outAt, html:`<div class="hist" style="border-left:5px solid var(--qc)"><h4>${chip('3 · QC · round '+(i+1),'var(--qc)')} <span class="muted small">${esc(e.who)} · ${fmtDT(e.inAt)} → ${fmtDT(e.outAt)} · <b>${Math.round(mins(e))} min</b></span> ${e.verdict==='pass'?chip('PASS','var(--done-t)','#1f5d38'):chip('FAIL → back to technician','#FDECEA','#B42318')}</h4>
+    ${kv([['Checks',e.checks,true],['Pack voltage',e.v?e.v+' V':''],['Cell delta',e.delta?e.delta+' mV':''],['Temp',e.temp?e.temp+' °C':''],['Tools',e.tools,true],['Findings',e.findings,true],['Reason for return',e.reason,true]])}</div>`}));
+  (c.tests||[]).forEach((e,i)=>e.outAt&&items.push({t:e.outAt, html:`<div class="hist" style="border-left:5px solid var(--test)"><h4>${chip('4 · AIR LEAK & INSULATION · round '+(i+1),'var(--test)')} <span class="muted small">${esc(e.who)} · ${fmtDT(e.inAt)} → ${fmtDT(e.outAt)} · <b>${Math.round(mins(e))} min</b></span> ${chip('Air '+(e.airResult||'').toUpperCase(), e.airResult==='pass'?'var(--done-t)':'#FDECEA', e.airResult==='pass'?'#1f5d38':'#B42318')} ${chip('Insulation '+(e.insResult||'').toUpperCase(), e.insResult==='pass'?'var(--done-t)':'#FDECEA', e.insResult==='pass'?'#1f5d38':'#B42318')}</h4>
+    ${kv([['Test pressure',e.pressure],['Hold time',e.hold?e.hold+' s':''],['Leak / drop',e.leak],['Test voltage',e.insV],['Insulation reading',e.insReading?e.insReading+' MΩ':''],['Min. required',e.insMin?e.insMin+' MΩ':''],['Tools',e.tools,true],['If failed',e.failAction==='reseal'?'Reseal & retest':e.failAction==='vendor'?'Return to vendor':e.failAction?'Back to technician':'']])}</div>`}));
+  if(c.closure) items.push({t:c.closure.at, html:`<div class="hist" style="border-left:5px solid var(--close)"><h4>${chip('5 · CLOSURE','var(--close)')} <span class="muted small">${fmtDT(c.closure.at)} by ${esc(c.closure.by)}</span> ${chip(c.closure.finalStatus==='deploy'?'Ready for deployment':c.closure.finalStatus==='vendor'?'Return to vendor':'Scrap','var(--done)')}</h4>
+    ${kv([['Hands-on minutes', Math.round([...(c.repairs||[]),...(c.qcs||[]),...(c.tests||[])].map(mins).filter(v=>v!=null).reduce((a,b)=>a+b,0))],['Turnaround',fmtDur(c.closure.at-c.receivedAt)],['Reworks',(c.qcs||[]).filter(q=>q.verdict==='fail').length+(c.tests||[]).filter(t=>!(t.airResult==='pass'&&t.insResult==='pass')).length],['Entered in app',c.closure.enteredApp?'Yes':'No'],['Scrap approved by',c.closure.approvedBy]])}</div>`});
+  items.sort((a,b)=>a.t-b.t);
+  return items.map(i=>i.html).join('');
+}
+function startBlock(c, stageKey, title, role, defName, label){
+  const s=ST[stageKey];
+  const names = staffNames(role, role==='tech'?c.brand:null);
+  return `<div class="action" style="border-color:${s.color}"><h3 style="color:${s.color}">${title}</h3>
+    <form id="startForm" class="row" autocomplete="off"><div class="grow" style="min-width:200px"><label class="f">${label}</label>
+    <input type="text" name="who" list="dlWho" required value="${esc(defName||lsGet('jc_who_'+role,''))}">${datalist('dlWho',names)}</div>
+    <button class="btn primary big" type="submit" style="align-self:flex-end" ${S.canWrite?'':'disabled'}>▶ Start — stamp time in</button></form>
+    <div class="small muted" style="margin-top:6px">Press Start when you pick up the battery. The clock runs until you submit.</div></div>`;
+}
+function runningHead(e, color){
+  return `<div class="row" style="margin-bottom:12px;background:#F7F9FC;border-radius:10px;padding:10px 12px">
+    <div class="grow"><div class="small muted">Picked by</div><b>${esc(e.who)}</b> <span class="small muted">at ${fmtDT(e.inAt)}</span></div>
+    <div style="text-align:right"><div class="small muted">Time on this battery</div><div class="timer" style="color:${color}" data-since="${e.inAt}">0:00</div></div></div>`;
+}
+function actionPanel(c){
+  if(c.status==='closed') return `<div class="banner" style="background:var(--done-t);color:#1f5d38;font-weight:600">This job card is closed.</div>`;
+  if(!S.canWrite) return '';
+  if(c.status==='repair'){
+    const e=openEntry(c.repairs);
+    const attempt=(c.repairs||[]).filter(x=>x.outAt).length+1;
+    const lastFail = [...(c.qcs||[]).map(q=>({t:q.outAt, r:q.verdict==='fail'?'QC: '+(q.reason||''):null})), ...(c.tests||[]).map(t=>({t:t.outAt, r:(t.airResult==='pass'&&t.insResult==='pass')?null:'Air leak / insulation test failed'}))].filter(x=>x.r).sort((a,b)=>b.t-a.t)[0];
+    const reworkNote = attempt>1 && lastFail ? `<div class="banner err" style="margin-bottom:10px"><b>Rework (attempt ${attempt}).</b> Returned because: ${esc(lastFail.r)}</div>` : '';
+    if(!e) return reworkNote + startBlock(c,'repair',`Stage 2 · Diagnosis & repair${attempt>1?' · attempt '+attempt:''}`,'tech',c.assignedTech,'Technician');
+    return `${reworkNote}<div class="action" style="border-color:var(--repair)"><h3 style="color:var(--repair)">Stage 2 · Diagnosis & repair · attempt ${attempt}</h3>${runningHead(e,'var(--repair)')}
+    <form id="stageForm" autocomplete="off"><div class="grid">
+      <div class="wide"><label class="f">Fault code(s) *</label><div class="opts">${FAULTS.map(([k,n])=>`<label title="${esc(n)}"><input type="checkbox" name="faults" value="${k}">${k} ${esc(n)}</label>`).join('')}</div></div>
+      <div class="wide"><label class="f">Issue found (diagnosis) *</label><textarea name="issue" required placeholder="What exactly was wrong? e.g. Cell 7 at 2.6 V, BMS cut-off"></textarea></div>
+      <div class="wide"><label class="f">Action taken *</label><textarea name="action" required placeholder="What you did to fix it"></textarea></div>
+      <div class="wide"><label class="f">Tools used *</label>${checks('tools',TOOLS_REPAIR)}<input type="text" name="toolsOther" placeholder="Other tools" style="margin-top:6px"></div>
+      <div class="wide"><label class="f">Spares / parts used (part + qty)</label><input type="text" name="spares" placeholder="e.g. 1 × fuse 40A, 2 × nickel strip"></div>
+      <div><label class="f">Voltage after (V)</label><input type="number" step="0.01" name="voltAfter"></div>
+      <div><label class="f">Cell delta after (mV)</label><input type="number" step="1" name="delta"></div>
+      <div class="wide"><label class="f">Result *</label>${radios('result',[['repaired','Repaired — send to QC'],['vendor','Cannot repair — return to vendor'],['scrap','Scrap — needs approval']],'')}</div>
+    </div><div id="formMsg"></div><div class="row" style="margin-top:14px"><button class="btn primary big" type="submit">Submit — stamp time out</button></div></form></div>`;
+  }
+  if(c.status==='qc'){
+    const e=openEntry(c.qcs); const round=(c.qcs||[]).filter(x=>x.outAt).length+1;
+    if(!e) return startBlock(c,'qc',`Stage 3 · Quality check${round>1?' · round '+round:''}`,'qc','','QC engineer');
+    return `<div class="action" style="border-color:var(--qc)"><h3 style="color:var(--qc)">Stage 3 · Quality check · round ${round}</h3>${runningHead(e,'var(--qc)')}
+    <form id="stageForm" autocomplete="off"><div class="grid">
+      <div class="wide"><label class="f">Checks done *</label>${checks('checks',QC_CHECKS)}</div>
+      <div><label class="f">Pack voltage (V)</label><input type="number" step="0.01" name="v"></div>
+      <div><label class="f">Cell delta (mV)</label><input type="number" step="1" name="delta"></div>
+      <div><label class="f">Temperature (°C)</label><input type="number" step="0.1" name="temp"></div>
+      <div class="wide"><label class="f">Tools used</label>${checks('tools',TOOLS_QC)}</div>
+      <div class="wide"><label class="f">QC findings</label><textarea name="findings"></textarea></div>
+      <div class="wide"><label class="f">Verdict *</label>${radios('verdict',[['pass','PASS — send to air leak / insulation'],['fail','FAIL — return to technician']],'')}</div>
+      <div class="wide" id="reasonWrap" style="display:none"><label class="f">Reason for return * <span class="muted">(be specific, e.g. "cell delta 120 mV after balancing")</span></label><textarea name="reason"></textarea></div>
+    </div><div id="formMsg"></div><div class="row" style="margin-top:14px"><button class="btn primary big" type="submit">Submit — stamp time out</button></div></form></div>`;
+  }
+  if(c.status==='test'){
+    const e=openEntry(c.tests); const round=(c.tests||[]).filter(x=>x.outAt).length+1;
+    const prev=lastDone(c.tests)||{};
+    if(!e) return startBlock(c,'test',`Stage 4 · Air leak & insulation test${round>1?' · round '+round:''}`,'test','','Tested by');
+    return `<div class="action" style="border-color:var(--test)"><h3 style="color:var(--test)">Stage 4 · Air leak & insulation test · round ${round}</h3>${runningHead(e,'var(--test)')}
+    <form id="stageForm" autocomplete="off"><div class="grid">
+      <div class="wide small" style="font-weight:700;color:var(--test)">Air leak test</div>
+      <div><label class="f">Test pressure</label><input type="text" name="pressure" value="${esc(prev.pressure||lsGet('jc_pressure',''))}" placeholder="e.g. 3 kPa"></div>
+      <div><label class="f">Hold time (s)</label><input type="number" name="hold" value="${esc(prev.hold||lsGet('jc_hold',''))}"></div>
+      <div><label class="f">Leak / pressure drop</label><input type="text" name="leak"></div>
+      <div class="wide"><label class="f">Air leak result *</label>${radios('airResult',[['pass','PASS'],['fail','FAIL']],'')}</div>
+      <div class="wide small" style="font-weight:700;color:var(--test);margin-top:4px">Insulation test</div>
+      <div><label class="f">Test voltage</label><input type="text" name="insV" value="${esc(prev.insV||lsGet('jc_insV',''))}" placeholder="e.g. 500 V DC"></div>
+      <div><label class="f">Reading (MΩ)</label><input type="number" step="0.01" name="insReading"></div>
+      <div><label class="f">Minimum required (MΩ)</label><input type="number" step="0.01" name="insMin" value="${esc(prev.insMin||lsGet('jc_insMin',''))}"></div>
+      <div class="wide"><label class="f">Insulation result *</label>${radios('insResult',[['pass','PASS'],['fail','FAIL']],'')}</div>
+      <div class="wide"><label class="f">Tools used</label>${checks('tools',TOOLS_TEST)}</div>
+      <div class="wide" id="failWrap" style="display:none"><label class="f">Action if failed *</label>${radios('failAction',[['tech','Back to technician (Stage 2)'],['reseal','Reseal & retest'],['vendor','Return to vendor']],'',false)}</div>
+    </div><div id="formMsg"></div><div class="row" style="margin-top:14px"><button class="btn primary big" type="submit">Submit — stamp time out</button></div></form></div>`;
+  }
+  if(c.status==='closure'){
+    const lr=lastDone(c.repairs); const lt=lastDone(c.tests);
+    const def = lr?.result==='scrap' ? 'scrap' : (lr?.result==='vendor' || lt?.failAction==='vendor') ? 'vendor' : 'deploy';
+    return `<div class="action" style="border-color:var(--close)"><h3 style="color:var(--close)">Stage 5 · Closure</h3>
+    <form id="stageForm" autocomplete="off"><div class="grid">
+      <div class="wide"><label class="f">Final status *</label>${radios('finalStatus',[['deploy','Ready for deployment'],['vendor','Return to vendor'],['scrap','Scrap']],def)}</div>
+      <div><label class="f">Closed by *</label><input type="text" name="by" list="dlSpoc" required value="${esc(lsGet('jc_spoc',''))}">${datalist('dlSpoc',staffNames('spoc').concat(staffNames('recv')))}</div>
+      <div><label class="f">Scrap approved by</label><input type="text" name="approvedBy"></div>
+      <div class="wide"><div class="opts"><label><input type="checkbox" name="enteredApp" value="yes">Entered in the battery maintenance app</label></div></div>
+    </div><div id="formMsg"></div><div class="row" style="margin-top:14px"><button class="btn primary big" type="submit">Close job card</button></div></form></div>`;
+  }
+  return '';
+}
+
+// ---------- bindings ----------
+function bindView(){
+  if(S.view==='cards'){
+    document.querySelectorAll('[data-stage]').forEach(el=>el.onclick=()=>{ S.filter.stage = S.filter.stage===el.dataset.stage?'active':el.dataset.stage; render(true); });
+    const q=$('#q'); if(q){ q.oninput=()=>{ S.filter.q=q.value; clearTimeout(q._t); q._t=setTimeout(()=>{ const pos=q.selectionStart; render(true); const n=$('#q'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} },250); }; }
+    $('#fbrand').onchange=e=>{ S.filter.brand=e.target.value; render(true); };
+    $('#fstage').onchange=e=>{ S.filter.stage=e.target.value; render(true); };
+    document.querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>{ S.openId=el.dataset.open; S.confirmDel=false; renderDetail(true); });
+  }
+  if(S.view==='receive'){
+    const f=$('#recvForm'), bid=$('#bid');
+    const setBrand = ()=>{ const b=PREFIX[(bid.value.trim()[0]||'').toUpperCase()]; if(b){ const r=f.querySelector(`input[name=brand][value="${b}"]`); if(r && !f.querySelector('input[name=brand]:checked')) { r.checked=true; } $('#brandHint').textContent='(from ID prefix: '+b+')'; refreshTech(); } };
+    const refreshTech = ()=>{ const b=(f.querySelector('input[name=brand]:checked')||{}).value; $('#dlTech').innerHTML = staffNames('tech', b).map(n=>`<option value="${esc(n)}">`).join(''); };
+    bid.oninput=()=>{ bid.value=bid.value.toUpperCase(); setBrand(); };
+    f.querySelectorAll('input[name=brand]').forEach(r=>r.onchange=refreshTech);
+    f.onsubmit=async ev=>{
+      ev.preventDefault(); const fd=new FormData(f); const msg=$('#recvMsg');
+      const batteryId=(fd.get('batteryId')||'').trim().toUpperCase();
+      const dup=S.cards.find(c=>c.batteryId===batteryId && c.status!=='closed');
+      if(dup){ msg.innerHTML=`<div class="banner err" style="margin-top:12px">${esc(batteryId)} already has an open job card (${esc(dup.jcNo)}, at ${esc(ST[dup.status]?.label||'')}). <a href="#" id="openDup">Open it</a></div>`; $('#openDup').onclick=e=>{e.preventDefault(); S.openId=dup.id; renderDetail(true);}; return; }
+      const recAt = new Date(fd.get('receivedAt')).getTime() || now();
+      const doc = { jcNo: genJC(), batteryId, brand: fd.get('brand'), warehouse: (fd.get('warehouse')||'').trim(), receivedAt: recAt, receivedBy: (fd.get('receivedBy')||'').trim(),
+        source: fd.get('source')||'station', sourceName: (fd.get('sourceName')||'').trim(), arrivalV: fd.get('arrivalV')||'', arrivalSoc: fd.get('arrivalSoc')||'', damage: fd.get('damage')||'no',
+        fieldFault: (fd.get('fieldFault')||'').trim(), assignedTech: (fd.get('assignedTech')||'').trim(), assignedAt: now(), status:'repair', repairs:[], qcs:[], tests:[], createdAt: now(), updatedAt: now() };
+      const btn=f.querySelector('button[type=submit]'); btn.disabled=true;
+      try{ const card = await createCard(doc); lsSet('jc_wh',doc.warehouse); lsSet('jc_recv',doc.receivedBy);
+        toast('Job card '+doc.jcNo+' opened'); S.openId=card.id; location.hash='#cards'; }
+      catch(e){ btn.disabled=false; msg.innerHTML=`<div class="banner err" style="margin-top:12px">Could not save (${esc(e.message||'error')}). Check your connection and try again.</div>`; }
+    };
+  }
+  if(S.view==='performance'){
+    document.querySelectorAll('input[name=prange]').forEach(r=>r.onchange=()=>{ S.perf.range=r.value; render(true); });
+    const pf=$('#pfrom'), pt=$('#pto'); if(pf) pf.onchange=()=>{S.perf.from=pf.value; render(true);}; if(pt) pt.onchange=()=>{S.perf.to=pt.value; render(true);};
+    $('#copyCsv').onclick=async()=>{ try{ await navigator.clipboard.writeText(techCsv()); toast('Copied — paste into Excel'); }catch(e){ toast('Copy was blocked by the browser'); } };
+  }
+  if(S.view==='staff'){
+    const f=$('#staffForm');
+    f.onsubmit=async ev=>{ ev.preventDefault(); const fd=new FormData(f); const name=(fd.get('name')||'').trim(); if(!name) return;
+      if(S.staff.some(s=>s.active!==false && s.name.toLowerCase()===name.toLowerCase() && s.role===fd.get('role'))){ toast(name+' is already on the list'); return; }
+      const old=S.staff.find(s=>s.name.toLowerCase()===name.toLowerCase() && s.role===fd.get('role'));
+      const { error } = old ? await sb.from('staff').update({active:true, brand:fd.get('brand')}).eq('id',old.id)
+                            : await sb.from('staff').insert({name, role:fd.get('role'), brand:fd.get('brand'), active:true});
+      if(error){ toast('Not saved — try again'); return; }
+      await loadStaff(); f.reset(); toast(name+' added'); render(true); };
+    document.querySelectorAll('[data-delstaff]').forEach(b=>b.onclick=async()=>{ const { error } = await sb.from('staff').update({active:false}).eq('id',b.dataset.delstaff); if(error){ toast('Not removed — try again'); return; } await loadStaff(); render(true); });
+  }
+}
+function bindDetail(c){
+  $('#closeDetail').onclick=()=>{ S.openId=null; S.confirmDel=false; renderDetail(); };
+  $('#ovbg').onclick=e=>{ if(e.target.id==='ovbg'){ S.openId=null; S.confirmDel=false; renderDetail(); } };
+  const del=$('#delCard'); if(del) del.onclick=()=>{ S.confirmDel=true; renderDetail(true); };
+  const no=$('#delNo'); if(no) no.onclick=()=>{ S.confirmDel=false; renderDetail(true); };
+  const yes=$('#delYes'); if(yes) yes.onclick=()=>{};
+
+  const sf=$('#startForm');
+  if(sf) sf.onsubmit=async ev=>{
+    ev.preventDefault(); const who=(new FormData(sf).get('who')||'').trim(); if(!who) return;
+    const field = c.status==='repair'?'repairs':c.status==='qc'?'qcs':'tests';
+    const role = c.status==='repair'?'tech':c.status==='qc'?'qc':'test'; lsSet('jc_who_'+role, who);
+    sf.querySelector('button').disabled=true;
+    const arr=[...(c[field]||[]), {who, inAt: now()}];
+    const patch={[field]:arr}; if(c.status==='repair' && who!==c.assignedTech && !(c.repairs||[]).length){ patch.assignedTech=who; }
+    if(!(await saveCard(c.id, patch))) sf.querySelector('button').disabled=false;
+  };
+  const f=$('#stageForm'); if(!f) return;
+  const msg=$('#formMsg');
+  const showErr = t => { msg.innerHTML=`<div class="banner err" style="margin-top:12px">${esc(t)}</div>`; };
+  if(c.status==='qc'){ const upd=()=>{ const v=(f.querySelector('input[name=verdict]:checked')||{}).value; $('#reasonWrap').style.display=v==='fail'?'block':'none'; }; f.querySelectorAll('input[name=verdict]').forEach(r=>r.onchange=upd); }
+  if(c.status==='test'){ const upd=()=>{ const a=(f.querySelector('input[name=airResult]:checked')||{}).value, i=(f.querySelector('input[name=insResult]:checked')||{}).value; $('#failWrap').style.display=(a==='fail'||i==='fail')?'block':'none'; }; f.querySelectorAll('input[name=airResult],input[name=insResult]').forEach(r=>r.onchange=upd); }
+  f.onsubmit=async ev=>{
+    ev.preventDefault(); const fd=new FormData(f); const g=k=>(fd.get(k)||'').toString().trim(); const all=k=>fd.getAll(k);
+    let patch={};
+    if(c.status==='repair'){
+      if(!all('faults').length) return showErr('Pick at least one fault code (use F12 if no fault was found).');
+      const tools=all('tools'); if(g('toolsOther')) tools.push(g('toolsOther'));
+      if(!tools.length) return showErr('Tick the tools you used.');
+      const arr=[...c.repairs]; const e={...arr.at(-1), outAt:now(), faults:all('faults'), issue:g('issue'), action:g('action'), tools, spares:g('spares'), voltAfter:g('voltAfter'), delta:g('delta'), result:g('result')};
+      arr[arr.length-1]=e; patch={repairs:arr, status: e.result==='repaired'?'qc':'closure'};
+    }
+    if(c.status==='qc'){
+      if(!all('checks').length) return showErr('Tick the checks you did.');
+      if(g('verdict')==='fail' && !g('reason')) return showErr('Write the reason for returning the battery.');
+      const arr=[...c.qcs]; const e={...arr.at(-1), outAt:now(), checks:all('checks'), v:g('v'), delta:g('delta'), temp:g('temp'), tools:all('tools'), findings:g('findings'), verdict:g('verdict'), reason:g('verdict')==='fail'?g('reason'):''};
+      arr[arr.length-1]=e; patch={qcs:arr, status: e.verdict==='pass'?'test':'repair'};
+    }
+    if(c.status==='test'){
+      const pass = g('airResult')==='pass' && g('insResult')==='pass';
+      if(!pass && !g('failAction')) return showErr('Choose what happens to the battery after the failed test.');
+      const arr=[...c.tests]; const e={...arr.at(-1), outAt:now(), pressure:g('pressure'), hold:g('hold'), leak:g('leak'), airResult:g('airResult'), insV:g('insV'), insReading:g('insReading'), insMin:g('insMin'), insResult:g('insResult'), tools:all('tools'), failAction: pass?'':g('failAction')};
+      arr[arr.length-1]=e; lsSet('jc_pressure',e.pressure); lsSet('jc_hold',e.hold); lsSet('jc_insV',e.insV); lsSet('jc_insMin',e.insMin);
+      patch={tests:arr, status: pass?'closure': e.failAction==='tech'?'repair': e.failAction==='vendor'?'closure':'test'};
+    }
+    if(c.status==='closure'){
+      if(g('finalStatus')==='scrap' && !g('approvedBy')) return showErr('Scrap needs the name of the person who approved it.');
+      patch={status:'closed', closure:{at:now(), by:g('by'), finalStatus:g('finalStatus'), approvedBy:g('approvedBy'), enteredApp: fd.get('enteredApp')==='yes'}}; lsSet('jc_spoc',g('by'));
+    }
+    const btn=f.querySelector('button[type=submit]'); btn.disabled=true;
+    if(await saveCard(c.id, patch)){ toast('Saved — moved to '+(ST[patch.status]?.label||'').toLowerCase()); } else btn.disabled=false;
+  };
+}
+
+// live timers
+setInterval(()=>{ document.querySelectorAll('[data-since]').forEach(el=>{ const s=Math.max(0,Math.floor((now()-Number(el.dataset.since))/1000)); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; el.textContent=(h?h+':'+pad(m):m)+':'+pad(x); }); }, 1000);
+
+init();
+</script>
+</body>
+</html>
