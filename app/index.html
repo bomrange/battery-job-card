@@ -137,6 +137,11 @@ const ROLE_LABEL = { admin: 'Supervisor (all rights)', rm: 'Regional manager', s
   receiving: 'Receiving', store: 'Receiving (store)', diagnosis: 'Diagnosis', repair_tech: 'Repair technician', qc: 'QC engineer', air_leak: 'Air leak test',
   insulation: 'Insulation test', iot_test: 'IoT test', dispatch: 'Dispatch', iot: 'IoT (offline to online)', fabrication: 'Fabrication', spares: 'Spares (waiting for spares stock)', storekeeper: 'Store keeper (tools & materials)', team_lead: 'Team lead (gives work to own team)', data_view: 'Data & reports (view only)' };
 const REGIONS = ['Central', 'Eastern', 'Northern', 'Western'];
+/* areas inside a region that have their own regional manager (stored as sub_region) */
+const AREAS = { 'West 1': 'Western 1', 'West 2': 'Western 2' };
+const areaOf = p => (p && AREAS[p.sub_region]) ? p.sub_region : null;
+const areaName = a => AREAS[a] || a;
+const AREA_REGION = { 'West 1': 'Western', 'West 2': 'Western' };
 const WAREHOUSES = ['Main warehouse', 'Luzira warehouse', 'Bukoto Solar Hub'];
 function appRoleOf(p) {
   const r = (p && p.roles) || [];
@@ -155,13 +160,13 @@ function viewsFor(p) {
   const r = (p && p.roles) || [], role = appRoleOf(p);
   if (role === 'admin') return { views: ['home', 'warehouse', 'region', 'docket', 'teamwork', 'store', 'team', 'users', 'settings', 'profile'], home: 'home' };
   if (role === 'viewer') return { views: ['home', 'warehouse', 'region', 'profile'], home: 'home' };
-  if (role === 'mgr' && r.includes('rm')) return { views: ['region', 'team', 'profile'], home: 'region' };
-  if (role === 'mgr') return { views: ['docket', 'myday', 'team', 'profile'], home: 'docket' };          // SPOC: no dashboard
-  if (kindOf(p) === 'field') return { views: ['myday', 'field', 'team', 'profile'], home: 'myday' };
+  if (role === 'mgr' && r.includes('rm')) return { views: ['home', 'team', 'profile'], home: 'home' };    // RM: home is the region dashboard
+  if (role === 'mgr') return { views: ['home', 'docket', 'myday', 'team', 'profile'], home: 'home' };
+  if (kindOf(p) === 'field') return { views: ['home', 'myday', 'field', 'team', 'profile'], home: 'home' };
   if (r.includes('storekeeper') && !Object.keys(STAGES).some(k => STAGES[k].roles.some(x => r.includes(x)))) return { views: ['store', 'warehouse', 'team', 'profile'], home: 'store' };
   const repair = r.some(x => ['repair_tech', 'wh_tech'].includes(x)) && TEAMS.includes(p.team);
   const lead = r.includes('team_lead') && ['iot', 'iot_test', 'air_leak', 'fabrication'].some(x => r.includes(x));
-  return { views: ['myday', ...(lead ? ['teamwork'] : []), ...(repair ? ['docket'] : []), ...(r.includes('storekeeper') ? ['store'] : []), 'warehouse', 'team', 'profile'], home: 'myday' };
+  return { views: ['home', 'myday', ...(lead ? ['teamwork'] : []), ...(repair ? ['docket'] : []), ...(r.includes('storekeeper') ? ['store'] : []), 'warehouse', 'team', 'profile'], home: 'home' };
 }
 const isFieldTech = () => S.me && (S.me.roles || []).includes('field_tech') && appRoleOf(S.me) === 'tech';
 
@@ -248,14 +253,14 @@ const F = { region: 'All', team: 'All', kind: 'all' };
 function mgrScope(m) {
   const r = (m && m.roles) || [];
   if (r.includes('admin') || r.includes('data_view')) return { region: 'All', team: 'All' };
-  if (r.includes('rm')) return { region: m.region || '(no region)', team: 'All', rm: true, only: 'field' };     // RM: field technicians in their region
+  if (r.includes('rm')) return { region: m.region || '(no region)', area: areaOf(m), team: 'All', rm: true, only: 'field' };     // RM: field technicians in their region
   if (r.includes('spoc')) return { region: 'All', team: m.team || 'All', only: 'wh' };                        // SPOC: warehouse technicians in their brand
   return { region: 'All', team: 'All' };
 }
 function mgrScopeLabel(m) {
   const r = (m && m.roles) || [];
   if (r.includes('admin') || r.includes('data_view')) return 'All teams';
-  if (r.includes('rm')) return m.region ? `${m.region} region` : 'No region set';
+  if (r.includes('rm')) return areaOf(m) ? areaName(areaOf(m)) : m.region ? `${m.region} region` : 'No region set';
   if (r.includes('spoc')) return m.team && m.team !== 'All' ? `${m.team} team` : 'All brands';
   return '';
 }
@@ -285,11 +290,11 @@ const scopeIsAll = () => { const s = scope(); return s.region === 'All' && s.tea
 function inScope(p, noKind) {
   if (!p) return false;
   const s = scope();
-  return (s.region === 'All' || p.region === s.region) && (s.team === 'All' || p.team === s.team) && (!s.only || kindOf(p) === s.only) && (noKind || s.kind === 'all' || kindOf(p) === s.kind);
+  return (s.region === 'All' || p.region === s.region) && (!s.area || p.sub_region === s.area) && (s.team === 'All' || p.team === s.team) && (!s.only || kindOf(p) === s.only) && (noKind || s.kind === 'all' || kindOf(p) === s.kind);
 }
 const inScopeId = id => id ? inScope(person(id)) : scopeIsAll();
 const scopeTechs = noKind => S.peopleList.filter(p => isTechProfile(p) && inScope(p, noKind));
-function peopleOfMgr(m) { const s = mgrScope(m); return S.peopleList.filter(p => isTechProfile(p) && (s.region === 'All' || p.region === s.region) && (s.team === 'All' || p.team === s.team) && (!s.only || kindOf(p) === s.only)); }
+function peopleOfMgr(m) { const s = mgrScope(m); return S.peopleList.filter(p => isTechProfile(p) && (s.region === 'All' || p.region === s.region) && (!s.area || p.sub_region === s.area) && (s.team === 'All' || p.team === s.team) && (!s.only || kindOf(p) === s.only)); }
 function scopeBar(opts = {}) {
   const sel = (id, label, val, options) => `<select data-scope="${id}" aria-label="${label}" class="h-10 max-w-full rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${options.map(([v, l]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
   let h = '';
@@ -812,7 +817,7 @@ function mdAnswer(q) {
     return ts.map(t => `${t.done ? '✓' : '○'} ${t.title}${S.role !== 'tech' ? ' — ' + firstName(personName(t.assignee)) : ''}`).join('\n');
   }
   if (/month|target|repaired|progress/.test(s)) {
-    if (S.role === 'tech') { const m = myMonth(); const t = targetFor(S.me.team); return `This month you: ${m.repaired} repaired, ${m.received} received, ${m.scrapped} scrapped, ${m.warranty} warranty, ${m.spares} waiting for spares.` + (t ? `\n${S.me.team} team: ${teamTotal(S.me.team).repaired} of ${t} repaired.` : ''); }
+    if (S.role === 'tech') { const m = myMonth(); const t = targetFor(S.me.team); return `This month you: ${m.repaired} repaired, ${m.received} received, ${m.scrapped} scrapped, ${m.warranty} warranty.` + (t ? `\n${S.me.team} team: ${teamTotal(S.me.team).repaired} of ${t} repaired.` : ''); }
     return TEAMS.map(t => { const tot = teamTotal(t), tg = targetFor(t); return `${t}: ${tot.repaired} repaired${tg ? ` of ${tg} (${Math.round(tot.repaired / tg * 100)}%)` : ''}`; }).join('\n');
   }
   if (/late|miss|risk|overdue|deadline/.test(s)) {
@@ -2271,13 +2276,13 @@ function repairForm(d) {
     ${section('Today', `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${[['repaired', 'Repaired'], ['scrapped', 'Scrapped'], ['warranty', 'Sent for warranty']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div>`, 'Batteries you finished today. <b>Repaired</b>: working again. <b>Scrapped</b>: totally dead, can\'t be repaired. <b>Warranty</b>: manufacturer fault, goes to QC to wait for the manufacturer.')}
     ${issuesOf('sop').length ? section('Checklist for the batteries you repaired', `<div class="grid sm:grid-cols-2 gap-2">${issuesOf('sop').map((s, i) => `<label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-cream-200 text-sm"><input type="checkbox" name="sop" value="${esc(s)}" ${(d.sop || []).includes(s) ? 'checked' : ''} class="w-5 h-5 accent-[#8B5A2B]"><span><b class="text-espresso-500">${i + 1}.</b> ${esc(s)}</span></label>`).join('')}</div>`, 'Tick every step before counting batteries as repaired. Your name and the time are recorded with it.') : ''}
     ${section('Handed over to other teams', `<div class="grid grid-cols-2 gap-2">${[['handed_fab', 'Physical damage → Fabrication'], ['handed_iot', 'Offline → IoT']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div>`, 'Broken nails, threading, broken wires or burnt BMS go to fabrication. Offline batteries go to IoT.')}
-    ${section('Still with you right now', `<div class="grid grid-cols-2 gap-2">${[['spares', 'Waiting for spares'], ['under_test', 'Under test']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div>`, '<b>Waiting for spares</b>: needs a part we don\'t have yet. <b>Under test</b>: repaired and being tested before it moves on. Give the number with you right now.')}
+    ${section('Why you moved batteries to QC (warranty)', issueGrid('wr', 'warranty', d) + `<div class="mt-2">${txtIn('warranty_reason', d.warranty_reason, 'Anything else about the warranty batteries?', 'e.g. 2 CBAK with swollen cells from the same batch')}</div>`, 'Give a reason for every battery you sent for warranty. The numbers here must add up to "Sent for warranty".')}
+    ${section('Still with you right now', `<div class="grid grid-cols-2 gap-2"><label class="block"><span class="text-xs font-medium text-espresso-600">Under test</span>${numIn('under_test', d.under_test, 'Under test')}</label></div>`, '<b>Under test</b>: repaired and being tested before it moves on. Give the number with you right now. Batteries waiting for spares are logged by Esther in the Spares tab.')}
     <label class="block"><span class="text-sm font-medium">Biggest issue you repaired today</span><select name="top_issue" class="${inputC} mt-1.5"><option value="">Choose…</option>${issuesOf('fault').map(i => `<option ${d.top_issue === i ? 'selected' : ''}>${esc(i)}</option>`).join('')}</select></label>
     <div class="grid md:grid-cols-2 gap-3">
       ${txtIn('spares_used', d.spares_used, 'Spares used', 'e.g. 2 BMS boards, 1 charge port')}
       ${txtIn('cause', d.cause, 'What keeps causing the same fault?', 'e.g. water entering through the port')}
       ${txtIn('scrap_reason', d.scrap_reason, 'Why scrapped?', 'e.g. dead cells')}
-      ${txtIn('spares_reason', d.spares_reason, 'Which spares are you waiting for?', '')}
       ${txtIn('test_under', d.test_under, 'What test are they under?', 'e.g. 24h charge cycle')}
       ${txtIn('recommendation', d.recommendation, 'What should be done?', 'Your recommendation')}
     </div>`;
@@ -2361,6 +2366,11 @@ function stageCheck(k, d) {
     if (k === 'qc' && (x.passed || 0) + (x.failed || 0) > (x.checked || 0)) return `${b}: passed + failed can't be more than checked.`;
   }
   if (k === 'repair' && !d.brand) return 'Choose the brand.';
+  if (k === 'repair' && d.warranty) {
+    const wr = Object.values(d.wr || {}).reduce((a, n) => a + (n || 0), 0);
+    if (issuesOf('warranty').length && wr !== d.warranty) return `You sent ${d.warranty} for warranty but gave reasons for ${wr}. Give a reason for each battery moved to QC.`;
+    if (!issuesOf('warranty').length && !String(d.warranty_reason || '').trim()) return 'Say why the batteries were moved to QC (warranty).';
+  }
   if (k === 'repair' && d.repaired && issuesOf('sop').length) { const miss = issuesOf('sop').filter(s => !(d.sop || []).includes(s)); if (miss.length) return `Tick the checklist before counting batteries as repaired. Missing: ${miss.join(', ')}.`; }
   if (STAGE_COUNT[k]) for (const b of TEAMS) {
     const n = STAGE_COUNT[k](d, b); if (!n) continue;
@@ -2444,7 +2454,7 @@ function whNumbers(from, to, brands = TEAMS) {
   };
   const p = flow(from, to), A = from || to ? flow(null, null) : p;
   const hold = latestPerUser(repLogs(brands)), spL = latestSpares();
-  const spares = spL ? brands.reduce((a, b) => a + ((((spL.data || {}).waiting || {})[b] || {}).n || 0), 0) : rSum(hold, 'spares'), underTest = rSum(hold, 'under_test');
+  const spares = spL ? brands.reduce((a, b) => a + ((((spL.data || {}).waiting || {})[b] || {}).n || 0), 0)  : 0, underTest = rSum(hold, 'under_test');
   const opening = k => brands.reduce((a, b) => a + openingOf(k, b, false), 0);
   const allocated = repAlloc().filter(a => brands.includes(a.brand)).reduce((a, x) => a + x.qty, 0);
   const incoming = tSum(logsOf('receiving', todayStr(), todayStr()), 'incoming', brands);
@@ -2643,7 +2653,7 @@ function renderDocket() {
       ${panel('By issue', issues.length ? `<table class="w-full text-sm"><thead><tr class="text-espresso-500"><th class="text-left font-medium pb-2">Issue</th><th class="font-medium pb-2 text-right">Diagnosed</th><th class="font-medium pb-2 text-right">Given out</th><th class="font-medium pb-2 text-right">Waiting</th></tr></thead><tbody>${issues.map(([i, d, gv]) => `<tr class="border-t border-cream-100"><td class="py-2">${esc(i)}</td><td class="py-2 text-right tnum">${d}</td><td class="py-2 text-right tnum">${gv}</td><td class="py-2 text-right tnum font-semibold ${d - gv > 0 ? 'text-caramel-800' : 'text-espresso-500'}">${Math.max(0, d - gv)}</td></tr>`).join('')}</tbody></table>` : '<p class="text-sm text-espresso-500">Nothing diagnosed for this brand yet.</p>', '', 'all time')}
       ${panel('Technicians', team.length ? `<ul class="divide-y divide-cream-100">${team.map(t => { const d = techDocket(t.id);
         return `<li class="py-3 flex items-center gap-3 ${t.id === S.me.id ? 'bg-caramel-100/40 -mx-2 px-2 rounded-xl' : ''}">${avatar(t)}<span class="flex-1 min-w-0"><span class="block font-medium truncate">${esc(t.full_name)}${t.id === S.me.id ? ' (you)' : ''}</span><span class="block text-xs text-espresso-500 truncate">${d.byIssue.length ? d.byIssue.map(([i, n]) => `${esc(i)} ${n}`).join(' · ') : 'Nothing given yet'}</span></span>
-          <span class="text-right text-xs leading-5 tnum"><span class="block"><b>${d.given}</b> given · <b class="text-olive-700">${d.done}</b> done</span><span class="block text-espresso-500">${d.handed ? d.handed + ' handed over · ' : ''}${d.spares} spares · ${d.test} test · <b class="${d.left ? 'text-caramel-800' : ''}">${d.left} left</b></span>${(() => { const s = tatSummary(personTat(t.id), monthStart(), todayStr()); return `<span class="block ${tatTone(s)}">${fmtTat(s)}${s.overdue ? ` · <b class="text-terra-700">${s.overdue} past ${tatTarget()} day${tatTarget() > 1 ? 's' : ''}</b>` : ''}</span>`; })()}</span>
+          <span class="text-right text-xs leading-5 tnum"><span class="block"><b>${d.given}</b> given · <b class="text-olive-700">${d.done}</b> done</span><span class="block text-espresso-500">${d.handed ? d.handed + ' handed over · ' : ''}${d.test} under test · <b class="${d.left ? 'text-caramel-800' : ''}">${d.left} left</b></span>${(() => { const s = tatSummary(personTat(t.id), monthStart(), todayStr()); return `<span class="block ${tatTone(s)}">${fmtTat(s)}${s.overdue ? ` · <b class="text-terra-700">${s.overdue} past ${tatTarget()} day${tatTarget() > 1 ? 's' : ''}</b>` : ''}</span>`; })()}</span>
           ${canGive ? `<button data-give="${t.id}" class="w-9 h-9 rounded-lg border border-cream-300 hover:bg-cream-100" aria-label="Give batteries to ${esc(t.full_name)}"><i class="fa-solid fa-plus"></i></button>` : ''}</li>`; }).join('')}</ul>` : '<p class="text-sm text-espresso-500">No technicians in this brand team.</p>')}
     </div>
     ${canGive ? panel('Given out today', todays.length ? `<ul class="divide-y divide-cream-100">${todays.map(a => `<li class="py-2.5 flex items-center gap-3 text-sm"><span class="flex-1"><b>${a.qty}</b> × ${esc(a.issue)} → ${esc(personName(a.tech_id))}</span><span class="text-xs text-espresso-500">${hhmm(a.created_at)}</span>${a.created_by === S.me.id || S.role === 'admin' ? `<button data-undo="${a.id}" class="h-8 px-2 rounded-lg text-xs text-terra-700 hover:bg-terra-50">Undo</button>` : ''}</li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">Nothing given out today.</p>') : ''}
@@ -2733,13 +2743,36 @@ function renderFieldDay() {
   };
 }
 
-/* ================= REGION DASHBOARD (regional managers; supervisor sees all with filters) ================= */
+/* ================= REGION DASHBOARD =================
+   supervisor: all regions with filters · regional manager: opens on own region/area, can look at any other region
+   field technician: own region, read-only, to see who is leading */
+const RV = { v: '' };
+function regionView() {
+  if (S.role === 'admin' || S.role === 'viewer') { const sc = scope(); return { region: sc.region, area: sc.area || null }; }
+  const isRm = (S.me.roles || []).includes('rm');
+  const mine = { region: S.me.region || '(no region)', area: isRm ? areaOf(S.me) : null, own: true };
+  if (!isRm || !RV.v) return mine;
+  if (RV.v === 'All') return { region: 'All', area: null };
+  if (RV.v.startsWith('a:')) { const a = RV.v.slice(2); return { region: AREA_REGION[a] || 'All', area: a }; }
+  return { region: RV.v.slice(2), area: null };
+}
+const rvLabel = v => v.area ? areaName(v.area) : v.region === 'All' ? 'All regions' : `${v.region} region`;
+function regionPicker() {
+  const isRm = (S.me.roles || []).includes('rm');
+  if (S.role === 'admin' || S.role === 'viewer') return scopeBar({ noKind: true });
+  const own = regionView(), mine = { region: S.me.region, area: isRm ? areaOf(S.me) : null };
+  if (!isRm) return `<span class="h-10 px-3 rounded-xl bg-caramel-100 text-caramel-800 text-sm font-semibold inline-flex items-center gap-2"><i class="fa-solid fa-user-group"></i>${esc(rvLabel(own))} field team</span>`;
+  const opts = [['', `Mine · ${rvLabel(mine)}`], ['All', 'All regions'], ...REGIONS.map(r => ['r:' + r, r + ' region']), ...Object.keys(AREAS).map(a => ['a:' + a, areaName(a)])];
+  return `<select id="rvSel" aria-label="Region to view" class="h-10 max-w-full rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${opts.map(([v, l]) => `<option value="${esc(v)}" ${v === RV.v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+}
 function renderRegion() {
   const [from, to, plabel] = periodRange(WH.period);
-  const techs = S.peopleList.filter(p => isTechProfile(p) && kindOf(p) === 'field' && inScope(p, true));
+  const rv = regionView(), isTech = S.role === 'tech';
+  const inRv = p => (rv.region === 'All' || p.region === rv.region) && (!rv.area || p.sub_region === rv.area);
+  const techs = S.peopleList.filter(p => isTechProfile(p) && kindOf(p) === 'field' && (S.role === 'admin' || S.role === 'viewer' ? inScope(p, true) : inRv(p)));
   const ids = new Set(techs.map(t => t.id));
   const logs = logsOf('field', from, to).filter(l => ids.has(l.user_id));
-  const sc = scope(), stations = S.stations.filter(s => sc.region === 'All' || s.region === sc.region);
+  const stations = S.stations.filter(s => (rv.region === 'All' || s.region === rv.region) && (!rv.area || s.sub_region === rv.area || ids.has(s.field_tech_id)));
   const visited = new Set(logs.flatMap(l => l.data.stations || []));
   const sum = f => logs.reduce((a, l) => a + (l.data[f] || 0), 0);
   const today = todayStr(), loggedToday = new Set(logsOf('field', today, today).map(l => l.user_id));
@@ -2748,34 +2781,39 @@ function renderRegion() {
     .sort((a, b) => b.rep - a.rep || b.st - a.st);
   const feed = key => [...logs].reverse().filter(l => l.data[key]).slice(0, 12);
   const feedHtml = (key, tone) => { const f = feed(key); return f.length ? `<ul class="space-y-2">${f.map(l => `<li class="p-3 rounded-xl ${tone} text-sm">${esc(l.data[key])}<div class="text-xs opacity-80 mt-0.5">${esc(personName(l.user_id))} · ${fmtDay(l.day)}</div></li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">Nothing reported.</p>'; };
-  setTitle(sc.region === 'All' ? 'Regions' : `${sc.region} region`, plabel);
+  const me = S.me.id, myPos = board.findIndex(r => r.t.id === me);
+  setTitle(S.view === 'home' ? 'Home' : rv.region === 'All' && !rv.area ? 'Regions' : rvLabel(rv), `${rvLabel(rv)} · ${plabel}`);
   $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-5">
-    <div class="flex flex-wrap items-center gap-2">${scopeBar({ noKind: true })}<select data-wh="period" aria-label="Period" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${PERIOD_OPTS().map(([v, l]) => `<option value="${v}" ${v === WH.period ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="flex flex-wrap items-center gap-2">${regionPicker()}<select data-wh="period" aria-label="Period" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${PERIOD_OPTS().map(([v, l]) => `<option value="${v}" ${v === WH.period ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    ${board.length ? `<div class="rounded-2xl ${myPos === 0 ? 'bg-olive-50 text-olive-700' : 'bg-caramel-100 text-caramel-800'} p-4 text-sm">${board.length && board[0].rep ? `<b>${esc(firstName(board[0].t.full_name))}</b> is leading ${esc(rvLabel(rv))} with <b class="tnum">${board[0].rep}</b> repaired (${esc(plabel)}).` : 'No repairs logged yet in this period.'}${myPos >= 0 ? ` You are <b>#${myPos + 1}</b> of ${board.length}${myPos === 0 && board[0].rep ? ' 🎉' : ''}.` : ''}</div>` : ''}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       ${statBtn('fieldRepaired', 'Repaired at stations', sum('repaired'), 'fa-screwdriver-wrench', 'bg-olive-50 text-olive-700', plabel)}
       ${statCard('Failed, back to warehouse', sum('failed_back'), 'fa-rotate-left', 'bg-terra-50 text-terra', plabel)}
       ${statCard('Stations visited', `${visited.size}<span class="text-sm font-sans text-espresso-500"> / ${stations.length}</span>`, 'fa-charging-station', 'bg-caramel-100 text-caramel-800', `${stations.filter(s => !s.field_tech_id).length} not assigned`)}
       ${statCard('Logged today', `${loggedToday.size}<span class="text-sm font-sans text-espresso-500"> / ${techs.length}</span>`, 'fa-user-check', 'bg-cream-100 text-espresso-700', 'field technicians')}
     </div>
-    ${vsGraph(WH.period, TEAMS, S.role === 'admin' && sc.region === 'All' ? null : ids, plabel)}
+    ${isTech ? '' : vsGraph(WH.period, TEAMS, S.role === 'admin' && rv.region === 'All' ? null : ids, plabel)}
     ${panel('Field technicians', board.length ? `<div class="overflow-x-auto"><table class="w-full text-sm min-w-[34rem]"><thead><tr class="text-espresso-500"><th class="text-left font-medium pb-2">Technician</th><th class="font-medium pb-2 text-right">Repaired</th><th class="font-medium pb-2 text-right">Failed back</th><th class="font-medium pb-2 text-right">Stations visited</th><th class="font-medium pb-2 text-right">Assigned</th><th class="font-medium pb-2 text-right">Days logged</th></tr></thead>
-      <tbody>${board.map((r, i) => `<tr class="border-t border-cream-100"><td class="py-2"><button data-person="${r.t.id}" class="flex items-center gap-2.5 text-left">${avatar(r.t, 'w-8 h-8 text-[11px]')}<span><span class="block font-medium">${i < 3 && r.rep ? ['🥇 ', '🥈 ', '🥉 '][i] : ''}${esc(r.t.full_name)}</span><span class="block text-xs text-espresso-500">${esc(r.t.staff_id)} · ${esc(r.t.region || 'no region')}${loggedToday.has(r.t.id) ? '' : ' · <span class="text-warn-800">not logged today</span>'}</span></span></button></td>
+      <tbody>${board.map((r, i) => `<tr class="border-t border-cream-100 ${r.t.id === me ? 'bg-caramel-100/60' : ''}"><td class="py-2"><button data-person="${r.t.id}" class="flex items-center gap-2.5 text-left">${avatar(r.t, 'w-8 h-8 text-[11px]')}<span><span class="block font-medium">${i < 3 && r.rep ? ['🥇 ', '🥈 ', '🥉 '][i] : ''}${esc(r.t.full_name)}${r.t.id === me ? ' (you)' : ''}</span><span class="block text-xs text-espresso-500">${esc(r.t.staff_id)} · ${esc(areaOf(r.t) ? areaName(areaOf(r.t)) : r.t.region || 'no region')}${loggedToday.has(r.t.id) ? '' : ' · <span class="text-warn-800">not logged today</span>'}</span></span></button></td>
         <td class="py-2 text-right tnum font-semibold text-olive-700">${r.rep}</td><td class="py-2 text-right tnum ${r.back ? 'text-terra' : ''}">${r.back}</td><td class="py-2 text-right tnum">${r.st}</td><td class="py-2 text-right tnum">${r.mine}</td><td class="py-2 text-right tnum">${r.days}</td></tr>`).join('')}</tbody></table></div>` : '<p class="text-sm text-espresso-500">No field technicians in this view.</p>', '', 'best performers first')}
-    <div class="grid xl:grid-cols-3 gap-5">
+    ${isTech ? '' : `<div class="grid xl:grid-cols-3 gap-5">
       ${panel('Blockers', feedHtml('blockers', 'bg-warn-50 text-warn-800'))}
       ${panel('Issues found', feedHtml('issues', 'bg-cream-100'))}
       ${panel('Improvements asked for', feedHtml('improvements', 'bg-olive-50 text-olive-700'))}
-    </div></div>`;
+    </div>`}</div>`;
   bindScope(renderRegion); bindPeriod(renderRegion); bindDetails(from, to, TEAMS, ids);
-  $$('#main [data-person]').forEach(b => b.onclick = () => S.role === 'admin' ? userDrawer(b.dataset.person) : personDrawer(b.dataset.person));
+  if ($('#rvSel')) $('#rvSel').onchange = e => { RV.v = e.target.value; renderRegion(); };
+  $$('#main [data-person]').forEach(b => b.onclick = () => isTech ? null : S.role === 'admin' ? userDrawer(b.dataset.person) : personDrawer(b.dataset.person));
+  if (isTech) appendMyMonths();
 }
 
 /* ================= STATIONS: regional manager assigns stations to their field technicians ================= */
 const ST = { q: '', show: 'all', limit: 60 };
 function renderStations() {
   const sc = scope(), canAssign = S.role === 'admin' || (S.me.roles || []).includes('rm');
-  const all = S.stations.filter(s => sc.region === 'All' || s.region === sc.region);
-  const techsFor = region => S.peopleList.filter(p => isTechProfile(p) && kindOf(p) === 'field' && (!region || p.region === region)).sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const techsFor = region => S.peopleList.filter(p => isTechProfile(p) && kindOf(p) === 'field' && (!region || p.region === region) && (!sc.area || p.sub_region === sc.area)).sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const areaIds = new Set(sc.area ? techsFor(sc.region).map(t => t.id) : []);
+  const all = S.stations.filter(s => (sc.region === 'All' || s.region === sc.region) && (!sc.area || s.sub_region === sc.area || areaIds.has(s.field_tech_id)));
   const q = ST.q.toLowerCase();
   const list = all.filter(s => (ST.show === 'all' || (ST.show === 'none' ? !s.field_tech_id : s.field_tech_id === ST.show)) && (!q || (s.name + ' ' + (s.sub_region || '') + ' ' + personName(s.field_tech_id)).toLowerCase().includes(q)));
   const regionTechs = techsFor(sc.region === 'All' ? null : sc.region);
@@ -2805,7 +2843,7 @@ function renderStations() {
 }
 
 /* ================= SETTINGS: supervisor edits issue lists ================= */
-const KIND_LABEL = { fault: 'Battery issues (diagnosis and repairs)', insulation: 'Insulation fail reasons', iot: 'IoT offline reasons', handover: 'Handover reasons (Quality / O&M)', scrap: 'Scrap reasons', sop: 'Repair checklist (steps before a battery counts as repaired)', fabrication: 'Fabrication jobs (physical damage)' };
+const KIND_LABEL = { fault: 'Battery issues (diagnosis and repairs)', insulation: 'Insulation fail reasons', iot: 'IoT offline reasons', handover: 'Handover reasons (Quality / O&M)', scrap: 'Scrap reasons', sop: 'Repair checklist (steps before a battery counts as repaired)', warranty: 'Warranty reasons (why moved to QC)', fabrication: 'Fabrication jobs (physical damage)' };
 function renderSettings() {
   setTitle('Settings', 'Lists people pick from');
   $('#main').innerHTML = `<div class="p-4 md:p-6 grid lg:grid-cols-2 gap-5">${panel('Turnaround target (TAT)', `<form id="tatF" class="flex flex-wrap items-end gap-3"><label class="block"><span class="text-sm font-medium">Finish batteries within</span><div class="mt-1.5 flex items-center gap-2"><input name="d" type="number" min="1" max="30" value="${tatTarget()}" class="${inputC} h-10 w-24 text-center tnum"><span class="text-sm">day(s) of being given them</span></div></label><button class="${btnP} h-10">Save</button></form><p class="mt-2 text-xs text-espresso-500">Used for on-time % and "past the target" alerts for repair technicians and team leads' teams.</p>`)}${Object.entries(KIND_LABEL).map(([k, l]) => panel(l, `<ul class="space-y-1.5">${S.issues.filter(i => i.kind === k).sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)).map(i => `<li class="flex items-center gap-2"><input data-iname="${i.id}" value="${esc(i.name)}" maxlength="60" aria-label="Name" class="${inputC} h-10 flex-1 ${i.active ? '' : 'line-through text-espresso-500'}"><button data-itoggle="${i.id}" class="h-10 px-3 rounded-xl border border-cream-300 text-sm ${i.active ? '' : 'bg-cream-100'}">${i.active ? 'Hide' : 'Show'}</button></li>`).join('')}</ul>
@@ -3270,7 +3308,9 @@ function openDetail(key, from, to, brands, fieldIds) {
   if (key === 'spares') { const l = latestSpares(); if (l) { people.push(row(`Updated by ${esc(personName(l.user_id))}`, '', fmtDay(l.day))); if (l.data.missing) people.push(`<li class="py-2 text-sm"><b>Waiting for:</b> ${esc(l.data.missing)}</li>`); } }
   const logList = (stage, f, label, filter = () => true) => logsOf(stage, from, to).filter(filter).map(l => [l, f(l)]).filter(x => x[1]).reverse().slice(0, 40).forEach(([l, n]) => people.push(row(`${esc(personName(l.user_id))}${label ? ' · ' + label(l) : ''}`, n, fmtDay(l.day))));
   if (key === 'scrapped') { logList('repair', l => brands.includes(l.data.brand) ? l.data.scrapped : 0, l => esc(l.data.brand) + ' line'); logList('fabrication', l => tSum([l], 'scrapped', brands), () => 'fabrication'); logList('dispatch', l => sSum([l], 'scrapped', brands), () => 'added to stock'); }
-  if (key === 'warranty') { logList('repair', l => brands.includes(l.data.brand) ? l.data.warranty : 0, l => esc(l.data.brand) + ' line'); logList('dispatch', l => sSum([l], 'warranty', brands) + sSum([l], 'to_qc', brands), () => 'added to stock'); }
+  if (key === 'warranty') { const why = {}; logsOf('repair', from, to).filter(l => brands.includes(l.data.brand)).forEach(l => Object.entries(l.data.wr || {}).forEach(([r, n]) => { why[r] = (why[r] || 0) + (n || 0); }));
+    const wl = Object.entries(why).filter(x => x[1]).sort((a, b) => b[1] - a[1]); if (wl.length) body += `<h3 class="text-xs font-semibold text-espresso-500 mb-1">WHY THEY WERE MOVED TO QC</h3><ul class="divide-y divide-cream-100 mb-4">${wl.map(([r, n]) => row(esc(r), n)).join('')}</ul>`;
+    logList('repair', l => brands.includes(l.data.brand) ? l.data.warranty : 0, l => esc(l.data.brand) + ' line' + (l.data.warranty_reason ? ' · ' + esc(l.data.warranty_reason) : '')); logList('dispatch', l => sSum([l], 'warranty', brands) + sSum([l], 'to_qc', brands), () => 'added to stock'); }
   if (key === 'whRepaired') logList('repair', l => brands.includes(l.data.brand) ? l.data.repaired : 0, l => esc(l.data.brand));
   if (key === 'fieldRepaired') logList('field', l => (!fieldIds || fieldIds.has(l.user_id)) ? l.data.repaired : 0, l => `${(l.data.stations || []).length} station${(l.data.stations || []).length === 1 ? '' : 's'}`);
   if (key === 'iotOffline' || key === 'airFail' || key === 'atFab') { const k = key === 'iotOffline' ? 'iot' : key === 'airFail' ? 'air_leak' : 'fabrication'; teamMembers(k).forEach(m => { const g = memberGiven(k, m.id), dn = memberDone(k, m.id); if (g) people.push(row(esc(m.full_name), Math.max(0, g - dn), `given ${g} · ${TEAM_STAGES[k].doneLabel} ${dn}`)); }); }
@@ -3528,8 +3568,34 @@ const pendingCount = () => S.me ? readQ().length : 0;
 window.addEventListener('online', () => setTimeout(flushQueue, 1500));
 window.addEventListener('offline', () => toast('You are offline. You can keep saving your daily counts; they will send when you are back online.'));
 
-/* ================= HOME: one page with what matters today ================= */
+/* ================= HOME: everyone opens on a dashboard for their own part of the work =================
+   supervisor/viewer: the whole operation · regional manager & field technicians: region dashboard
+   everyone else: their team's leaderboard and their own numbers */
 function renderHome() {
+  if (S.role === 'admin' || S.role === 'viewer') return renderOpsHome();
+  if ((S.me.roles || []).includes('rm') || (S.role === 'tech' && kindOf(S.me) === 'field')) return renderRegion();
+  return renderTechHome();
+}
+function renderTechHome() {
+  const [from, to, plabel] = periodRange(WH.period);
+  const mine = TEAMS.includes(S.me.team) ? [S.me.team] : TEAMS;
+  const g = whNumbers(from, to, mine);
+  setTitle('Home', `${fmtDay(todayStr())} · ${plabel}`);
+  const isRepair = (S.me.roles || []).some(r => ['repair_tech', 'wh_tech', 'spoc'].includes(r));
+  const st = isRepair ? techDocket(S.me.id) : null;
+  $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-5">
+    <div class="flex flex-wrap items-center gap-2">${periodBar(renderTechHome, false)}<span class="h-10 px-3 rounded-xl bg-caramel-100 text-caramel-800 text-sm font-semibold inline-flex items-center gap-2"><i class="fa-solid fa-user-group"></i>${esc(mine.length === 1 ? mine[0] + ' team' : 'Warehouse')}</span></div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      ${st ? statCard('Still to work on', st.left, 'fa-screwdriver-wrench', 'bg-caramel-100 text-caramel-800', `${st.given} given · ${st.done} done`) : ''}
+      ${statCard(mine.length === 1 ? mine[0] + ' repaired' : 'Repaired', g.p.repaired, 'fa-circle-check', 'bg-olive-50 text-olive-700', plabel)}
+      ${statCard('Under repair', g.underRepair, 'fa-gears', 'bg-cream-100 text-espresso-700', 'right now')}
+      ${statCard('Ready to dispatch', g.ready, 'fa-truck-fast', 'bg-olive-50 text-olive-700', 'right now')}
+    </div>
+    ${leaderPanel(from, to, plabel, mine)}
+  </div>`;
+  bindPeriod(renderTechHome); appendMyMonths();
+}
+function renderOpsHome() {
   const [from, to, plabel] = periodRange(WH.period);
   const brands = WH.brand === 'All' ? TEAMS : [WH.brand];
   const g = whNumbers(from, to, brands), t = todayStr();
@@ -3548,7 +3614,7 @@ function renderHome() {
   ].filter(Boolean);
   const views = (APP_ROLES[S.role] || {}).views || [];
   $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-5">
-    <div class="flex flex-wrap items-center gap-2">${periodBar(renderHome)}<button id="hoBtn" class="${btnS} h-10 ml-auto"><i class="fa-solid fa-file-export"></i>Shift handover report</button></div>
+    <div class="flex flex-wrap items-center gap-2">${periodBar(renderOpsHome)}<button id="hoBtn" class="${btnS} h-10 ml-auto"><i class="fa-solid fa-file-export"></i>Shift handover report</button></div>
     ${panel('Needs attention', att.length ? `<ul class="space-y-2">${att.map(([h, sub, v, tone, ic]) => `<li><button ${views.includes(v) ? `data-hgo="${v}"` : 'disabled'} class="w-full text-left p-3 rounded-xl ${tone} flex items-start gap-3 ${views.includes(v) ? 'hover:brightness-95' : ''}"><i class="fa-solid ${ic} mt-1"></i><span class="flex-1 min-w-0"><span class="block font-semibold text-sm">${esc(h)}</span><span class="block text-xs opacity-90 truncate">${esc(sub)}</span></span>${views.includes(v) ? '<i class="fa-solid fa-chevron-right mt-1 opacity-60"></i>' : ''}</button></li>`).join('')}</ul>` : '<p class="text-sm text-olive-700"><i class="fa-solid fa-circle-check"></i> Nothing needs attention right now.</p>', '', 'right now')}
     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
       ${statBtn('onHand', 'In the warehouse', g.onHand, 'fa-warehouse', 'bg-espresso-900 text-cream-50')}
@@ -3561,7 +3627,7 @@ function renderHome() {
     ${vsGraph(WH.period, brands, null, plabel)}
     ${leaderPanel(from, to, plabel, brands)}
   </div>`;
-  bindPeriod(renderHome); bindDetails(from, to, brands, null);
+  bindPeriod(renderOpsHome); bindDetails(from, to, brands, null);
   $$('[data-hgo]').forEach(b => b.onclick = () => go(b.dataset.hgo));
   $('#hoBtn').onclick = () => handoverModal(brands);
 }
