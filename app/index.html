@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<style>/*! tailwindcss v3.4.10 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Inter,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]{display:none}*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0}.inset-x-0{left:0;right:0}.-bottom-0\.5{bottom:-.125rem}.-bottom-1{bottom:-.25rem}.-right-0\.5{right:-.125rem}.-right-1{right:-.25rem}.-top-5{top:-1.25rem}.bottom-0{bottom:0}.bottom-2{bottom:.5rem}.bottom-20{bottom:5rem}.bottom-24{bottom:6rem}.left-1\/2{left:50%}.left-3{left:.75rem}.left-3\.5{left:.875rem}.left-\[12\%\]{left:12%}.right-0{right:0}.right-3{right:.75rem}.right-4{right:1rem}.right-\[12\%\]{right:12%}.right-\[30\%\]{right:30%}.top-0{top:0}.top-1\/2{top:50%}.top-2{top:.5rem}.top-3{top:.75rem}.top-4{top:1rem}.top-5{top:1.25rem}.z-0{z-index:0}.z-30{z-index:30}.z-40{z-index:40}.z-50{z-index:50}.z-\[400\]{z-index:400}.z-\[60\]{z-index:60}.col-span-2{grid-column:span 2/span 2}.col-span-3{grid-column:span 3/span 3}.mx-3{margin-left:.75rem;margin-right:.75rem}.mx-auto{margin-left:auto;margin-right:auto}.my-\[6vh\]{margin-top:6vh;margin-bottom:6vh}.-ml-2{margin-left:-.5rem}.mb-1{margin-bottom:.25rem}.mb-4{margin-bottom:1rem}.ml-2{margin-left:.5rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-1\.5{margin-right:.375rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-10{margin-top:2.5rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.mt-\[10vh\]{margin-top:10vh}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.aspect-square{aspect-ratio:1/1}.h-0\.5{height:.125rem}.h-1\.5{height:.375rem}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-2{height:.5rem}.h-2\.5{height:.625rem}.h-20{height:5rem}.h-24{height:6rem}.h-3{height:.75rem}.h-36{height:9rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-56{height:14rem}.h-6{height:1.5rem}.h-7{height:1.75rem}.h-72{height:18rem}.h-8{height:2rem}.h-9{height:2.25rem}.h-\[calc\(100vh-14rem\)\]{height:calc(100vh - 14rem)}.h-\[calc\(100vh-8\.5rem\)\]{height:calc(100vh - 8.5rem)}.h-\[min\(520px\2c 70vh\)\]{height:min(520px,70vh)}.h-full{height:100%}.h-screen{height:100vh}.max-h-48{max-height:12rem}.max-h-\[55vh\]{max-height:55vh}.max-h-\[calc\(100vh-18rem\)\]{max-height:calc(100vh - 18rem)}.min-h-\[380px\]{min-height:380px}.min-h-\[44px\]{min-height:44px}.min-h-\[48px\]{min-height:48px}.min-h-\[64px\]{min-height:64px}.min-h-screen{min-height:100vh}.w-0\.5{width:.125rem}.w-1\.5{width:.375rem}.w-10{width:2.5rem}.w-11{width:2.75rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-2{width:.5rem}.w-2\.5{width:.625rem}.w-20{width:5rem}.w-24{width:6rem}.w-28{width:7rem}.w-3{width:.75rem}.w-4{width:1rem}.w-44{width:11rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-64{width:16rem}.w-7{width:1.75rem}.w-8{width:2rem}.w-80{width:20rem}.w-9{width:2.25rem}.w-\[calc\(100\%-2rem\)\]{width:calc(100% - 2rem)}.w-full{width:100%}.w-px{width:1px}.min-w-0{min-width:0}.min-w-\[200px\]{min-width:200px}.min-w-\[720px\]{min-width:720px}.min-w-\[760px\]{min-width:760px}.max-w-2xl{max-width:42rem}.max-w-3xl{max-width:48rem}.max-w-\[85\%\]{max-width:85%}.max-w-full{max-width:100%}.max-w-lg{max-width:32rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-1\/2{--tw-translate-x:-50%}.-translate-x-1\/2,.-translate-y-1\/2{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%}.translate-x-5{--tw-translate-x:1.25rem}.translate-x-5,.translate-x-full{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.translate-x-full{--tw-translate-x:100%}.rotate-180{--tw-rotate:180deg}.rotate-180,.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.touch-none{touch-action:none}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.grid-cols-\[110px_1fr\]{grid-template-columns:110px 1fr}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.place-items-center{place-items:center}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.items-baseline{align-items:baseline}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-8{gap:2rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.space-y-5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.25rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-cream-100>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(var(--k100)/var(--tw-divide-opacity))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-line{white-space:pre-line}.rounded{border-radius:.25rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-sm{border-radius:.125rem}.rounded-xl{border-radius:.75rem}.rounded-bl-md{border-bottom-left-radius:.375rem}.rounded-br-md{border-bottom-right-radius:.375rem}.border{border-width:1px}.border-0{border-width:0}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-l-4{border-left-width:4px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-caramel-500{--tw-border-opacity:1;border-color:rgb(200 138 53/var(--tw-border-opacity))}.border-caramel-500\/40{border-color:rgba(200,138,53,.4)}.border-caramel-500\/50{border-color:rgba(200,138,53,.5)}.border-caramel-700{--tw-border-opacity:1;border-color:rgb(var(--c700)/var(--tw-border-opacity))}.border-cream-100{--tw-border-opacity:1;border-color:rgb(var(--k100)/var(--tw-border-opacity))}.border-cream-200{--tw-border-opacity:1;border-color:rgb(var(--k200)/var(--tw-border-opacity))}.border-cream-300{--tw-border-opacity:1;border-color:rgb(var(--k300)/var(--tw-border-opacity))}.border-espresso-700{--tw-border-opacity:1;border-color:rgb(var(--e700)/var(--tw-border-opacity))}.border-espresso-900{--tw-border-opacity:1;border-color:rgb(var(--e900)/var(--tw-border-opacity))}.border-night-line{border-color:hsla(0,0%,100%,.06)}.border-olive{--tw-border-opacity:1;border-color:rgb(74 107 54/var(--tw-border-opacity))}.border-olive\/30{border-color:rgba(74,107,54,.3)}.border-terra{--tw-border-opacity:1;border-color:rgb(184 64 40/var(--tw-border-opacity))}.border-terra\/30{border-color:rgba(184,64,40,.3)}.border-terra\/40{border-color:rgba(184,64,40,.4)}.border-warn{--tw-border-opacity:1;border-color:rgb(217 155 38/var(--tw-border-opacity))}.bg-black\/40{background-color:rgba(0,0,0,.4)}.bg-black\/50{background-color:rgba(0,0,0,.5)}.bg-caramel-100{--tw-bg-opacity:1;background-color:rgb(var(--c100)/var(--tw-bg-opacity))}.bg-caramel-100\/60{background-color:rgb(var(--c100)/.6)}.bg-caramel-400{--tw-bg-opacity:1;background-color:rgb(217 155 38/var(--tw-bg-opacity))}.bg-caramel-500{--tw-bg-opacity:1;background-color:rgb(200 138 53/var(--tw-bg-opacity))}.bg-caramel-700{--tw-bg-opacity:1;background-color:rgb(var(--c700)/var(--tw-bg-opacity))}.bg-cream-100{--tw-bg-opacity:1;background-color:rgb(var(--k100)/var(--tw-bg-opacity))}.bg-cream-200{--tw-bg-opacity:1;background-color:rgb(var(--k200)/var(--tw-bg-opacity))}.bg-cream-300{--tw-bg-opacity:1;background-color:rgb(var(--k300)/var(--tw-bg-opacity))}.bg-cream-50{--tw-bg-opacity:1;background-color:rgb(var(--k50)/var(--tw-bg-opacity))}.bg-cream-50\/90{background-color:rgb(var(--k50)/.9)}.bg-espresso-900{--tw-bg-opacity:1;background-color:rgb(var(--e900)/var(--tw-bg-opacity))}.bg-night{--tw-bg-opacity:1;background-color:rgb(31 18 13/var(--tw-bg-opacity))}.bg-night-2{--tw-bg-opacity:1;background-color:rgb(44 26 20/var(--tw-bg-opacity))}.bg-olive{--tw-bg-opacity:1;background-color:rgb(74 107 54/var(--tw-bg-opacity))}.bg-olive-50{--tw-bg-opacity:1;background-color:rgb(var(--o50)/var(--tw-bg-opacity))}.bg-olive\/50{background-color:rgba(74,107,54,.5)}.bg-surface{--tw-bg-opacity:1;background-color:rgb(var(--surf)/var(--tw-bg-opacity))}.bg-surface\/70{background-color:rgb(var(--surf)/.7)}.bg-surface\/95{background-color:rgb(var(--surf)/.95)}.bg-terra{--tw-bg-opacity:1;background-color:rgb(184 64 40/var(--tw-bg-opacity))}.bg-terra-50{--tw-bg-opacity:1;background-color:rgb(var(--t50)/var(--tw-bg-opacity))}.bg-transparent{background-color:transparent}.bg-warn{--tw-bg-opacity:1;background-color:rgb(217 155 38/var(--tw-bg-opacity))}.bg-warn-50{--tw-bg-opacity:1;background-color:rgb(var(--w50)/var(--tw-bg-opacity))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}.bg-white\/15{background-color:hsla(0,0%,100%,.15)}.bg-white\/20{background-color:hsla(0,0%,100%,.2)}.bg-white\/5{background-color:hsla(0,0%,100%,.05)}.object-cover{-o-object-fit:cover;object-fit:cover}.p-0{padding:0}.p-1{padding:.25rem}.p-10{padding:2.5rem}.p-2{padding:.5rem}.p-2\.5{padding:.625rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.px-1{padding-left:.25rem;padding-right:.25rem}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.px-8{padding-left:2rem;padding-right:2rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-14{padding-top:3.5rem;padding-bottom:3.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.pb-1{padding-bottom:.25rem}.pb-24{padding-bottom:6rem}.pb-3{padding-bottom:.75rem}.pb-4{padding-bottom:1rem}.pb-\[env\(safe-area-inset-bottom\)\]{padding-bottom:env(safe-area-inset-bottom)}.pb-\[max\(12px\2c env\(safe-area-inset-bottom\)\)\]{padding-bottom:max(12px,env(safe-area-inset-bottom))}.pl-10{padding-left:2.5rem}.pl-3{padding-left:.75rem}.pl-9{padding-left:2.25rem}.pr-1{padding-right:.25rem}.pr-12{padding-right:3rem}.pr-3{padding-right:.75rem}.pt-1{padding-top:.25rem}.pt-10{padding-top:2.5rem}.pt-2{padding-top:.5rem}.pt-3{padding-top:.75rem}.pt-4{padding-top:1rem}.pt-6{padding-top:1.5rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-display{font-family:Space Grotesk,Inter,sans-serif}.font-sans{font-family:Inter,system-ui,sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-5xl{font-size:3rem;line-height:1}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-4{line-height:1rem}.leading-tight{line-height:1.25}.tracking-\[\.3em\]{letter-spacing:.3em}.tracking-\[\.4em\]{letter-spacing:.4em}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.text-\[\#94705C\]{--tw-text-opacity:1;color:rgb(148 112 92/var(--tw-text-opacity))}.text-caramel-400{--tw-text-opacity:1;color:rgb(217 155 38/var(--tw-text-opacity))}.text-caramel-700{--tw-text-opacity:1;color:rgb(var(--c700)/var(--tw-text-opacity))}.text-caramel-800{--tw-text-opacity:1;color:rgb(var(--c800)/var(--tw-text-opacity))}.text-cream-300{--tw-text-opacity:1;color:rgb(var(--k300)/var(--tw-text-opacity))}.text-cream-50{--tw-text-opacity:1;color:rgb(var(--k50)/var(--tw-text-opacity))}.text-espresso-500{--tw-text-opacity:1;color:rgb(var(--e500)/var(--tw-text-opacity))}.text-espresso-600{--tw-text-opacity:1;color:rgb(var(--e600)/var(--tw-text-opacity))}.text-espresso-700{--tw-text-opacity:1;color:rgb(var(--e700)/var(--tw-text-opacity))}.text-espresso-800{--tw-text-opacity:1;color:rgb(var(--e800)/var(--tw-text-opacity))}.text-espresso-900{--tw-text-opacity:1;color:rgb(var(--e900)/var(--tw-text-opacity))}.text-night{--tw-text-opacity:1;color:rgb(31 18 13/var(--tw-text-opacity))}.text-olive{--tw-text-opacity:1;color:rgb(74 107 54/var(--tw-text-opacity))}.text-olive-700{--tw-text-opacity:1;color:rgb(var(--o700)/var(--tw-text-opacity))}.text-sand{--tw-text-opacity:1;color:rgb(245 235 225/var(--tw-text-opacity))}.text-sand-2{--tw-text-opacity:1;color:rgb(217 196 172/var(--tw-text-opacity))}.text-sand-3{--tw-text-opacity:1;color:rgb(184 164 147/var(--tw-text-opacity))}.text-terra{--tw-text-opacity:1;color:rgb(184 64 40/var(--tw-text-opacity))}.text-terra-700{--tw-text-opacity:1;color:rgb(var(--t700)/var(--tw-text-opacity))}.text-warn-800{--tw-text-opacity:1;color:rgb(var(--w800)/var(--tw-text-opacity))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity))}.line-through{text-decoration-line:line-through}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-\[\#4A6B36\]{accent-color:#4a6b36}.accent-\[\#8B5A2B\]{accent-color:#8b5a2b}.opacity-20{opacity:.2}.opacity-50{opacity:.5}.opacity-80{opacity:.8}.shadow{--tw-shadow:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--tw-shadow-colored:0 1px 3px 0 var(--tw-shadow-color),0 1px 2px -1px var(--tw-shadow-color)}.shadow,.shadow-2xl{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-\[0_0_14px_3px_rgba\(217\2c 155\2c 38\2c \.7\)\]{--tw-shadow:0 0 14px 3px rgba(217,155,38,.7);--tw-shadow-colored:0 0 14px 3px var(--tw-shadow-color)}.shadow-\[0_0_14px_3px_rgba\(217\2c 155\2c 38\2c \.7\)\],.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.ring-2{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color)}.ring-2,.ring-4{box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-4{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color)}.ring-caramel-400{--tw-ring-opacity:1;--tw-ring-color:rgb(217 155 38/var(--tw-ring-opacity))}.ring-caramel-500{--tw-ring-opacity:1;--tw-ring-color:rgb(200 138 53/var(--tw-ring-opacity))}.ring-white{--tw-ring-opacity:1;--tw-ring-color:rgb(255 255 255/var(--tw-ring-opacity))}.blur{--tw-blur:blur(8px)}.blur,.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px)}.backdrop-blur,.backdrop-blur-sm{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}:root{--e950:31 18 13;--e900:44 26 20;--e800:61 35 25;--e700:90 58 42;--e600:122 86 67;--e500:148 112 92;--c800:111 70 34;--c700:139 90 43;--c100:243 226 199;--k50:250 246 240;--k100:245 235 225;--k200:234 219 200;--k300:217 196 172;--surf:255 255 255;--t50:251 234 229;--t700:143 47 28;--o50:237 243 231;--o700:58 85 42;--w50:251 240 217;--w800:122 84 16;color-scheme:light}.dark{--e950:250 246 240;--e900:245 235 225;--e800:234 219 200;--e700:217 196 172;--e600:196 170 145;--e500:170 145 120;--c800:232 185 127;--c700:168 110 50;--c100:58 40 23;--k50:23 16 11;--k100:34 24 15;--k200:58 42 30;--k300:84 64 47;--surf:31 21 14;--t50:58 26 18;--t700:240 160 140;--o50:30 42 22;--o700:169 201 143;--w50:58 44 16;--w800:242 198 107;color-scheme:dark}body,html{-webkit-tap-highlight-color:transparent}.tnum,body,html{font-variant-numeric:tabular-nums}:focus-visible{outline:3px solid #d99b26;outline-offset:2px}.scroll-thin::-webkit-scrollbar{height:8px;width:8px}.scroll-thin::-webkit-scrollbar-thumb{background:rgb(var(--k300));border-radius:8px}@keyframes scan{0%{top:8%}50%{top:88%}to{top:8%}}.scanline{animation:scan 2.2s ease-in-out infinite}@keyframes shake{0%,to{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}.shake{animation:shake .3s ease-in-out 2}@keyframes floaty{0%,to{transform:translateY(0)}50%{transform:translateY(-10px)}}.floaty{animation:floaty 7s ease-in-out infinite}@keyframes fadein{0%{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.fadein{animation:fadein .35s ease-out}.wizard-track{transition:transform .35s cubic-bezier(.2,.8,.2,1)}.drawer{transition:transform .3s cubic-bezier(.2,.8,.2,1)}input[type=number]::-webkit-inner-spin-button{opacity:.4}@media (prefers-reduced-motion:reduce){*,:after,:before{animation:none!important;transition:none!important}}.empty\:hidden:empty{display:none}.hover\:border-caramel-500:hover{--tw-border-opacity:1;border-color:rgb(200 138 53/var(--tw-border-opacity))}.hover\:bg-caramel-800:hover{--tw-bg-opacity:1;background-color:rgb(var(--c800)/var(--tw-bg-opacity))}.hover\:bg-cream-100:hover{--tw-bg-opacity:1;background-color:rgb(var(--k100)/var(--tw-bg-opacity))}.hover\:bg-cream-200:hover{--tw-bg-opacity:1;background-color:rgb(var(--k200)/var(--tw-bg-opacity))}.hover\:bg-espresso-800:hover{--tw-bg-opacity:1;background-color:rgb(var(--e800)/var(--tw-bg-opacity))}.hover\:bg-white\/10:hover{background-color:hsla(0,0%,100%,.1)}.hover\:bg-white\/5:hover{background-color:hsla(0,0%,100%,.05)}.hover\:underline:hover{text-decoration-line:underline}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.focus\:border-caramel-500:focus{--tw-border-opacity:1;border-color:rgb(200 138 53/var(--tw-border-opacity))}.focus\:ring-4:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.focus\:ring-caramel-400\/25:focus{--tw-ring-color:rgba(217,155,38,.25)}.active\:bg-cream-100:active{--tw-bg-opacity:1;background-color:rgb(var(--k100)/var(--tw-bg-opacity))}.disabled\:opacity-40:disabled{opacity:.4}.disabled\:opacity-50:disabled{opacity:.5}.disabled\:opacity-60:disabled{opacity:.6}@media (min-width:640px){.sm\:inline{display:inline}.sm\:h-\[min\(820px\2c calc\(100vh-7rem\)\)\]{height:min(820px,calc(100vh - 7rem))}.sm\:w-\[440px\]{width:440px}.sm\:max-w-\[420px\]{max-width:420px}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:rounded-\[2\.25rem\]{border-radius:2.25rem}.sm\:border-\[10px\]{border-width:10px}.sm\:border-night-2{--tw-border-opacity:1;border-color:rgb(44 26 20/var(--tw-border-opacity))}.sm\:p-6{padding:1.5rem}.sm\:shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}}@media (min-width:768px){.md\:bottom-6{bottom:1.5rem}.md\:right-4{right:1rem}.md\:inline{display:inline}.md\:flex{display:flex}.md\:hidden{display:none}.md\:h-\[calc\(100vh-6\.5rem\)\]{height:calc(100vh - 6.5rem)}.md\:w-auto{width:auto}.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}.md\:p-6{padding:1.5rem}.md\:px-6{padding-left:1.5rem;padding-right:1.5rem}.md\:pb-6{padding-bottom:1.5rem}.md\:pl-4{padding-left:1rem}.md\:pr-5{padding-right:1.25rem}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width:1024px){.lg\:mt-16{margin-top:4rem}.lg\:block{display:block}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:px-14{padding-left:3.5rem;padding-right:3.5rem}.lg\:py-14{padding-top:3.5rem;padding-bottom:3.5rem}.lg\:text-5xl{font-size:3rem;line-height:1}}@media (min-width:1280px){.xl\:col-span-2{grid-column:span 2/span 2}.xl\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.xl\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.xl\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.xl\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.xl\:grid-cols-\[minmax\(0\2c 1\.55fr\)_minmax\(0\2c 1fr\)\]{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}.xl\:grid-cols-\[minmax\(0\2c 1\.5fr\)_minmax\(0\2c 1fr\)\]{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}.xl\:grid-cols-\[minmax\(0\2c 1fr\)_340px\]{grid-template-columns:minmax(0,1fr) 340px}}</style>
+<style>/*! tailwindcss v3.4.10 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:Inter,system-ui,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]{display:none}*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0}.inset-x-0{left:0;right:0}.-bottom-0\.5{bottom:-.125rem}.-bottom-1{bottom:-.25rem}.-right-0\.5{right:-.125rem}.-right-1{right:-.25rem}.-top-5{top:-1.25rem}.bottom-0{bottom:0}.bottom-2{bottom:.5rem}.bottom-20{bottom:5rem}.bottom-24{bottom:6rem}.left-1\/2{left:50%}.left-3{left:.75rem}.left-3\.5{left:.875rem}.left-\[12\%\]{left:12%}.right-0{right:0}.right-3{right:.75rem}.right-4{right:1rem}.right-\[12\%\]{right:12%}.right-\[30\%\]{right:30%}.top-0{top:0}.top-1\/2{top:50%}.top-2{top:.5rem}.top-3{top:.75rem}.top-4{top:1rem}.top-5{top:1.25rem}.z-0{z-index:0}.z-30{z-index:30}.z-40{z-index:40}.z-50{z-index:50}.z-\[400\]{z-index:400}.z-\[60\]{z-index:60}.col-span-2{grid-column:span 2/span 2}.col-span-3{grid-column:span 3/span 3}.-mx-2{margin-left:-.5rem;margin-right:-.5rem}.mx-3{margin-left:.75rem;margin-right:.75rem}.mx-auto{margin-left:auto;margin-right:auto}.my-\[6vh\]{margin-top:6vh;margin-bottom:6vh}.-ml-2{margin-left:-.5rem}.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.ml-2{margin-left:.5rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-1\.5{margin-right:.375rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-10{margin-top:2.5rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.mt-\[10vh\]{margin-top:10vh}.mt-auto{margin-top:auto}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.aspect-square{aspect-ratio:1/1}.h-0\.5{height:.125rem}.h-1\.5{height:.375rem}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-2{height:.5rem}.h-2\.5{height:.625rem}.h-20{height:5rem}.h-24{height:6rem}.h-3{height:.75rem}.h-36{height:9rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-56{height:14rem}.h-6{height:1.5rem}.h-7{height:1.75rem}.h-72{height:18rem}.h-8{height:2rem}.h-9{height:2.25rem}.h-\[calc\(100vh-14rem\)\]{height:calc(100vh - 14rem)}.h-\[calc\(100vh-8\.5rem\)\]{height:calc(100vh - 8.5rem)}.h-\[min\(520px\2c 70vh\)\]{height:min(520px,70vh)}.h-auto{height:auto}.h-full{height:100%}.h-screen{height:100vh}.max-h-48{max-height:12rem}.max-h-80{max-height:20rem}.max-h-\[55vh\]{max-height:55vh}.max-h-\[calc\(100vh-18rem\)\]{max-height:calc(100vh - 18rem)}.min-h-\[380px\]{min-height:380px}.min-h-\[44px\]{min-height:44px}.min-h-\[48px\]{min-height:48px}.min-h-\[64px\]{min-height:64px}.min-h-screen{min-height:100vh}.w-0\.5{width:.125rem}.w-1\.5{width:.375rem}.w-10{width:2.5rem}.w-11{width:2.75rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-2{width:.5rem}.w-2\.5{width:.625rem}.w-20{width:5rem}.w-24{width:6rem}.w-28{width:7rem}.w-3{width:.75rem}.w-4{width:1rem}.w-44{width:11rem}.w-5{width:1.25rem}.w-56{width:14rem}.w-6{width:1.5rem}.w-64{width:16rem}.w-7{width:1.75rem}.w-8{width:2rem}.w-80{width:20rem}.w-9{width:2.25rem}.w-\[calc\(100\%-2rem\)\]{width:calc(100% - 2rem)}.w-full{width:100%}.w-px{width:1px}.min-w-0{min-width:0}.min-w-\[12rem\]{min-width:12rem}.min-w-\[200px\]{min-width:200px}.min-w-\[22rem\]{min-width:22rem}.min-w-\[34rem\]{min-width:34rem}.min-w-\[720px\]{min-width:720px}.min-w-\[760px\]{min-width:760px}.max-w-2xl{max-width:42rem}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-\[85\%\]{max-width:85%}.max-w-full{max-width:100%}.max-w-lg{max-width:32rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.max-w-xs{max-width:20rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-1\/2{--tw-translate-x:-50%}.-translate-x-1\/2,.-translate-y-1\/2{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%}.translate-x-5{--tw-translate-x:1.25rem}.translate-x-5,.translate-x-full{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.translate-x-full{--tw-translate-x:100%}.rotate-180{--tw-rotate:180deg}.rotate-180,.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.touch-none{touch-action:none}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.grid-cols-\[110px_1fr\]{grid-template-columns:110px 1fr}.grid-cols-\[minmax\(0\2c 1\.3fr\)_6rem_5rem\]{grid-template-columns:minmax(0,1.3fr) 6rem 5rem}.grid-cols-\[minmax\(0\2c 1fr\)_7rem\]{grid-template-columns:minmax(0,1fr) 7rem}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.place-items-center{place-items:center}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.items-baseline{align-items:baseline}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-6{gap:1.5rem}.gap-8{gap:2rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-2\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.625rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.625rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.space-y-5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.25rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-cream-100>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(var(--k100)/var(--tw-divide-opacity))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-line{white-space:pre-line}.rounded{border-radius:.25rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-sm{border-radius:.125rem}.rounded-xl{border-radius:.75rem}.rounded-bl-md{border-bottom-left-radius:.375rem}.rounded-br-md{border-bottom-right-radius:.375rem}.border{border-width:1px}.border-0{border-width:0}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-l-4{border-left-width:4px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-caramel-500{--tw-border-opacity:1;border-color:rgb(200 138 53/var(--tw-border-opacity))}.border-caramel-500\/40{border-color:rgba(200,138,53,.4)}.border-caramel-500\/50{border-color:rgba(200,138,53,.5)}.border-caramel-700{--tw-border-opacity:1;border-color:rgb(var(--c700)/var(--tw-border-opacity))}.border-cream-100{--tw-border-opacity:1;border-color:rgb(var(--k100)/var(--tw-border-opacity))}.border-cream-200{--tw-border-opacity:1;border-color:rgb(var(--k200)/var(--tw-border-opacity))}.border-cream-300{--tw-border-opacity:1;border-color:rgb(var(--k300)/var(--tw-border-opacity))}.border-espresso-700{--tw-border-opacity:1;border-color:rgb(var(--e700)/var(--tw-border-opacity))}.border-espresso-900{--tw-border-opacity:1;border-color:rgb(var(--e900)/var(--tw-border-opacity))}.border-night-line{border-color:hsla(0,0%,100%,.06)}.border-olive{--tw-border-opacity:1;border-color:rgb(74 107 54/var(--tw-border-opacity))}.border-olive\/30{border-color:rgba(74,107,54,.3)}.border-terra{--tw-border-opacity:1;border-color:rgb(184 64 40/var(--tw-border-opacity))}.border-terra\/30{border-color:rgba(184,64,40,.3)}.border-terra\/40{border-color:rgba(184,64,40,.4)}.border-warn{--tw-border-opacity:1;border-color:rgb(217 155 38/var(--tw-border-opacity))}.bg-black\/40{background-color:rgba(0,0,0,.4)}.bg-black\/50{background-color:rgba(0,0,0,.5)}.bg-caramel-100{--tw-bg-opacity:1;background-color:rgb(var(--c100)/var(--tw-bg-opacity))}.bg-caramel-100\/40{background-color:rgb(var(--c100)/.4)}.bg-caramel-100\/60{background-color:rgb(var(--c100)/.6)}.bg-caramel-400{--tw-bg-opacity:1;background-color:rgb(217 155 38/var(--tw-bg-opacity))}.bg-caramel-500{--tw-bg-opacity:1;background-color:rgb(200 138 53/var(--tw-bg-opacity))}.bg-caramel-700{--tw-bg-opacity:1;background-color:rgb(var(--c700)/var(--tw-bg-opacity))}.bg-cream-100{--tw-bg-opacity:1;background-color:rgb(var(--k100)/var(--tw-bg-opacity))}.bg-cream-200{--tw-bg-opacity:1;background-color:rgb(var(--k200)/var(--tw-bg-opacity))}.bg-cream-300{--tw-bg-opacity:1;background-color:rgb(var(--k300)/var(--tw-bg-opacity))}.bg-cream-50{--tw-bg-opacity:1;background-color:rgb(var(--k50)/var(--tw-bg-opacity))}.bg-cream-50\/90{background-color:rgb(var(--k50)/.9)}.bg-espresso-900{--tw-bg-opacity:1;background-color:rgb(var(--e900)/var(--tw-bg-opacity))}.bg-night{--tw-bg-opacity:1;background-color:rgb(31 18 13/var(--tw-bg-opacity))}.bg-night-2{--tw-bg-opacity:1;background-color:rgb(44 26 20/var(--tw-bg-opacity))}.bg-olive{--tw-bg-opacity:1;background-color:rgb(74 107 54/var(--tw-bg-opacity))}.bg-olive-50{--tw-bg-opacity:1;background-color:rgb(var(--o50)/var(--tw-bg-opacity))}.bg-olive\/50{background-color:rgba(74,107,54,.5)}.bg-surface{--tw-bg-opacity:1;background-color:rgb(var(--surf)/var(--tw-bg-opacity))}.bg-surface\/70{background-color:rgb(var(--surf)/.7)}.bg-surface\/95{background-color:rgb(var(--surf)/.95)}.bg-terra{--tw-bg-opacity:1;background-color:rgb(184 64 40/var(--tw-bg-opacity))}.bg-terra-50{--tw-bg-opacity:1;background-color:rgb(var(--t50)/var(--tw-bg-opacity))}.bg-transparent{background-color:transparent}.bg-warn{--tw-bg-opacity:1;background-color:rgb(217 155 38/var(--tw-bg-opacity))}.bg-warn-50{--tw-bg-opacity:1;background-color:rgb(var(--w50)/var(--tw-bg-opacity))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity))}.bg-white\/15{background-color:hsla(0,0%,100%,.15)}.bg-white\/20{background-color:hsla(0,0%,100%,.2)}.bg-white\/5{background-color:hsla(0,0%,100%,.05)}.object-cover{-o-object-fit:cover;object-fit:cover}.p-0{padding:0}.p-1{padding:.25rem}.p-10{padding:2.5rem}.p-2{padding:.5rem}.p-2\.5{padding:.625rem}.p-3{padding:.75rem}.p-3\.5{padding:.875rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.px-1{padding-left:.25rem;padding-right:.25rem}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.px-8{padding-left:2rem;padding-right:2rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-14{padding-top:3.5rem;padding-bottom:3.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.pb-1{padding-bottom:.25rem}.pb-2{padding-bottom:.5rem}.pb-24{padding-bottom:6rem}.pb-3{padding-bottom:.75rem}.pb-4{padding-bottom:1rem}.pb-\[env\(safe-area-inset-bottom\)\]{padding-bottom:env(safe-area-inset-bottom)}.pb-\[max\(12px\2c env\(safe-area-inset-bottom\)\)\]{padding-bottom:max(12px,env(safe-area-inset-bottom))}.pl-10{padding-left:2.5rem}.pl-3{padding-left:.75rem}.pl-9{padding-left:2.25rem}.pr-1{padding-right:.25rem}.pr-12{padding-right:3rem}.pr-2{padding-right:.5rem}.pr-3{padding-right:.75rem}.pt-1{padding-top:.25rem}.pt-10{padding-top:2.5rem}.pt-2{padding-top:.5rem}.pt-3{padding-top:.75rem}.pt-4{padding-top:1rem}.pt-6{padding-top:1.5rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-display{font-family:Space Grotesk,Inter,sans-serif}.font-sans{font-family:Inter,system-ui,sans-serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-5xl{font-size:3rem;line-height:1}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-4{line-height:1rem}.leading-5{line-height:1.25rem}.leading-tight{line-height:1.25}.tracking-\[\.3em\]{letter-spacing:.3em}.tracking-\[\.4em\]{letter-spacing:.4em}.tracking-tight{letter-spacing:-.025em}.tracking-wide{letter-spacing:.025em}.tracking-wider{letter-spacing:.05em}.text-\[\#94705C\]{--tw-text-opacity:1;color:rgb(148 112 92/var(--tw-text-opacity))}.text-\[\#9BB585\]{--tw-text-opacity:1;color:rgb(155 181 133/var(--tw-text-opacity))}.text-caramel-400{--tw-text-opacity:1;color:rgb(217 155 38/var(--tw-text-opacity))}.text-caramel-700{--tw-text-opacity:1;color:rgb(var(--c700)/var(--tw-text-opacity))}.text-caramel-800{--tw-text-opacity:1;color:rgb(var(--c800)/var(--tw-text-opacity))}.text-cream-300{--tw-text-opacity:1;color:rgb(var(--k300)/var(--tw-text-opacity))}.text-cream-50{--tw-text-opacity:1;color:rgb(var(--k50)/var(--tw-text-opacity))}.text-espresso-500{--tw-text-opacity:1;color:rgb(var(--e500)/var(--tw-text-opacity))}.text-espresso-600{--tw-text-opacity:1;color:rgb(var(--e600)/var(--tw-text-opacity))}.text-espresso-700{--tw-text-opacity:1;color:rgb(var(--e700)/var(--tw-text-opacity))}.text-espresso-800{--tw-text-opacity:1;color:rgb(var(--e800)/var(--tw-text-opacity))}.text-espresso-900{--tw-text-opacity:1;color:rgb(var(--e900)/var(--tw-text-opacity))}.text-night{--tw-text-opacity:1;color:rgb(31 18 13/var(--tw-text-opacity))}.text-olive{--tw-text-opacity:1;color:rgb(74 107 54/var(--tw-text-opacity))}.text-olive-700{--tw-text-opacity:1;color:rgb(var(--o700)/var(--tw-text-opacity))}.text-sand{--tw-text-opacity:1;color:rgb(245 235 225/var(--tw-text-opacity))}.text-sand-2{--tw-text-opacity:1;color:rgb(217 196 172/var(--tw-text-opacity))}.text-sand-3{--tw-text-opacity:1;color:rgb(184 164 147/var(--tw-text-opacity))}.text-terra{--tw-text-opacity:1;color:rgb(184 64 40/var(--tw-text-opacity))}.text-terra-700{--tw-text-opacity:1;color:rgb(var(--t700)/var(--tw-text-opacity))}.text-warn-800{--tw-text-opacity:1;color:rgb(var(--w800)/var(--tw-text-opacity))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity))}.line-through{text-decoration-line:line-through}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-\[\#4A6B36\]{accent-color:#4a6b36}.accent-\[\#8B5A2B\]{accent-color:#8b5a2b}.opacity-20{opacity:.2}.opacity-50{opacity:.5}.opacity-80{opacity:.8}.shadow{--tw-shadow:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--tw-shadow-colored:0 1px 3px 0 var(--tw-shadow-color),0 1px 2px -1px var(--tw-shadow-color)}.shadow,.shadow-2xl{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-\[0_0_14px_3px_rgba\(217\2c 155\2c 38\2c \.7\)\]{--tw-shadow:0 0 14px 3px rgba(217,155,38,.7);--tw-shadow-colored:0 0 14px 3px var(--tw-shadow-color)}.shadow-\[0_0_14px_3px_rgba\(217\2c 155\2c 38\2c \.7\)\],.shadow-lg{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.ring-2{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color)}.ring-2,.ring-4{box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-4{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color)}.ring-caramel-400{--tw-ring-opacity:1;--tw-ring-color:rgb(217 155 38/var(--tw-ring-opacity))}.ring-caramel-500{--tw-ring-opacity:1;--tw-ring-color:rgb(200 138 53/var(--tw-ring-opacity))}.ring-white{--tw-ring-opacity:1;--tw-ring-color:rgb(255 255 255/var(--tw-ring-opacity))}.blur{--tw-blur:blur(8px)}.blur,.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px)}.backdrop-blur,.backdrop-blur-sm{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}:root{--e950:31 18 13;--e900:44 26 20;--e800:61 35 25;--e700:90 58 42;--e600:122 86 67;--e500:148 112 92;--c800:111 70 34;--c700:139 90 43;--c100:243 226 199;--k50:250 246 240;--k100:245 235 225;--k200:234 219 200;--k300:217 196 172;--surf:255 255 255;--t50:251 234 229;--t700:143 47 28;--o50:237 243 231;--o700:58 85 42;--w50:251 240 217;--w800:122 84 16;color-scheme:light}.dark{--e950:250 246 240;--e900:245 235 225;--e800:234 219 200;--e700:217 196 172;--e600:196 170 145;--e500:170 145 120;--c800:232 185 127;--c700:168 110 50;--c100:58 40 23;--k50:23 16 11;--k100:34 24 15;--k200:58 42 30;--k300:84 64 47;--surf:31 21 14;--t50:58 26 18;--t700:240 160 140;--o50:30 42 22;--o700:169 201 143;--w50:58 44 16;--w800:242 198 107;color-scheme:dark}body,html{-webkit-tap-highlight-color:transparent}.tnum,body,html{font-variant-numeric:tabular-nums}:focus-visible{outline:3px solid #d99b26;outline-offset:2px}.scroll-thin::-webkit-scrollbar{height:8px;width:8px}.scroll-thin::-webkit-scrollbar-thumb{background:rgb(var(--k300));border-radius:8px}@keyframes scan{0%{top:8%}50%{top:88%}to{top:8%}}.scanline{animation:scan 2.2s ease-in-out infinite}@keyframes shake{0%,to{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}.shake{animation:shake .3s ease-in-out 2}@keyframes floaty{0%,to{transform:translateY(0)}50%{transform:translateY(-10px)}}.floaty{animation:floaty 7s ease-in-out infinite}@keyframes fadein{0%{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.fadein{animation:fadein .35s ease-out}.wizard-track{transition:transform .35s cubic-bezier(.2,.8,.2,1)}.drawer{transition:transform .3s cubic-bezier(.2,.8,.2,1)}input[type=number]::-webkit-inner-spin-button{opacity:.4}@media (prefers-reduced-motion:reduce){*,:after,:before{animation:none!important;transition:none!important}}.empty\:hidden:empty{display:none}.hover\:border-caramel-500:hover{--tw-border-opacity:1;border-color:rgb(200 138 53/var(--tw-border-opacity))}.hover\:bg-caramel-800:hover{--tw-bg-opacity:1;background-color:rgb(var(--c800)/var(--tw-bg-opacity))}.hover\:bg-cream-100:hover{--tw-bg-opacity:1;background-color:rgb(var(--k100)/var(--tw-bg-opacity))}.hover\:bg-cream-200:hover{--tw-bg-opacity:1;background-color:rgb(var(--k200)/var(--tw-bg-opacity))}.hover\:bg-espresso-800:hover{--tw-bg-opacity:1;background-color:rgb(var(--e800)/var(--tw-bg-opacity))}.hover\:bg-terra-50:hover{--tw-bg-opacity:1;background-color:rgb(var(--t50)/var(--tw-bg-opacity))}.hover\:bg-white\/10:hover{background-color:hsla(0,0%,100%,.1)}.hover\:bg-white\/5:hover{background-color:hsla(0,0%,100%,.05)}.hover\:underline:hover{text-decoration-line:underline}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.focus\:border-caramel-500:focus{--tw-border-opacity:1;border-color:rgb(200 138 53/var(--tw-border-opacity))}.focus\:ring-4:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.focus\:ring-caramel-400\/25:focus{--tw-ring-color:rgba(217,155,38,.25)}.active\:bg-cream-100:active{--tw-bg-opacity:1;background-color:rgb(var(--k100)/var(--tw-bg-opacity))}.disabled\:opacity-40:disabled{opacity:.4}.disabled\:opacity-50:disabled{opacity:.5}.disabled\:opacity-60:disabled{opacity:.6}@media (min-width:640px){.sm\:inline{display:inline}.sm\:h-\[min\(820px\2c calc\(100vh-7rem\)\)\]{height:min(820px,calc(100vh - 7rem))}.sm\:w-\[440px\]{width:440px}.sm\:max-w-\[420px\]{max-width:420px}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.sm\:rounded-\[2\.25rem\]{border-radius:2.25rem}.sm\:border-\[10px\]{border-width:10px}.sm\:border-night-2{--tw-border-opacity:1;border-color:rgb(44 26 20/var(--tw-border-opacity))}.sm\:p-6{padding:1.5rem}.sm\:shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}}@media (min-width:768px){.md\:bottom-6{bottom:1.5rem}.md\:right-4{right:1rem}.md\:col-span-1{grid-column:span 1/span 1}.md\:inline{display:inline}.md\:flex{display:flex}.md\:hidden{display:none}.md\:h-\[calc\(100vh-6\.5rem\)\]{height:calc(100vh - 6.5rem)}.md\:w-auto{width:auto}.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:grid-cols-\[minmax\(0\2c 1\.2fr\)_7rem_5rem_minmax\(0\2c 2fr\)\]{grid-template-columns:minmax(0,1.2fr) 7rem 5rem minmax(0,2fr)}.md\:p-6{padding:1.5rem}.md\:px-6{padding-left:1.5rem;padding-right:1.5rem}.md\:pb-6{padding-bottom:1.5rem}.md\:pl-4{padding-left:1rem}.md\:pr-5{padding-right:1.25rem}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width:1024px){.lg\:mt-16{margin-top:4rem}.lg\:block{display:block}.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:px-14{padding-left:3.5rem;padding-right:3.5rem}.lg\:py-14{padding-top:3.5rem;padding-bottom:3.5rem}.lg\:text-5xl{font-size:3rem;line-height:1}}@media (min-width:1280px){.xl\:col-span-2{grid-column:span 2/span 2}.xl\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.xl\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.xl\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.xl\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.xl\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}.xl\:grid-cols-\[minmax\(0\2c 1\.55fr\)_minmax\(0\2c 1fr\)\]{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}.xl\:grid-cols-\[minmax\(0\2c 1\.5fr\)_minmax\(0\2c 1fr\)\]{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}.xl\:grid-cols-\[minmax\(0\2c 1fr\)_340px\]{grid-template-columns:minmax(0,1fr) 340px}}</style>
 </head>
 <body class="bg-cream-50 text-espresso-900 font-sans antialiased">
 
@@ -146,13 +146,27 @@ function appRoleOf(p) {
   return 'tech';
 }
 const isTechProfile = p => p && p.active !== false && appRoleOf(p) === 'tech';
-const kindOf = p => (p && (p.roles || []).includes('field_tech')) ? 'field' : 'wh';
+/* WH-… staff work in the warehouse, FT-… staff in the field; roles decide only when the ID says neither */
+const kindOf = p => { const id = String((p && p.staff_id) || '').toUpperCase();
+  if (id.startsWith('FT')) return 'field'; if (id.startsWith('WH')) return 'wh';
+  return (p && (p.roles || []).includes('field_tech')) ? 'field' : 'wh'; };
+/* which screens each person gets */
+function viewsFor(p) {
+  const r = (p && p.roles) || [], role = appRoleOf(p);
+  if (role === 'admin') return { views: ['warehouse', 'region', 'docket', 'dispatch', 'team', 'stations', 'users', 'settings', 'profile'], home: 'warehouse' };
+  if (role === 'viewer') return { views: ['warehouse', 'region', 'profile'], home: 'warehouse' };
+  if (role === 'mgr' && r.includes('rm')) return { views: ['region', 'stations', 'dispatch', 'team', 'profile'], home: 'region' };
+  if (role === 'mgr') return { views: ['docket', 'myday', 'team', 'profile'], home: 'docket' };          // SPOC: no dashboard
+  if (kindOf(p) === 'field') return { views: ['myday', 'field', 'team', 'profile'], home: 'myday' };
+  const repair = r.some(x => ['repair_tech', 'wh_tech'].includes(x)) && TEAMS.includes(p.team);
+  return { views: ['myday', ...(repair ? ['docket'] : []), 'warehouse', 'team', 'profile'], home: 'myday' };
+}
 const isFieldTech = () => S.me && (S.me.roles || []).includes('field_tech') && appRoleOf(S.me) === 'tech';
 
 /* ================= STATE ================= */
 const S = {
   sb: null, user: null, me: null, role: 'tech', view: null,
-  people: {}, peopleList: [], stations: [], jobs: [], logs: [], tasks: [], targets: [], teamMonth: [], requests: [],
+  people: {}, peopleList: [], stations: [], stage: [], alloc: [], issues: [], stageTab: null, fieldAll: false, jobs: [], logs: [], tasks: [], targets: [], teamMonth: [], requests: [],
   day: null, viewAs: null, slaFilter: 'all', openJob: null, fieldJob: null, charts: {}, loaded: false
 };
 const W = { step: 0, scanned: null, readings: {}, parts: {}, checks: {}, open: { 0: true }, sigInk: false };
@@ -232,8 +246,8 @@ const F = { region: 'All', team: 'All', kind: 'all' };
 function mgrScope(m) {
   const r = (m && m.roles) || [];
   if (r.includes('admin') || r.includes('data_view')) return { region: 'All', team: 'All' };
-  if (r.includes('rm')) return { region: m.region || '(no region)', team: 'All', rm: true };
-  if (r.includes('spoc')) return { region: 'All', team: m.team || 'All' };
+  if (r.includes('rm')) return { region: m.region || '(no region)', team: 'All', rm: true, only: 'field' };     // RM: field technicians in their region
+  if (r.includes('spoc')) return { region: 'All', team: m.team || 'All', only: 'wh' };                        // SPOC: warehouse technicians in their brand
   return { region: 'All', team: 'All' };
 }
 function mgrScopeLabel(m) {
@@ -258,17 +272,19 @@ function scope() {
     return { region: F.region, team: F.team, kind: F.kind };
   }
   if (S.role === 'mgr') return { ...mgrScope(S.me), kind: F.kind };
+  if (S.role === 'tech') { const k = kindOf(S.me);                                                         // technicians: only their own colleagues
+    return k === 'field' ? { region: S.me.region || '(no region)', team: 'All', only: 'field', kind: 'all' } : { region: 'All', team: S.me.team || 'All', only: 'wh', kind: 'all' }; }
   return { region: 'All', team: 'All', kind: F.kind };
 }
 const scopeIsAll = () => { const s = scope(); return s.region === 'All' && s.team === 'All' && s.kind === 'all'; };
 function inScope(p, noKind) {
   if (!p) return false;
   const s = scope();
-  return (s.region === 'All' || p.region === s.region) && (s.team === 'All' || p.team === s.team) && (noKind || s.kind === 'all' || kindOf(p) === s.kind);
+  return (s.region === 'All' || p.region === s.region) && (s.team === 'All' || p.team === s.team) && (!s.only || kindOf(p) === s.only) && (noKind || s.kind === 'all' || kindOf(p) === s.kind);
 }
 const inScopeId = id => id ? inScope(person(id)) : scopeIsAll();
 const scopeTechs = noKind => S.peopleList.filter(p => isTechProfile(p) && inScope(p, noKind));
-function peopleOfMgr(m) { const s = mgrScope(m); return S.peopleList.filter(p => isTechProfile(p) && (s.region === 'All' || p.region === s.region) && (s.team === 'All' || p.team === s.team)); }
+function peopleOfMgr(m) { const s = mgrScope(m); return S.peopleList.filter(p => isTechProfile(p) && (s.region === 'All' || p.region === s.region) && (s.team === 'All' || p.team === s.team) && (!s.only || kindOf(p) === s.only)); }
 function scopeBar(opts = {}) {
   const sel = (id, label, val, options) => `<select data-scope="${id}" aria-label="${label}" class="h-10 max-w-full rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${options.map(([v, l]) => `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
   let h = '';
@@ -278,10 +294,12 @@ function scopeBar(opts = {}) {
       h += sel('region', 'Region', F.region, [['All', 'All regions'], ...REGIONS.map(r => [r, r])]);
       h += sel('team', 'Team', F.team, [['All', 'All teams'], ...TEAMS.map(t => [t, t])]);
     } else h += `<button data-scope-clear class="h-10 px-3 rounded-xl bg-caramel-100 text-caramel-800 text-sm font-semibold"><i class="fa-solid fa-xmark mr-1"></i>Back to everyone</button>`;
+  } else if (S.role === 'tech') {
+    h += `<span class="h-10 px-3 rounded-xl bg-caramel-100 text-caramel-800 text-sm font-semibold inline-flex items-center gap-2"><i class="fa-solid fa-user-group"></i>${esc(kindOf(S.me) === 'field' ? (S.me.region || 'No region') + ' field team' : (S.me.team && S.me.team !== 'All' ? S.me.team + ' team' : 'Warehouse team'))}</span>`;
   } else if (S.role !== 'tech') {
     h += `<span class="h-10 px-3 rounded-xl bg-caramel-100 text-caramel-800 text-sm font-semibold inline-flex items-center gap-2"><i class="fa-solid fa-user-group"></i>${esc(mgrScopeLabel(S.me))}</span>`;
   }
-  if (!opts.noKind) h += `<div class="flex rounded-xl border border-cream-300 bg-surface overflow-hidden text-sm font-medium" role="group" aria-label="Kind of technician">${[['all', 'Everyone'], ['wh', 'Warehouse'], ['field', 'Field']].map(([k, l]) => `<button data-kind="${k}" aria-pressed="${F.kind === k}" class="h-10 px-3 ${F.kind === k ? 'bg-espresso-900 text-cream-50' : ''}">${l}</button>`).join('')}</div>`;
+  if (!opts.noKind && !scope().only) h += `<div class="flex rounded-xl border border-cream-300 bg-surface overflow-hidden text-sm font-medium" role="group" aria-label="Kind of technician">${[['all', 'Everyone'], ['wh', 'Warehouse'], ['field', 'Field']].map(([k, l]) => `<button data-kind="${k}" aria-pressed="${F.kind === k}" class="h-10 px-3 ${F.kind === k ? 'bg-espresso-900 text-cream-50' : ''}">${l}</button>`).join('')}</div>`;
   return `<div class="flex flex-wrap items-center gap-2">${h}${opts.extra || ''}</div>`;
 }
 function bindScope(rerender) {
@@ -384,7 +402,7 @@ async function afterLogin(fresh) {
   const { data: me, error } = await S.sb.from('profiles').select('*').eq('id', S.user.id).single();
   if (error || !me) { await S.sb.auth.signOut(); return showAuth('login', 'Your account has no profile yet. Talk to your supervisor.'); }
   if (!me.active) { await S.sb.auth.signOut(); return showAuth('login', 'This account is switched off. Talk to your supervisor.'); }
-  S.me = me; S.role = appRoleOf(me); APP_ROLES[S.role].label = roleLabel(me);
+  S.me = me; S.role = appRoleOf(me); APP_ROLES[S.role].label = roleLabel(me); Object.assign(APP_ROLES[S.role], viewsFor(me));
   store.set('bo_last', JSON.stringify({ id: me.staff_id, name: me.full_name, role: roleLabel(me) }));
   if (fresh) S.sb.rpc('touch_seen', { p_login: true }).then(() => {}, () => {});
   if (me.must_change_pin) return renderChangePin(true);
@@ -548,7 +566,12 @@ async function signOut() {
 
 /* ================= SHELL ================= */
 const VIEW_META = {
-  dispatch:  { label: 'Dispatch',  icon: 'fa-route' },
+  warehouse: { label: 'Warehouse', icon: 'fa-warehouse' },
+  region:    { label: 'Region',    icon: 'fa-earth-africa' },
+  docket:    { label: 'Docket',    icon: 'fa-boxes-stacked' },
+  stations:  { label: 'Stations',  icon: 'fa-charging-station' },
+  settings:  { label: 'Settings',  icon: 'fa-sliders' },
+  dispatch:  { label: 'Job board', icon: 'fa-route' },
   team:      { label: 'Team',      icon: 'fa-users' },
   map:       { label: 'Live map',  icon: 'fa-map-location-dot' },
   users:     { label: 'Users',     icon: 'fa-id-card' },
@@ -562,13 +585,12 @@ const R = () => APP_ROLES[S.role];
 const BOTTOM_MAX = 5;
 
 async function startApp(fresh) {
-  if (isFieldTech() && !(await locationGate())) return;
   $('#auth').classList.add('hidden'); $('#boot').classList.remove('hidden');
   try { await loadAll(); }
   catch (e) { $('#boot').classList.add('hidden'); return showAuth('login', 'Could not load data: ' + errMsg(e)); }
   S.loaded = true; S.day = todayStr();
   $('#boot').classList.add('hidden'); $('#app').classList.remove('hidden'); $('#mdBtn').classList.remove('hidden'); $('#mdBtn').classList.add('flex');
-  renderTheme(); subscribeLive(); startSharing();
+  renderTheme(); subscribeLive();
   const want = fresh ? '' : (location.hash || '').slice(1);
   go(R().views.includes(want) ? want : R().home, true);
   if (S.timers) S.timers.forEach(clearInterval);
@@ -581,13 +603,14 @@ async function loadAll() {
   const sinceIso = since.toISOString(), sinceDay = ymd(since);
   const q = [
     S.sb.from('profiles').select('id,staff_id,full_name,phone,roles,team,region,warehouse,photo_url,active,last_seen').eq('active', true).order('full_name'),
-    S.sb.from('stations').select('id,name,region,lat,lng').eq('active', true).order('name'),
+    S.sb.from('stations').select('id,name,region,sub_region,field_tech_id,lat,lng').eq('active', true).order('name'),
     S.sb.from('jobs').select('*').gte('start_at', sinceIso).order('start_at'),
     S.sb.from('jobs').select('*').eq('status', 'open').lt('start_at', sinceIso),
     S.sb.from('daily_logs').select('*').gte('day', sinceDay),
     S.sb.from('tasks').select('*').gte('day', ymd(new Date(Date.now() - 14 * 864e5))).order('created_at'),
     S.sb.from('targets').select('*').eq('month', monthStart()),
-    S.sb.rpc('team_month', { p_month: todayStr() })
+    S.sb.rpc('team_month', { p_month: todayStr() }),
+    loadStageData().then(() => ({ data: true }), e => { console.warn('stage data unavailable', e); S.stage = []; S.alloc = []; S.issues = []; return { data: true }; })
   ];
   if (R().can.approve) q.push(S.sb.from('account_requests').select('id,full_name,phone,team,role_wanted,photo,status,created_at').eq('status', 'pending').order('created_at'));
   const r = await Promise.all(q);
@@ -597,8 +620,8 @@ async function loadAll() {
   S.stations = r[1].data || [];
   const jobs = [...(r[3].data || []), ...(r[2].data || [])];
   S.jobs = [...new Map(jobs.map(j => [j.id, j])).values()];
-  S.logs = r[4].data || []; S.tasks = r[5].data || []; S.targets = r[6].data || []; S.teamMonth = r[7].data || [];
-  S.requests = R().can.approve ? (r[8].data || []) : [];
+  S.logs = compatLogs(); S.tasks = r[5].data || []; S.targets = r[6].data || []; S.teamMonth = r[7].data || [];
+  S.requests = R().can.approve ? (r[9].data || []) : [];
 }
 let refreshTimer = null;
 function softRefresh(delay = 0) {
@@ -606,7 +629,7 @@ function softRefresh(delay = 0) {
   refreshTimer = setTimeout(async () => {
     try { await loadAll(); } catch (e) { return; }
     if (S.openJob && !$('#drawer').classList.contains('translate-x-full')) openJob(S.openJob, true);
-    if (['myday', 'field', 'profile'].includes(S.view) && document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if (['myday', 'field', 'profile', 'settings', 'stations'].includes(S.view) && document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
     if (S.view === 'field' && S.fieldJob) return;  // never disturb a job card in progress
     if (!$('#modal').classList.contains('hidden')) return;
     renderView();
@@ -618,7 +641,8 @@ function subscribeLive() {
     S.channel = S.sb.channel('ops-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, () => softRefresh(800))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => softRefresh(800))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_logs' }, () => softRefresh(1500))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stage_logs' }, () => softRefresh(1500))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'allocations' }, () => softRefresh(1000))
       .subscribe();
   } catch (e) { console.warn('live updates off', e); }
 }
@@ -656,9 +680,9 @@ function go(view, replace) {
   $('#main').scrollTop = 0;
 }
 window.addEventListener('popstate', () => { if (!S.loaded) return; const v = (location.hash || '').slice(1); if (R().views.includes(v) && v !== S.view) go(v, true); });
-function setTitle(t, sub = '') { $('#pageTitle').textContent = t; $('#pageSub').textContent = (S.role === 'admin' && S.viewAs && ['dispatch', 'team', 'map', 'analytics'].includes(S.view) ? `${firstName(personName(S.viewAs))}'s view · ` : '') + sub; document.title = t + ' · Battery Ops'; renderNav(); }
+function setTitle(t, sub = '') { $('#pageTitle').textContent = t; $('#pageSub').textContent = (S.role === 'admin' && S.viewAs && ['dispatch', 'team', 'map', 'region', 'stations', 'docket'].includes(S.view) ? `${firstName(personName(S.viewAs))}'s view · ` : '') + sub; document.title = t + ' · Battery Ops'; renderNav(); }
 function renderView() {
-  const fn = { dispatch: renderDispatch, team: renderTeam, map: renderMap, users: renderUsers, analytics: renderAnalytics, myday: renderMyDay, field: renderField, month: renderMonth, profile: renderProfile }[S.view];
+  const fn = { warehouse: renderWarehouse, region: renderRegion, docket: renderDocket, stations: renderStations, settings: renderSettings, dispatch: renderDispatch, team: renderTeam, map: renderMap, users: renderUsers, analytics: renderAnalytics, myday: () => kindOf(S.me) === 'field' ? renderFieldDay() : renderWhDay(), field: renderField, month: renderMonth, profile: renderProfile }[S.view];
   fn && fn();
 }
 
@@ -788,13 +812,13 @@ function mdAnswer(q) {
     return l.length ? l.map(j => `• ${j.jc_no} ${j.title} — ${SLA_STYLE[sla(j)].label}${S.role !== 'tech' ? ', ' + firstName(personName(j.tech_id)) : ''}`).join('\n') : 'No late or at-risk jobs right now.';
   }
   if (/logged|log|who/.test(s) && S.role !== 'tech') {
-    const techs = scopeTechs(), done = new Set(S.logs.filter(l => l.day === today && l.submitted).map(l => l.user_id));
+    const techs = scopeTechs(), done = new Set(S.stage.filter(l => l.day === today).map(l => l.user_id));
     const not = techs.filter(p => !done.has(p.id));
     return `${techs.length - not.length} of ${techs.length} have logged today.` + (not.length ? `\nNot yet: ${not.slice(0, 15).map(p => firstName(p.full_name)).join(', ')}${not.length > 15 ? '…' : ''}` : '');
   }
   if (/block/.test(s) && S.role !== 'tech') {
-    const b = S.logs.filter(l => l.day === today && l.blockers && inScopeId(l.user_id));
-    return b.length ? b.map(l => `• ${firstName(personName(l.user_id))}: ${l.blockers}`).join('\n') : 'No blockers reported today.';
+    const b = S.stage.filter(l => l.day === today && (l.data.blockers || l.note) && inScopeId(l.user_id));
+    return b.length ? b.map(l => `• ${firstName(personName(l.user_id))}: ${l.data.blockers || l.note}`).join('\n') : 'No blockers reported today.';
   }
   if (/job|today|schedule|work/.test(s)) {
     const list = S.role === 'tech' ? mine : todays;
@@ -809,13 +833,12 @@ $('#mdBtn').addEventListener('click', () => $('#mdPanel').classList.contains('hi
 /* --- shared month maths --- */
 const curMonth = () => monthStart();
 function myMonth(uid = S.me.id, month = curMonth()) {
-  const m = { received: 0, diagnosed: 0, repaired: 0, scrapped: 0, warranty: 0, spares: 0 };
-  S.logs.filter(l => l.user_id === uid && l.day >= month && l.day.slice(0, 7) === month.slice(0, 7)).forEach(l => LOG_FIELDS.forEach(f => m[f.key] += l[f.key] || 0));
-  return m;
+  const ls = logsOf('repair', month, todayStr()).filter(l => l.user_id === uid), last = latestPerUser(ls)[0];
+  return { received: 0, diagnosed: 0, repaired: rSum(ls, 'repaired'), scrapped: rSum(ls, 'scrapped'), warranty: rSum(ls, 'warranty'), spares: last ? last.data.spares || 0 : 0 };
 }
 function teamTotal(team) {
-  const row = S.teamMonth.find(r => r.team === team) || {};
-  const out = {}; LOG_FIELDS.forEach(f => out[f.key] = +row[f.key] || 0); return out;
+  const g = TEAMS.includes(team) ? whNumbers(curMonth(), todayStr(), [team]).p : { received: 0, diagnosed: 0, repaired: 0, scrapped: 0, warranty: 0 };
+  return { received: g.received, diagnosed: g.diagnosed, repaired: g.repaired, scrapped: g.scrapped, warranty: g.warranty, spares: 0 };
 }
 function scopeMonth(filter = inScopeId) {
   const mk = curMonth().slice(0, 7), out = {}; LOG_FIELDS.forEach(f => out[f.key] = 0);
@@ -1102,8 +1125,8 @@ function renderTeam() {
   const t = todayStr(), can = R().can;
   setTitle('Team', fmtDay(t) + ' · today');
   const techs = scopeTechs();
-  const logs = Object.fromEntries(S.logs.filter(l => l.day === t).map(l => [l.user_id, l]));
-  const submitted = techs.filter(p => logs[p.id] && logs[p.id].submitted);
+  const logs = {}; S.stage.filter(l => l.day === t).forEach(l => { const o = logs[l.user_id] = logs[l.user_id] || { submitted: true, stages: [], blockers: '' }; o.stages.push(l.stage === 'field' ? 'field visits' + (l.data.stations && l.data.stations.length ? ` (${l.data.stations.length} stations)` : '') : STAGES[l.stage].label.toLowerCase()); const bl = l.data.blockers || l.note; if (bl) o.blockers = o.blockers ? o.blockers + ' · ' + bl : bl; });
+  const submitted = techs.filter(p => logs[p.id]);
   const blockers = techs.filter(p => logs[p.id] && logs[p.id].blockers);
   const todayTasks = S.tasks.filter(x => (x.day === t || (!x.done && x.day < t)) && inScopeId(x.assignee)).sort((a, b) => a.done - b.done || (b.created_at > a.created_at ? 1 : -1));
   const totals = {}; LOG_FIELDS.forEach(f => totals[f.key] = techs.reduce((a, p) => a + ((logs[p.id] || {})[f.key] || 0), 0));
@@ -1114,13 +1137,13 @@ function renderTeam() {
     </div>
     ${can.approve ? `<div id="reqBox"></div>` : ''}
     ${S.role === 'admin' && !S.viewAs ? supervisorsHtml() : ''}
-    <div class="grid grid-cols-3 md:grid-cols-6 gap-3">${LOG_FIELDS.map(f => `<div class="bg-surface rounded-2xl border border-cream-200 p-3"><div class="text-xs text-espresso-500 flex items-center gap-1.5"><i class="fa-solid ${f.icon} text-caramel-700"></i>${f.label}</div><div class="mt-1 font-display text-2xl font-semibold tnum">${totals[f.key]}</div></div>`).join('')}</div>
+    ${teamTodayStrip(techs)}
     <div class="grid xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] gap-5">
       ${card(`<div class="px-5 pt-4 pb-3 border-b border-cream-100 flex items-center"><div><h2 class="font-display font-semibold text-lg">Today's logs</h2><p class="text-xs text-espresso-500">${submitted.length} of ${techs.length} submitted · edits lock at midnight</p></div></div>
         <ul class="divide-y divide-cream-100">${techs.length ? techs.sort((a, b) => (logs[b.id] ? 1 : 0) - (logs[a.id] ? 1 : 0) || a.full_name.localeCompare(b.full_name)).map(p => { const l = logs[p.id];
           return `<li><button data-person="${p.id}" class="w-full px-5 py-3 flex items-center gap-3 text-left hover:bg-cream-100">${avatar(p)}
-            <span class="flex-1 min-w-0"><span class="block font-medium truncate">${esc(p.full_name)}</span><span class="block text-xs text-espresso-500 truncate">${kindOf(p) === 'field' ? '<i class="fa-solid fa-location-dot text-caramel-700"></i> ' : ''}${l ? [LOG_FIELDS.filter(f => l[f.key]).map(f => `${l[f.key]} ${f.label.toLowerCase()}`).join(' · '), l.stations && l.stations.length ? l.stations.length + ' station' + (l.stations.length > 1 ? 's' : '') : ''].filter(Boolean).join(' · ') || 'No counts yet' : esc(p.staff_id + ' · ' + (p.team || ''))}${l && l.blockers ? ' · <i class="fa-solid fa-triangle-exclamation text-warn-800"></i> blocker' : ''}</span></span>
-            ${l ? (l.submitted ? pill('Submitted', 'bg-olive-50 text-olive-700') : pill('Started', 'bg-warn-50 text-warn-800')) : pill('Not yet', 'bg-cream-100 text-espresso-600')}</button></li>`; }).join('') : '<li class="p-6 text-center text-sm text-espresso-500">No technicians in this team.</li>'}</ul>`)}
+            <span class="flex-1 min-w-0"><span class="block font-medium truncate">${esc(p.full_name)}</span><span class="block text-xs text-espresso-500 truncate">${kindOf(p) === 'field' ? '<i class="fa-solid fa-location-dot text-caramel-700"></i> ' : ''}${l ? esc('Logged ' + l.stages.join(', ')) : esc(p.staff_id + ' · ' + (p.team || ''))}${l && l.blockers ? ' · <i class="fa-solid fa-triangle-exclamation text-warn-800"></i> blocker' : ''}</span></span>
+            ${l ? pill('Logged', 'bg-olive-50 text-olive-700') : pill('Not yet', 'bg-cream-100 text-espresso-600')}</button></li>`; }).join('') : '<li class="p-6 text-center text-sm text-espresso-500">No technicians in this team.</li>'}</ul>`)}
       <div class="space-y-5">
         ${card(`<div class="px-5 pt-4 pb-3 border-b border-cream-100"><h2 class="font-display font-semibold text-lg">Blockers today</h2></div>
           <ul class="p-3 space-y-2">${blockers.length ? blockers.map(p => `<li class="p-3 rounded-xl bg-warn-50 text-warn-800 text-sm"><b>${esc(firstName(p.full_name))}:</b> ${esc(logs[p.id].blockers)}</li>`).join('') : '<li class="p-3 text-sm text-espresso-500">No blockers reported.</li>'}</ul>`)}
@@ -1130,7 +1153,9 @@ function renderTeam() {
       </div>
     </div></div>`;
   bindScope(renderTeam);
-  $$('[data-viewas]').forEach(b => b.onclick = () => { S.viewAs = b.dataset.viewas; go('dispatch'); toast(`Now viewing ${personName(S.viewAs)}'s dashboard`, 'info'); });
+  $$('[data-viewas]').forEach(b => b.onclick = () => { const m = person(b.dataset.viewas); S.viewAs = m.id;
+    if ((m.roles || []).includes('rm')) go('region'); else { WH.brand = TEAMS.includes(m.team) ? m.team : 'CBAK'; go('docket'); }
+    toast(`Now viewing ${m.full_name}'s ${(m.roles || []).includes('rm') ? 'region' : 'docket'}`, 'info'); });
   $$('[data-mgr]').forEach(b => b.onclick = () => userDrawer(b.dataset.mgr));
   if ($('#giveTask')) $('#giveTask').onclick = () => taskForm();
   $$('#main [data-person]').forEach(b => b.onclick = () => personDrawer(b.dataset.person));
@@ -1237,6 +1262,16 @@ function supervisorsHtml() {
     </div>`;
   }).join('');
   return card(`<div class="p-5"><div class="flex items-center"><h2 class="font-display font-semibold text-lg">Supervisors</h2><span class="ml-auto text-xs text-espresso-500">Regional managers and SPOCs</span></div><div class="mt-4 grid md:grid-cols-2 xl:grid-cols-3 gap-3">${cards}</div></div>`);
+}
+
+/* today's numbers for the people in view */
+function teamTodayStrip(techs) {
+  const t = todayStr(), ids = new Set(techs.map(p => p.id)), wh = techs.some(p => kindOf(p) === 'wh'), fd = techs.some(p => kindOf(p) === 'field');
+  const g = whNumbers(t, t).p, fl = logsOf('field', t, t).filter(l => ids.has(l.user_id));
+  const items = [];
+  if (wh) items.push(['Received', g.received, 'fa-inbox'], ['Diagnosed', g.diagnosed, 'fa-stethoscope'], ['Repaired', g.repaired, 'fa-screwdriver-wrench'], ['Dispatched', g.sent, 'fa-truck-fast']);
+  if (fd) items.push(['Repaired at stations', fl.reduce((a, l) => a + (l.data.repaired || 0), 0), 'fa-charging-station'], ['Failed, back to warehouse', fl.reduce((a, l) => a + (l.data.failed_back || 0), 0), 'fa-rotate-left']);
+  return `<div class="grid grid-cols-2 md:grid-cols-${Math.min(6, items.length)} gap-3">${items.map(([l, v, i]) => `<div class="bg-surface rounded-2xl border border-cream-200 p-3"><div class="text-xs text-espresso-500 flex items-center gap-1.5"><i class="fa-solid ${i} text-caramel-700"></i>${l} today</div><div class="mt-1 font-display text-2xl font-semibold tnum">${v}</div></div>`).join('')}</div>`;
 }
 
 /* ================= ANALYTICS ================= */
@@ -1374,7 +1409,7 @@ function renderMyDay() {
     <div class="rounded-2xl bg-night-2 text-sand p-5 flex items-center gap-4">
       ${avatar(S.me, 'w-14 h-14 text-lg')}
       <div class="min-w-0 flex-1"><div class="text-sm text-sand-3">Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}</div><div class="font-display text-xl font-semibold truncate">${esc(S.me.full_name)}</div><div class="text-xs text-sand-3 tnum">${esc(S.me.staff_id)}${S.me.team && S.me.team !== 'All' ? ' · ' + esc(S.me.team) + ' team' : ''}</div></div>
-      <div class="flex flex-col items-end gap-1.5">${log && log.submitted ? pill('Logged ' + hhmm(log.updated_at), 'bg-olive text-white') : pill('Not logged yet', 'bg-caramel-500 text-night')}<span id="geoPill">${geoPill()}</span></div>
+      <div class="flex flex-col items-end gap-1.5">${log && log.submitted ? pill('Logged ' + hhmm(log.updated_at), 'bg-olive text-white') : pill('Not logged yet', 'bg-caramel-500 text-night')}</div>
     </div>
     ${tg ? `<button data-go2="month" class="w-full text-left bg-surface rounded-2xl border border-cream-200 p-4 hover:bg-cream-100">${targetBar(S.me.team)}<div class="text-xs text-espresso-500">You: ${m.repaired} repaired this month</div></button>` : ''}
     ${card(`<div class="p-5"><div class="flex items-center"><h2 class="font-display font-semibold text-lg">Tasks</h2><span class="ml-auto text-xs text-espresso-500">${tasks.filter(x => x.done).length}/${tasks.length} done</span></div>
@@ -1559,14 +1594,14 @@ async function userDrawer(id) {
         <button id="uEdit" class="${btnS}"><i class="fa-regular fa-pen-to-square"></i>Edit</button>
         <button id="uPin" class="${btnS}"><i class="fa-solid fa-key"></i>Reset PIN</button>
         ${appRoleOf(p) === 'tech' ? `<button id="uDay" class="${btnS}"><i class="fa-solid fa-sun"></i>Today's work</button>` : ''}
-        ${kindOf(p) === 'field' ? `<button id="uMap" class="${btnS}"><i class="fa-solid fa-map-location-dot"></i>On the map</button>` : ''}
+
         ${p.id !== S.me.id ? `<button id="uOff" class="${btnS} ${p.active === false ? 'text-olive-700' : 'text-terra-700'} col-span-2"><i class="fa-solid ${p.active === false ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>${p.active === false ? 'Switch account back on' : 'Switch account off'}</button>` : ''}
       </div>
     </div>`);
   $('#dwClose').onclick = closeDrawer;
   $('#uEdit').onclick = () => userForm(p);
   if ($('#uDay')) $('#uDay').onclick = () => personDrawer(p.id);
-  if ($('#uMap')) $('#uMap').onclick = () => { closeDrawer(); MAP.focus = p.id; go('map'); };
+
   $('#uPin').onclick = async () => {
     if (!confirmInline($('#uPin'), 'Tap again to reset')) return;
     const pin = genPin(); const { error } = await S.sb.rpc('admin_reset_pin', { p_user: p.id, p_pin: pin });
@@ -1751,7 +1786,7 @@ function geoPill() {
   return GEO.on && !GEO.err ? pill(`Location on${GEO.lastSent ? ' · ' + hhmm(GEO.lastSent) : ''}`, 'bg-olive text-white') : pill(GEO.err || 'Finding location…', GEO.err ? 'bg-terra text-white' : 'bg-white/15 text-sand');
 }
 function updateGeoPill() { const el = $('#geoPill'); if (el) el.innerHTML = geoPill(); }
-document.addEventListener('visibilitychange', () => { if (!document.hidden && isFieldTech() && S.loaded && GEO.watch == null) startSharing(); });
+
 
 /* ================= JOB CARD (field workspace) ================= */
 const PARAMS = [
@@ -2073,11 +2108,590 @@ async function submitJob(j) {
   Object.assign(j, { status: 'done', outcome: W.outcome, report, battery_id: W.scanned || j.battery_id, done_at: new Date().toISOString() });
   const done = $('#wizDone'); done.classList.remove('hidden'); done.classList.add('flex'); $('#wizBar').classList.add('hidden');
   done.innerHTML = `<div class="w-20 h-20 rounded-full bg-olive text-white grid place-items-center text-4xl"><i class="fa-solid fa-check"></i></div>
-    <h3 class="mt-5 font-display text-2xl font-semibold">Job card submitted</h3><p class="mt-2 text-espresso-600">${esc(j.jc_no)} · ${esc(W.scanned || '')} · ${esc(W.outcome)}.<br>It's added to today's log and your supervisor can see it now.</p>
+    <h3 class="mt-5 font-display text-2xl font-semibold">Job card submitted</h3><p class="mt-2 text-espresso-600">${esc(j.jc_no)} · ${esc(W.scanned || '')} · ${esc(W.outcome)}.<br>Your supervisor can see it now.</p>
     <button id="nextJob" class="${btnP} mt-6 h-12 px-6">Back to my jobs</button>`;
   $('#nextJob').onclick = () => { S.fieldJob = null; softRefresh(); renderField(); };
   toast('Job card submitted');
-  S.sb.from('daily_logs').select('*').eq('user_id', j.tech_id || S.me.id).eq('day', todayStr()).then(r => { if (r.data && r.data[0]) { S.logs = S.logs.filter(l => !(l.user_id === r.data[0].user_id && l.day === r.data[0].day)).concat(r.data); dayDraft = null; } }, () => {});
+}
+
+/* ================= WAREHOUSE STAGES: one daily entry per person per stage, numbers only ================= */
+const STAGES = {
+  receiving:  { label: 'Receiving',            icon: 'fa-inbox',            roles: ['receiving', 'store'] },
+  diagnosis:  { label: 'Diagnosis',            icon: 'fa-stethoscope',      roles: ['diagnosis'] },
+  repair:     { label: 'Repairs',              icon: 'fa-screwdriver-wrench', roles: ['repair_tech', 'wh_tech', 'spoc'] },
+  insulation: { label: 'Insulation test',      icon: 'fa-bolt',             roles: ['insulation'] },
+  iot:        { label: 'IoT online check',     icon: 'fa-tower-broadcast',  roles: ['iot', 'iot_test'] },
+  air_leak:   { label: 'Air leak test',        icon: 'fa-wind',             roles: ['air_leak'] },
+  dispatch:   { label: 'Dispatch & handovers', icon: 'fa-truck-fast',       roles: ['dispatch'] },
+  qc:         { label: 'Quality check',        icon: 'fa-clipboard-check',  roles: ['qc'] }
+};
+const myStages = () => Object.keys(STAGES).filter(k => STAGES[k].roles.some(r => (S.me.roles || []).includes(r)));
+const n0 = v => { const n = parseInt(v, 10); return isNaN(n) || n < 0 ? 0 : Math.min(n, 100000); };
+const getp = (o, path) => path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
+const issuesOf = kind => S.issues.filter(i => i.kind === kind && i.active).sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)).map(i => i.name);
+const myBrand = () => TEAMS.includes(S.me.team) ? S.me.team : null;
+
+/* --- loading: page through everything, since stock is counted from day one --- */
+async function fetchAll(build) {
+  const out = []; const size = 1000;
+  for (let from = 0; from < 50000; from += size) {
+    const { data, error } = await build().range(from, from + size - 1);
+    if (error) throw error;
+    out.push(...(data || [])); if (!data || data.length < size) break;
+  }
+  return out;
+}
+async function loadStageData() {
+  const [st, al, is] = await Promise.all([
+    fetchAll(() => S.sb.from('stage_logs').select('id,user_id,day,stage,data,note,updated_at').order('day')),
+    fetchAll(() => S.sb.from('allocations').select('*').order('created_at')),
+    S.sb.from('issue_types').select('*').order('sort')
+  ]);
+  if (is.error) throw is.error;
+  S.stage = st; S.alloc = al; S.issues = is.data || [];
+}
+const logsOf = (stage, from, to) => S.stage.filter(l => l.stage === stage && (!from || l.day >= from) && (!to || l.day <= to));
+const myLog = stage => S.stage.find(l => l.stage === stage && l.user_id === S.me.id && l.day === todayStr());
+
+/* --- form bits --- */
+const numCls = 'w-full h-11 px-2 rounded-xl border border-cream-300 bg-surface text-center tnum font-semibold focus:border-caramel-500 focus:ring-4 focus:ring-caramel-400/25 outline-none';
+const numIn = (name, val, label) => `<input name="${name}" type="number" inputmode="numeric" min="0" max="100000" value="${val ? esc(val) : ''}" placeholder="0" aria-label="${esc(label)}" class="${numCls}">`;
+/* rows = brands, columns = fields */
+function brandGrid(prefix, cols, d, brands = TEAMS) {
+  return `<div class="overflow-x-auto"><table class="w-full text-sm min-w-[22rem]"><thead><tr><th class="text-left font-medium text-espresso-500 pb-2 pr-2 w-24">Brand</th>${cols.map(c => `<th class="font-medium text-espresso-500 pb-2 px-1 text-center">${esc(c[1])}</th>`).join('')}</tr></thead>
+    <tbody>${brands.map(b => `<tr><td class="py-1 pr-2 font-semibold">${b}</td>${cols.map(c => `<td class="py-1 px-1">${numIn(`${prefix}.${b}.${c[0]}`, getp(d, `${prefix}.${b}.${c[0]}`), `${b} ${c[1]}`)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+/* one number per issue name (per brand when brands given) */
+function issueGrid(prefix, kind, d, brands) {
+  const list = issuesOf(kind);
+  if (!list.length) return '<p class="text-sm text-espresso-500">No reasons set up yet. The supervisor adds them in Settings.</p>';
+  if (!brands) return `<div class="grid sm:grid-cols-2 gap-2">${list.map(n => `<label class="flex items-center gap-2 p-2 rounded-xl border border-cream-200"><span class="flex-1 text-sm">${esc(n)}</span><span class="w-20">${numIn(`${prefix}.${n}`, getp(d, prefix) && getp(d, prefix)[n], n)}</span></label>`).join('')}</div>`;
+  return `<div class="overflow-x-auto"><table class="w-full text-sm min-w-[22rem]"><thead><tr><th class="text-left font-medium text-espresso-500 pb-2">Issue</th>${brands.map(b => `<th class="font-medium text-espresso-500 pb-2 px-1 w-20 text-center">${b}</th>`).join('')}</tr></thead>
+    <tbody>${list.map(n => `<tr><td class="py-1 pr-2">${esc(n)}</td>${brands.map(b => `<td class="py-1 px-1">${numIn(`${prefix}.${b}.${n}`, d[prefix] && d[prefix][b] && d[prefix][b][n], `${b} ${n}`)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+const txtIn = (name, val, label, ph = '') => `<label class="block"><span class="text-sm font-medium">${esc(label)}</span><textarea name="${name}" rows="2" maxlength="500" placeholder="${esc(ph)}" class="${inputC} h-auto py-2 mt-1.5">${esc(val || '')}</textarea></label>`;
+const section = (title, inner, sub = '') => `<section class="space-y-3"><div><h3 class="font-display font-semibold">${esc(title)}</h3>${sub ? `<p class="text-xs text-espresso-500">${sub}</p>` : ''}</div>${inner}</section>`;
+/* turn a.b.c names into a nested object; numbers become integers, zero entries dropped */
+function readStageForm(form) {
+  const out = {};
+  [...form.elements].forEach(el => {
+    if (!el.name || el.name === 'note') return;
+    let v = el.type === 'number' ? n0(el.value) : (el.tagName === 'SELECT' && el.multiple ? [...el.selectedOptions].map(o => o.value) : el.value.trim());
+    if (el.type === 'checkbox') { if (!el.checked) return; v = el.value; const k = el.name; out[k] = out[k] || []; out[k].push(v); return; }
+    if (v === 0 || v === '') return;
+    const parts = el.name.split('.'); let o = out;
+    parts.slice(0, -1).forEach(k => { o[k] = o[k] || {}; o = o[k]; }); o[parts[parts.length - 1]] = v;
+  });
+  return out;
+}
+
+/* --- each stage's form --- */
+const STAGE_FORM = {
+  receiving: d => section('Batteries received today', brandGrid('t', [['recv', 'Received'], ['incoming', 'Still incoming']], d), 'Count only. No battery IDs.'),
+  diagnosis: d => section('How many had each issue', issueGrid('issues', 'fault', d, TEAMS), 'Enter the number of batteries per issue, per brand. Your supervisor can add issues.'),
+  repair: d => repairForm(d),
+  insulation: d => section('Insulation test today', brandGrid('t', [['tested', 'Tested'], ['passed', 'Passed'], ['failed', 'Failed']], d))
+    + section('Why they failed', issueGrid('reasons', 'insulation', d), 'Number of batteries per reason.'),
+  iot: d => section('Online check today', brandGrid('t', [['checked', 'Checked'], ['online', 'Online'], ['offline', 'Offline'], ['recovered', 'Brought back online']], d), 'Only batteries that are online can go to air leak test.')
+    + section('Why they were offline', issueGrid('reasons', 'iot', d))
+    + txtIn('action', d.action, 'What did you do to bring them back?', 'e.g. replaced SIM, reflashed firmware'),
+  air_leak: d => section('Air leak test today', brandGrid('t', [['tested', 'Tested'], ['passed', 'Passed'], ['failed', 'Failed'], ['refixed', 'Fixed and passed on retest']], d), 'Test only batteries the IoT team marked online.')
+    + section('What fixed the failures', `<div class="grid sm:grid-cols-3 gap-2">${[['gasket', 'Changed gasket'], ['bubble', 'Bubble test and seal'], ['other', 'Other fix']].map(([k, l]) => `<label class="flex items-center gap-2 p-2 rounded-xl border border-cream-200"><span class="flex-1 text-sm">${l}</span><span class="w-20">${numIn('fixes.' + k, getp(d, 'fixes.' + k), l)}</span></label>`).join('')}</div>`)
+    + txtIn('used', d.used, 'What did you use?', 'e.g. 3 gaskets, sealant'),
+  dispatch: d => dispatchForm(d),
+  qc: d => qcForm(d)
+};
+function repairForm(d) {
+  const b = myBrand();
+  const st = techDocket(S.me.id);
+  return `${b ? '' : `<label class="block"><span class="text-sm font-medium">Brand</span><select name="brand" class="${inputC} mt-1.5" required>${TEAMS.map(t => `<option ${d.brand === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`}
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="rounded-xl bg-cream-100 p-3"><div class="text-xs text-espresso-500">Given to you</div><div class="font-display text-2xl font-semibold tnum">${st.given}</div></div>
+      <div class="rounded-xl bg-cream-100 p-3"><div class="text-xs text-espresso-500">Finished</div><div class="font-display text-2xl font-semibold tnum">${st.done}</div></div>
+      <div class="rounded-xl ${st.left > 0 ? 'bg-caramel-100 text-caramel-800' : 'bg-olive-50 text-olive-700'} p-3"><div class="text-xs">Still to work on</div><div class="font-display text-2xl font-semibold tnum">${st.left}</div></div>
+    </div>
+    ${st.byIssue.length ? `<p class="text-xs text-espresso-500">Given by issue: ${st.byIssue.map(([i, n]) => `${esc(i)} ${n}`).join(' · ')}</p>` : ''}
+    ${section('Today', `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${[['repaired', 'Repaired'], ['scrapped', 'Scrapped'], ['warranty', 'Sent for warranty']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div>`, 'Batteries you finished today.')}
+    ${section('Still with you right now', `<div class="grid grid-cols-2 gap-2">${[['spares', 'Waiting for spares'], ['under_test', 'Under test']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div>`)}
+    <label class="block"><span class="text-sm font-medium">Biggest issue you repaired today</span><select name="top_issue" class="${inputC} mt-1.5"><option value="">Choose…</option>${issuesOf('fault').map(i => `<option ${d.top_issue === i ? 'selected' : ''}>${esc(i)}</option>`).join('')}</select></label>
+    <div class="grid md:grid-cols-2 gap-3">
+      ${txtIn('spares_used', d.spares_used, 'Spares used', 'e.g. 2 BMS boards, 1 charge port')}
+      ${txtIn('cause', d.cause, 'What keeps causing the same fault?', 'e.g. water entering through the port')}
+      ${txtIn('scrap_reason', d.scrap_reason, 'Why scrapped?', 'e.g. dead cells')}
+      ${txtIn('spares_reason', d.spares_reason, 'Which spares are you waiting for?', '')}
+      ${txtIn('test_under', d.test_under, 'What test are they under?', 'e.g. 24h charge cycle')}
+      ${txtIn('recommendation', d.recommendation, 'What should be done?', 'Your recommendation')}
+    </div>`;
+}
+function dispatchForm(d) {
+  const g = whNumbers();
+  return section('Dispatched today', brandGrid('t', [['sent', 'Dispatched'], ['out', 'Handed to Quality / O&M'], ['back', 'Returned from them']], d), 'Handovers are batteries beyond our repair, e.g. vandalism or cell imbalance.')
+    + section('Why they were handed over', issueGrid('out_reasons', 'handover', d))
+    + `<div class="rounded-xl bg-cream-100 p-3 text-sm"><b>What is holding batteries back right now:</b> ${g.iotOffline} offline at IoT · ${g.airFail} failed air leak · ${g.spares} waiting for spares · ${g.underRepair} under repair · ${g.ready} ready to dispatch</div>`
+    + txtIn('why_low', d.why_low, 'Why couldn\'t more be dispatched?', 'e.g. 4 still offline with IoT, 6 failed air leak');
+}
+function qcForm(d) {
+  const techs = S.peopleList.filter(p => (p.roles || []).some(r => ['repair_tech', 'wh_tech', 'spoc'].includes(r)));
+  const rows = (d.mistakes || []).concat([{}, {}]).slice(0, Math.max(3, (d.mistakes || []).length + 1));
+  return section('Checked today', brandGrid('t', [['checked', 'Checked'], ['passed', 'Passed'], ['failed', 'Failed']], d))
+    + section('Mistakes found on the line', `<div class="space-y-2" id="qcRows">${rows.map((m, i) => `<div class="grid grid-cols-[minmax(0,1.3fr)_6rem_5rem] md:grid-cols-[minmax(0,1.2fr)_7rem_5rem_minmax(0,2fr)] gap-2">
+      <select name="mistakes.${i}.tech" aria-label="Technician" class="${inputC}"><option value="">Technician…</option>${techs.map(p => `<option value="${p.id}" ${m.tech === p.id ? 'selected' : ''}>${esc(p.full_name)} · ${esc(p.team || '')}</option>`).join('')}</select>
+      <select name="mistakes.${i}.brand" aria-label="Brand" class="${inputC}">${TEAMS.map(t => `<option ${m.brand === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+      ${numIn(`mistakes.${i}.n`, m.n, 'Batteries')}
+      <input name="mistakes.${i}.reason" value="${esc(m.reason || '')}" maxlength="200" placeholder="What went wrong" aria-label="Reason" class="${inputC} col-span-3 md:col-span-1"></div>`).join('')}</div>`, 'Who made the mistake, how many batteries, and why they failed.');
+}
+function cleanStageData(stage, data) {
+  if (stage === 'qc' && data.mistakes) data.mistakes = Object.values(data.mistakes).filter(m => m.tech && m.n);
+  if (stage === 'repair' && !data.brand) data.brand = myBrand();
+  return data;
+}
+
+/* --- My day for warehouse staff --- */
+function renderWhDay() {
+  const stages = myStages();
+  setTitle('My day', fmtDay(todayStr()) + ' · you can edit until midnight');
+  if (!stages.length) {
+    $('#main').innerHTML = `<div class="p-4 md:p-6 max-w-3xl">${card(`<div class="p-6 text-center"><i class="fa-solid fa-warehouse text-3xl text-caramel-700"></i><h2 class="mt-3 font-display font-semibold text-lg">No daily count for your role yet</h2><p class="mt-1 text-sm text-espresso-500">Ask the supervisor to set your role (receiving, diagnosis, repair, insulation, IoT, air leak, dispatch or QC).</p></div>`)}</div>`;
+    return;
+  }
+  if (!stages.includes(S.stageTab)) S.stageTab = stages[0];
+  const k = S.stageTab, ex = myLog(k), d = (ex && ex.data) || {};
+  $('#main').innerHTML = `<div class="p-4 md:p-6 max-w-4xl space-y-4">
+    ${stages.length > 1 ? `<div class="flex gap-2 overflow-x-auto scroll-thin" role="tablist">${stages.map(s => `<button role="tab" aria-selected="${s === k}" data-stab="${s}" class="h-10 px-4 rounded-xl shrink-0 text-sm font-medium inline-flex items-center gap-2 ${s === k ? 'bg-espresso-900 text-cream-50' : 'bg-surface border border-cream-200'}"><i class="fa-solid ${STAGES[s].icon}"></i>${STAGES[s].label}${myLog(s) ? ' <i class="fa-solid fa-circle-check text-[#9BB585]"></i>' : ''}</button>`).join('')}</div>` : ''}
+    ${card(`<form id="stageForm" class="p-5 space-y-5" novalidate>
+      <div class="flex items-center gap-3"><span class="w-10 h-10 rounded-xl bg-caramel-100 text-caramel-800 grid place-items-center"><i class="fa-solid ${STAGES[k].icon}"></i></span><div><h2 class="font-display font-semibold text-lg">${STAGES[k].label}</h2><p class="text-xs text-espresso-500">${ex ? 'Saved ' + hhmm(ex.updated_at) + '. Change anything and save again.' : 'Not saved yet today.'}</p></div></div>
+      ${STAGE_FORM[k](d)}
+      ${txtIn('note', ex && ex.note, 'Anything else? Blockers?', 'Optional')}
+      <p id="stageErr" class="hidden text-sm text-terra-700"></p>
+      <div class="flex justify-end"><button class="${btnP}"><i class="fa-solid fa-floppy-disk"></i>${ex ? 'Save changes' : 'Save today'}</button></div>
+    </form>`)}</div>`;
+  $$('[data-stab]').forEach(b => b.onclick = () => { S.stageTab = b.dataset.stab; renderWhDay(); });
+  $('#stageForm').onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target, btn = f.querySelector('button:not([type=button]):last-child');
+    const data = cleanStageData(k, readStageForm(f));
+    const err = stageCheck(k, data); if (err) { $('#stageErr').textContent = err; $('#stageErr').classList.remove('hidden'); return; }
+    busy(btn, true, 'Saving');
+    const row = { user_id: S.me.id, day: todayStr(), stage: k, data, note: f.note.value.trim() || null };
+    const { data: saved, error } = await S.sb.from('stage_logs').upsert(row, { onConflict: 'user_id,day,stage' }).select().single();
+    busy(btn, false);
+    if (error) { $('#stageErr').textContent = errMsg(error); $('#stageErr').classList.remove('hidden'); return; }
+    S.stage = S.stage.filter(l => !(l.user_id === S.me.id && l.day === row.day && l.stage === k)).concat(saved);
+    toast(`${STAGES[k].label} saved`); renderWhDay();
+  };
+}
+/* sanity checks so the numbers add up */
+function stageCheck(k, d) {
+  const t = d.t || {};
+  for (const b of TEAMS) {
+    const x = t[b] || {};
+    if (k === 'insulation' && (x.passed || 0) + (x.failed || 0) > (x.tested || 0)) return `${b}: passed + failed can't be more than tested.`;
+    if (k === 'air_leak' && (x.passed || 0) + (x.failed || 0) > (x.tested || 0)) return `${b}: passed + failed can't be more than tested.`;
+    if (k === 'air_leak' && (x.refixed || 0) > (x.failed || 0)) return `${b}: retest passes can't be more than failures.`;
+    if (k === 'iot' && (x.online || 0) + (x.offline || 0) > (x.checked || 0)) return `${b}: online + offline can't be more than checked.`;
+    if (k === 'qc' && (x.passed || 0) + (x.failed || 0) > (x.checked || 0)) return `${b}: passed + failed can't be more than checked.`;
+  }
+  if (k === 'repair' && !d.brand) return 'Choose the brand.';
+  return '';
+}
+
+/* older screens read one summary per person per day; build it from the stage entries */
+function compatLogs() {
+  const m = {};
+  S.stage.forEach(l => {
+    const k = l.user_id + '|' + l.day, o = m[k] = m[k] || { user_id: l.user_id, day: l.day, submitted: true, received: 0, diagnosed: 0, repaired: 0, scrapped: 0, warranty: 0, spares: 0, stations: [], blockers: '' };
+    const d = l.data || {};
+    if (l.stage === 'receiving') o.received += tSum([l], 'recv', TEAMS);
+    if (l.stage === 'diagnosis') o.diagnosed += Object.values(countMap([l], 'issues', TEAMS)).reduce((a, b) => a + b, 0);
+    if (l.stage === 'repair') { o.repaired += d.repaired || 0; o.scrapped += d.scrapped || 0; o.warranty += d.warranty || 0; o.spares += d.spares || 0; }
+    if (l.stage === 'field') { o.repaired += d.repaired || 0; o.stations = d.stations || []; }
+    const bl = d.blockers || l.note; if (bl) o.blockers = o.blockers ? o.blockers + ' · ' + bl : bl;
+  });
+  return Object.values(m);
+}
+
+/* ================= WAREHOUSE NUMBERS, DASHBOARD AND BRAND DOCKET ================= */
+const WH = { period: 'month', brand: 'All' };
+function periodRange(p) {
+  const t = new Date(), to = todayStr();
+  if (p === 'today') return [to, to, 'Today'];
+  if (p === 'week') { const d = new Date(t); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return [ymd(d), to, 'This week']; }
+  if (p === 'month') return [monthStart(), to, fmtMonth(monthStart())];
+  return [null, null, 'All time'];
+}
+const tSum = (logs, field, brands) => logs.reduce((a, l) => a + brands.reduce((s, b) => s + ((((l.data || {}).t || {})[b] || {})[field] || 0), 0), 0);
+const repLogs = (brands, from, to) => logsOf('repair', from, to).filter(l => brands.includes((l.data || {}).brand));
+const rSum = (logs, f) => logs.reduce((a, l) => a + ((l.data || {})[f] || 0), 0);
+function latestPerUser(logs) { const m = {}; logs.forEach(l => { if (!m[l.user_id] || l.day > m[l.user_id].day) m[l.user_id] = l; }); return Object.values(m); }
+function countMap(logs, path, brands) {   // {name: n} summed, optionally per-brand nested
+  const out = {};
+  logs.forEach(l => { const o = getp(l.data || {}, path) || {};
+    if (brands) brands.forEach(b => Object.entries(o[b] || {}).forEach(([k, v]) => out[k] = (out[k] || 0) + (+v || 0)));
+    else Object.entries(o).forEach(([k, v]) => out[k] = (out[k] || 0) + (+v || 0)); });
+  return out;
+}
+const sortedCounts = m => Object.entries(m).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+
+/* flows for a period, plus stock worked out from everything ever logged */
+function whNumbers(from, to, brands = TEAMS) {
+  const flow = (f, t2) => {
+    const rec = logsOf('receiving', f, t2), ins = logsOf('insulation', f, t2), iot = logsOf('iot', f, t2), air = logsOf('air_leak', f, t2), dis = logsOf('dispatch', f, t2), qc = logsOf('qc', f, t2), rep = repLogs(brands, f, t2);
+    const diag = countMap(logsOf('diagnosis', f, t2), 'issues', brands);
+    return {
+      received: tSum(rec, 'recv', brands), diagnosed: Object.values(diag).reduce((a, b) => a + b, 0),
+      repaired: rSum(rep, 'repaired'), scrapped: rSum(rep, 'scrapped'), warranty: rSum(rep, 'warranty'),
+      insTested: tSum(ins, 'tested', brands), insPassed: tSum(ins, 'passed', brands), insFailed: tSum(ins, 'failed', brands),
+      iotChecked: tSum(iot, 'checked', brands), online: tSum(iot, 'online', brands), offline: tSum(iot, 'offline', brands), recovered: tSum(iot, 'recovered', brands),
+      airTested: tSum(air, 'tested', brands), airPassed: tSum(air, 'passed', brands), airFailed: tSum(air, 'failed', brands), refixed: tSum(air, 'refixed', brands),
+      sent: tSum(dis, 'sent', brands), out: tSum(dis, 'out', brands), back: tSum(dis, 'back', brands),
+      qcChecked: tSum(qc, 'checked', brands), qcPassed: tSum(qc, 'passed', brands), qcFailed: tSum(qc, 'failed', brands)
+    };
+  };
+  const p = flow(from, to), A = from || to ? flow(null, null) : p;
+  const hold = latestPerUser(repLogs(brands));
+  const spares = rSum(hold, 'spares'), underTest = rSum(hold, 'under_test');
+  const allocated = S.alloc.filter(a => brands.includes(a.brand)).reduce((a, x) => a + x.qty, 0);
+  const incoming = tSum(logsOf('receiving', todayStr(), todayStr()), 'incoming', brands);
+  return {
+    p, A, spares, underTest, allocated, incoming,
+    onHand: Math.max(0, A.received + A.back - A.sent - A.out),
+    awaitingDiag: Math.max(0, A.received - A.diagnosed),
+    underRepair: Math.max(0, allocated - A.repaired - A.scrapped - A.warranty - spares - underTest),
+    iotOffline: Math.max(0, A.offline - A.recovered),
+    airFail: Math.max(0, A.airFailed - A.refixed),
+    ready: Math.max(0, A.airPassed + A.refixed - A.sent),
+    withPartner: Math.max(0, A.out - A.back),
+    scrapped: A.scrapped, warranty: A.warranty, dispatched: A.sent
+  };
+}
+/* one technician: given by SPOC vs finished vs still holding */
+function techDocket(uid) {
+  const al = S.alloc.filter(a => a.tech_id === uid);
+  const given = al.reduce((a, x) => a + x.qty, 0);
+  const mine = logsOf('repair').filter(l => l.user_id === uid);
+  const done = rSum(mine, 'repaired') + rSum(mine, 'scrapped') + rSum(mine, 'warranty');
+  const last = latestPerUser(mine)[0], holding = last ? ((last.data.spares || 0) + (last.data.under_test || 0)) : 0;
+  const by = {}; al.forEach(a => by[a.issue] = (by[a.issue] || 0) + a.qty);
+  return { given, done, holding, left: Math.max(0, given - done - holding), byIssue: sortedCounts(by), repaired: rSum(mine, 'repaired'), spares: last ? last.data.spares || 0 : 0, test: last ? last.data.under_test || 0 : 0 };
+}
+const whTeam = brand => S.peopleList.filter(p => p.active !== false && p.team === brand && (p.roles || []).some(r => ['repair_tech', 'wh_tech', 'spoc'].includes(r)));
+
+/* --- small display pieces --- */
+const statCard = (label, val, icon, tone = 'bg-cream-100 text-espresso-700', sub = '') => `<div class="bg-surface rounded-2xl border border-cream-200 p-3.5"><div class="flex items-center gap-2 text-xs text-espresso-500"><span class="w-7 h-7 rounded-lg grid place-items-center ${tone}"><i class="fa-solid ${icon} text-xs"></i></span>${esc(label)}</div><div class="mt-1.5 font-display text-2xl font-semibold tnum">${val}</div>${sub ? `<div class="text-xs text-espresso-500">${sub}</div>` : ''}</div>`;
+function hbars(rows, empty = 'Nothing logged yet.', tone = 'bg-caramel-700') {
+  if (!rows.length) return `<p class="text-sm text-espresso-500">${empty}</p>`;
+  const max = Math.max(1, ...rows.map(r => r[1]));
+  return `<ul class="space-y-2.5">${rows.map(([k, v, sub]) => `<li><div class="flex items-baseline gap-2 text-sm"><span class="min-w-0 truncate">${esc(k)}</span><span class="ml-auto font-semibold tnum">${v}</span></div>${sub ? `<div class="text-[11px] text-espresso-500">${esc(sub)}</div>` : ''}<div class="mt-1 h-2 rounded-full bg-cream-200 overflow-hidden"><div class="h-full rounded-full ${tone}" style="width:${Math.max(2, Math.round(v / max * 100))}%"></div></div></li>`).join('')}</ul>`;
+}
+const panel = (title, inner, extra = '', sub = '') => card(`<div class="p-5"><div class="flex items-baseline gap-2"><h2 class="font-display font-semibold text-lg">${esc(title)}</h2>${sub ? `<span class="ml-auto text-xs text-espresso-500">${sub}</span>` : ''}</div><div class="mt-4">${inner}</div></div>`, extra);
+function periodBar(onChange, withBrand = true, fixedBrand) {
+  const sel = (id, val, opts, label) => `<select data-wh="${id}" aria-label="${label}" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${opts.map(([v, l]) => `<option value="${v}" ${v === val ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  return `<div class="flex flex-wrap items-center gap-2">${sel('period', WH.period, [['today', 'Today'], ['week', 'This week'], ['month', 'This month'], ['all', 'All time']], 'Period')}${withBrand && !fixedBrand ? sel('brand', WH.brand, [['All', 'All brands'], ...TEAMS.map(t => [t, t])], 'Brand') : ''}${fixedBrand ? pill(fixedBrand, 'bg-caramel-100 text-caramel-800') : ''}</div>`;
+}
+function bindPeriod(onChange) { $$('[data-wh]').forEach(s => s.onchange = () => { WH[s.dataset.wh] = s.value; onChange(); }); }
+
+/* ================= WAREHOUSE DASHBOARD ================= */
+function renderWarehouse() {
+  const [from, to, plabel] = periodRange(WH.period);
+  const brands = WH.brand === 'All' ? TEAMS : [WH.brand];
+  const g = whNumbers(from, to, brands), p = g.p;
+  setTitle('Warehouse', `${plabel} · ${WH.brand === 'All' ? 'all brands' : WH.brand} · numbers only`);
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+  const pipe = [['Received', p.received], ['Diagnosed', p.diagnosed], ['Repaired', p.repaired], ['Passed insulation', p.insPassed], ['Online (IoT)', p.online + p.recovered], ['Passed air leak', p.airPassed + p.refixed], ['Dispatched', p.sent]];
+  const holds = [['Offline at IoT', g.iotOffline], ['Failed air leak, back in repair', g.airFail], ['Waiting for spares', g.spares], ['Under repair', g.underRepair], ['Under test', g.underTest], ['Waiting for diagnosis', g.awaitingDiag], ['With Quality / O&M', g.withPartner], ['Ready to dispatch', g.ready]].filter(r => r[1] > 0);
+  const diag = sortedCounts(countMap(logsOf('diagnosis', from, to), 'issues', brands));
+  const perBrandIssue = issue => TEAMS.filter(b => brands.includes(b)).map(b => { const n = countMap(logsOf('diagnosis', from, to), 'issues', [b])[issue] || 0; return n ? `${b} ${n}` : ''; }).filter(Boolean).join(' · ');
+  const insR = sortedCounts(countMap(logsOf('insulation', from, to), 'reasons'));
+  const iotR = sortedCounts(countMap(logsOf('iot', from, to), 'reasons'));
+  const outR = sortedCounts(countMap(logsOf('dispatch', from, to), 'out_reasons'));
+  const fixes = countMap(logsOf('air_leak', from, to), 'fixes');
+  const qcM = {}; logsOf('qc', from, to).forEach(l => (l.data.mistakes || []).forEach(m => { if (!brands.includes(m.brand)) return; const k = m.tech; qcM[k] = qcM[k] || { n: 0, reasons: [] }; qcM[k].n += m.n || 0; if (m.reason) qcM[k].reasons.push(m.reason); }));
+  const notes = [...repLogs(brands, from, to)].reverse().filter(l => ['cause', 'recommendation', 'spares_used', 'scrap_reason', 'spares_reason', 'test_under'].some(k => l.data[k])).slice(0, 8);
+  const disNotes = [...logsOf('dispatch', from, to)].reverse().filter(l => l.data.why_low || l.note).slice(0, 3);
+  const iotActs = [...logsOf('iot', from, to)].reverse().filter(l => l.data.action).slice(0, 3);
+  const airUsed = [...logsOf('air_leak', from, to)].reverse().filter(l => l.data.used).slice(0, 3);
+  const feed = (arr, fn) => arr.length ? `<ul class="space-y-2 text-sm">${arr.map(fn).join('')}</ul>` : '';
+  const who = l => `<span class="text-xs text-espresso-500">${esc(firstName(personName(l.user_id)))} · ${fmtDay(l.day)}</span>`;
+  $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-5">
+    <div class="flex flex-wrap items-center gap-2">${periodBar(renderWarehouse)}${S.role === 'admin' || S.role === 'viewer' ? `<button id="csvBtn" class="${btnS} h-10 ml-auto"><i class="fa-solid fa-file-arrow-down"></i>Download numbers (CSV)</button>` : ''}</div>
+    ${S.role === 'admin' ? notLoggedHtml() : ''}
+    <div><h2 class="text-xs uppercase tracking-wider font-semibold text-espresso-500 mb-2">Stock at the warehouse now</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3">
+      ${statCard('In the warehouse', g.onHand, 'fa-warehouse', 'bg-espresso-900 text-cream-50', 'received + returned − dispatched − handed over')}
+      ${statCard('Under repair', g.underRepair, 'fa-screwdriver-wrench', 'bg-caramel-100 text-caramel-800')}
+      ${statCard('Waiting for spares', g.spares, 'fa-box-open', 'bg-warn-50 text-warn-800')}
+      ${statCard('Under test', g.underTest, 'fa-vial', 'bg-cream-100 text-espresso-700')}
+      ${statCard('Offline at IoT', g.iotOffline, 'fa-tower-broadcast', 'bg-terra-50 text-terra')}
+      ${statCard('Failed air leak', g.airFail, 'fa-wind', 'bg-terra-50 text-terra')}
+      ${statCard('Ready to dispatch', g.ready, 'fa-truck-fast', 'bg-olive-50 text-olive-700')}
+      ${statCard('Waiting for diagnosis', g.awaitingDiag, 'fa-stethoscope')}
+      ${statCard('Scrapped', g.scrapped, 'fa-trash-can')}
+      ${statCard('Sent for warranty', g.warranty, 'fa-file-shield')}
+      ${statCard('With Quality / O&M', g.withPartner, 'fa-people-arrows')}
+      ${statCard('Incoming today', g.incoming, 'fa-truck-ramp-box', 'bg-caramel-100 text-caramel-800')}
+    </div></div>
+    <div class="grid xl:grid-cols-2 gap-5">
+      ${panel('Battery flow', hbars(pipe.map(([k, v], i) => [k, v, i ? `${pct(v, pipe[0][1])} of received` : '']), 'Nothing logged yet.'), '', plabel)}
+      ${panel('Why batteries are not dispatched', `<div class="flex items-end gap-6 mb-4"><div><div class="text-xs text-espresso-500">Received</div><div class="font-display text-3xl font-semibold tnum">${p.received}</div></div><div><div class="text-xs text-espresso-500">Dispatched</div><div class="font-display text-3xl font-semibold tnum text-olive-700">${p.sent}</div></div><div><div class="text-xs text-espresso-500">Handed over</div><div class="font-display text-3xl font-semibold tnum">${p.out}</div></div></div>
+        ${hbars(holds, 'Nothing is holding batteries back.', 'bg-terra')}
+        ${feed(disNotes, l => `<li class="p-3 rounded-xl bg-cream-100">${esc(l.data.why_low || l.note)}<div>${who(l)}</div></li>`) ? `<div class="mt-4">${feed(disNotes, l => `<li class="p-3 rounded-xl bg-cream-100">${esc(l.data.why_low || l.note)}<div>${who(l)}</div></li>`)}</div>` : ''}`, '', 'right now')}
+    </div>
+    <div class="grid xl:grid-cols-3 gap-5">
+      ${panel('Biggest issues (diagnosis)', hbars(diag.slice(0, 10).map(([k, v]) => [k, v, perBrandIssue(k)])), 'xl:col-span-2', `${p.diagnosed} diagnosed`)}
+      ${panel('Repairs', `<div class="grid grid-cols-2 gap-2">${[['Repaired', p.repaired, 'text-olive-700'], ['Scrapped', p.scrapped, ''], ['Warranty', p.warranty, ''], ['Given out', S.alloc.filter(a => brands.includes(a.brand) && (!from || a.day >= from) && (!to || a.day <= to)).reduce((a, x) => a + x.qty, 0), '']].map(([l, v, c]) => `<div class="rounded-xl bg-cream-100 p-3"><div class="text-xs text-espresso-500">${l}</div><div class="font-display text-2xl font-semibold tnum ${c}">${v}</div></div>`).join('')}</div>`)}
+    </div>
+    <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+      ${panel('Insulation test', `<p class="text-sm mb-3"><b class="tnum">${p.insPassed}</b> passed · <b class="tnum text-terra">${p.insFailed}</b> failed of <b class="tnum">${p.insTested}</b></p>${hbars(insR.slice(0, 6), 'No failures logged.', 'bg-terra')}`)}
+      ${panel('IoT online check', `<p class="text-sm mb-3"><b class="tnum">${p.online}</b> online · <b class="tnum text-terra">${p.offline}</b> offline · <b class="tnum text-olive-700">${p.recovered}</b> brought back</p>${hbars(iotR.slice(0, 6), 'No offline reasons logged.', 'bg-terra')}${feed(iotActs, l => `<li class="mt-3 text-xs"><b>Done:</b> ${esc(l.data.action)} ${who(l)}</li>`)}`)}
+      ${panel('Air leak test', `<p class="text-sm mb-3"><b class="tnum">${p.airPassed}</b> passed · <b class="tnum text-terra">${p.airFailed}</b> failed · <b class="tnum text-olive-700">${p.refixed}</b> fixed and passed</p>${hbars([['Changed gasket', fixes.gasket || 0], ['Bubble test and seal', fixes.bubble || 0], ['Other fix', fixes.other || 0]].filter(r => r[1]), 'No fixes logged.')}${feed(airUsed, l => `<li class="mt-3 text-xs"><b>Used:</b> ${esc(l.data.used)} ${who(l)}</li>`)}`)}
+      ${panel('Handovers to Quality / O&M', `<p class="text-sm mb-3"><b class="tnum">${p.out}</b> handed over · <b class="tnum">${p.back}</b> returned</p>${hbars(outR.slice(0, 6), 'No handovers logged.')}`)}
+    </div>
+    <div class="grid xl:grid-cols-2 gap-5">
+      ${panel('Quality check', `<p class="text-sm mb-3"><b class="tnum">${p.qcPassed}</b> passed · <b class="tnum text-terra">${p.qcFailed}</b> failed of <b class="tnum">${p.qcChecked}</b> checked</p>
+        ${Object.keys(qcM).length ? `<ul class="divide-y divide-cream-100">${Object.entries(qcM).sort((a, b) => b[1].n - a[1].n).map(([id, m]) => `<li class="py-2.5 flex items-start gap-3">${avatar(person(id), 'w-8 h-8 text-[11px]')}<span class="flex-1 min-w-0"><span class="block text-sm font-medium">${esc(personName(id))} <span class="text-xs text-espresso-500">${esc((person(id) || {}).team || '')}</span></span><span class="block text-xs text-espresso-500">${esc([...new Set(m.reasons)].slice(0, 3).join(' · '))}</span></span><span class="font-semibold tnum text-terra">${m.n}</span></li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">No mistakes recorded.</p>'}`, '', 'mistakes by technician')}
+      ${panel('From the repair line', notes.length ? `<ul class="space-y-3 text-sm">${notes.map(l => `<li class="p-3 rounded-xl bg-cream-100"><div class="flex items-center gap-2">${who(l)}${pill(l.data.brand || '', 'bg-caramel-100 text-caramel-800')}${l.data.top_issue ? `<span class="text-xs">Top: ${esc(l.data.top_issue)}</span>` : ''}</div>
+        ${[['spares_used', 'Spares used'], ['cause', 'Keeps happening because'], ['scrap_reason', 'Scrapped because'], ['spares_reason', 'Waiting for'], ['test_under', 'Test'], ['recommendation', 'Recommends']].filter(([k]) => l.data[k]).map(([k, t]) => `<div class="mt-1"><b>${t}:</b> ${esc(l.data[k])}</div>`).join('')}</li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">No notes yet.</p>', '', 'causes, spares, recommendations')}
+    </div></div>`;
+  bindPeriod(renderWarehouse);
+  if ($('#csvBtn')) $('#csvBtn').onclick = () => downloadCsv(from, to, plabel);
+}
+/* warehouse staff with a daily form who haven't logged today */
+function notLoggedHtml() {
+  const t = todayStr(), done = new Set(S.stage.filter(l => l.day === t).map(l => l.user_id + '|' + l.stage));
+  const miss = [];
+  S.peopleList.filter(p => p.active !== false && kindOf(p) === 'wh' && appRoleOf(p) === 'tech').forEach(p => Object.keys(STAGES).forEach(k => {
+    if (STAGES[k].roles.some(r => (p.roles || []).includes(r)) && !done.has(p.id + '|' + k)) miss.push([p, k]); }));
+  if (!miss.length) return `<div class="rounded-2xl bg-olive-50 text-olive-700 px-4 py-3 text-sm font-medium"><i class="fa-solid fa-circle-check mr-1.5"></i>Every warehouse stage has been logged today.</div>`;
+  const byStage = {}; miss.forEach(([p, k]) => (byStage[k] = byStage[k] || []).push(firstName(p.full_name)));
+  return `<details class="rounded-2xl bg-warn-50 text-warn-800 px-4 py-3 text-sm"><summary class="cursor-pointer font-medium"><i class="fa-solid fa-clock mr-1.5"></i>${miss.length} daily log${miss.length > 1 ? 's' : ''} not in yet today</summary>
+    <ul class="mt-2 space-y-1">${Object.entries(byStage).map(([k, names]) => `<li><b>${STAGES[k].label}:</b> ${esc(names.join(', '))}</li>`).join('')}</ul></details>`;
+}
+/* everything logged in the period as a spreadsheet: one row per entry and number */
+function downloadCsv(from, to, plabel) {
+  const rows = [['Day', 'Staff ID', 'Name', 'Stage', 'Brand', 'Item', 'Number', 'Notes']];
+  const flat = (o, pre = []) => Object.entries(o || {}).flatMap(([k, v]) => v && typeof v === 'object' && !Array.isArray(v) ? flat(v, pre.concat(k)) : [[pre.concat(k), v]]);
+  S.stage.filter(l => l.stage !== 'field' || S.role === 'admin').filter(l => (!from || l.day >= from) && (!to || l.day <= to)).forEach(l => {
+    const p = person(l.user_id) || {}, base = [l.day, p.staff_id || '', p.full_name || '', l.stage === 'field' ? 'Field' : STAGES[l.stage].label];
+    const d = { ...l.data }; const mistakes = d.mistakes || []; delete d.mistakes; const st = d.stations || []; delete d.stations;
+    flat(d).forEach(([path, v]) => {
+      let brand = l.stage === 'repair' ? d.brand || '' : ''; let item = path.filter(x => x !== 't');
+      if (TEAMS.includes(item[0])) { brand = item[0]; item = item.slice(1); } else if (TEAMS.includes(item[1])) { brand = item[1]; item = [item[0], ...item.slice(2)]; }
+      if (path[0] === 'brand') return;
+      rows.push([...base, brand, item.join(' / '), typeof v === 'number' ? v : '', typeof v === 'number' ? '' : v]);
+    });
+    mistakes.forEach(m => rows.push([...base, m.brand, 'Mistake by ' + personName(m.tech), m.n, m.reason || '']));
+    if (st.length) rows.push([...base, '', 'Stations visited', st.length, st.map(id => (S.stations.find(s => s.id === id) || {}).name).filter(Boolean).join('; ')]);
+    if (l.note) rows.push([...base, '', 'Note', '', l.note]);
+  });
+  const csv = rows.map(r => r.map(c => { c = String(c ?? ''); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' }));
+  a.download = `battery-ops-${plabel.toLowerCase().replace(/\s+/g, '-')}.csv`; document.body.appendChild(a); a.click(); a.remove();
+  toast(`${rows.length - 1} rows downloaded`);
+}
+
+/* ================= BRAND DOCKET: SPOC gives out batteries, technicians see their brand ================= */
+function docketBrand() {
+  if (S.role === 'admin' || S.role === 'viewer') return TEAMS.includes(WH.brand) ? WH.brand : (WH.brand = 'CBAK');
+  return myBrand() || 'CBAK';
+}
+function renderDocket() {
+  const b = docketBrand(), canGive = S.role === 'admin' || (S.me.roles || []).includes('spoc');
+  const [from, to, plabel] = periodRange(WH.period);
+  const g = whNumbers(from, to, [b]), p = g.p;
+  setTitle(`${b} docket`, canGive ? 'Give batteries to your technicians by issue' : 'Batteries in your brand');
+  const diagAll = countMap(logsOf('diagnosis'), 'issues', [b]);
+  const givenBy = {}; S.alloc.filter(a => a.brand === b).forEach(a => givenBy[a.issue] = (givenBy[a.issue] || 0) + a.qty);
+  const issues = [...new Set([...Object.keys(diagAll), ...Object.keys(givenBy)])].map(i => [i, diagAll[i] || 0, givenBy[i] || 0]).sort((x, y) => (y[1] - y[2]) - (x[1] - x[2]));
+  const waiting = issues.reduce((a, r) => a + Math.max(0, r[1] - r[2]), 0);
+  const team = whTeam(b).sort((x, y) => x.full_name.localeCompare(y.full_name));
+  const todays = S.alloc.filter(a => a.brand === b && a.day === todayStr()).reverse();
+  $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-5">
+    <div class="flex flex-wrap items-center gap-2">${S.role === 'admin' || S.role === 'viewer' ? `<select data-wh="brand" aria-label="Brand" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${TEAMS.map(t => `<option ${t === b ? 'selected' : ''}>${t}</option>`).join('')}</select>` : pill(b, 'bg-caramel-100 text-caramel-800')}
+      <select data-wh="period" aria-label="Period" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${[['today', 'Today'], ['week', 'This week'], ['month', 'This month'], ['all', 'All time']].map(([v, l]) => `<option value="${v}" ${v === WH.period ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      ${canGive ? `<button id="giveBat" class="${btnP} h-10 ml-auto"><i class="fa-solid fa-hand-holding"></i>Give batteries</button>` : ''}</div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      ${statCard('Waiting to be given out', waiting, 'fa-inbox', 'bg-caramel-100 text-caramel-800', 'diagnosed, not yet with a technician')}
+      ${statCard('Under repair', g.underRepair, 'fa-screwdriver-wrench', 'bg-espresso-900 text-cream-50')}
+      ${statCard('Waiting for spares', g.spares, 'fa-box-open', 'bg-warn-50 text-warn-800')}
+      ${statCard('Under test', g.underTest, 'fa-vial')}
+      ${statCard('Received', p.received, 'fa-truck-ramp-box', 'bg-cream-100 text-espresso-700', plabel)}
+      ${statCard('Repaired', p.repaired, 'fa-circle-check', 'bg-olive-50 text-olive-700', plabel)}
+      ${statCard('Scrapped', p.scrapped, 'fa-trash-can', 'bg-cream-100 text-espresso-700', plabel)}
+      ${statCard('Warranty', p.warranty, 'fa-file-shield', 'bg-cream-100 text-espresso-700', plabel)}
+    </div>
+    <div class="grid xl:grid-cols-2 gap-5">
+      ${panel('By issue', issues.length ? `<table class="w-full text-sm"><thead><tr class="text-espresso-500"><th class="text-left font-medium pb-2">Issue</th><th class="font-medium pb-2 text-right">Diagnosed</th><th class="font-medium pb-2 text-right">Given out</th><th class="font-medium pb-2 text-right">Waiting</th></tr></thead><tbody>${issues.map(([i, d, gv]) => `<tr class="border-t border-cream-100"><td class="py-2">${esc(i)}</td><td class="py-2 text-right tnum">${d}</td><td class="py-2 text-right tnum">${gv}</td><td class="py-2 text-right tnum font-semibold ${d - gv > 0 ? 'text-caramel-800' : 'text-espresso-500'}">${Math.max(0, d - gv)}</td></tr>`).join('')}</tbody></table>` : '<p class="text-sm text-espresso-500">Nothing diagnosed for this brand yet.</p>', '', 'all time')}
+      ${panel('Technicians', team.length ? `<ul class="divide-y divide-cream-100">${team.map(t => { const d = techDocket(t.id);
+        return `<li class="py-3 flex items-center gap-3 ${t.id === S.me.id ? 'bg-caramel-100/40 -mx-2 px-2 rounded-xl' : ''}">${avatar(t)}<span class="flex-1 min-w-0"><span class="block font-medium truncate">${esc(t.full_name)}${t.id === S.me.id ? ' (you)' : ''}</span><span class="block text-xs text-espresso-500 truncate">${d.byIssue.length ? d.byIssue.map(([i, n]) => `${esc(i)} ${n}`).join(' · ') : 'Nothing given yet'}</span></span>
+          <span class="text-right text-xs leading-5 tnum"><span class="block"><b>${d.given}</b> given · <b class="text-olive-700">${d.done}</b> done</span><span class="block text-espresso-500">${d.spares} spares · ${d.test} test · <b class="${d.left ? 'text-caramel-800' : ''}">${d.left} left</b></span></span>
+          ${canGive ? `<button data-give="${t.id}" class="w-9 h-9 rounded-lg border border-cream-300 hover:bg-cream-100" aria-label="Give batteries to ${esc(t.full_name)}"><i class="fa-solid fa-plus"></i></button>` : ''}</li>`; }).join('')}</ul>` : '<p class="text-sm text-espresso-500">No technicians in this brand team.</p>')}
+    </div>
+    ${canGive ? panel('Given out today', todays.length ? `<ul class="divide-y divide-cream-100">${todays.map(a => `<li class="py-2.5 flex items-center gap-3 text-sm"><span class="flex-1"><b>${a.qty}</b> × ${esc(a.issue)} → ${esc(personName(a.tech_id))}</span><span class="text-xs text-espresso-500">${hhmm(a.created_at)}</span>${a.created_by === S.me.id || S.role === 'admin' ? `<button data-undo="${a.id}" class="h-8 px-2 rounded-lg text-xs text-terra-700 hover:bg-terra-50">Undo</button>` : ''}</li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">Nothing given out today.</p>') : ''}
+  </div>`;
+  bindPeriod(renderDocket);
+  if ($('#giveBat')) $('#giveBat').onclick = () => giveForm(b);
+  $$('[data-give]').forEach(x => x.onclick = () => giveForm(b, x.dataset.give));
+  $$('[data-undo]').forEach(x => x.onclick = async () => {
+    if (!confirmInline(x, 'Sure?')) return;
+    const { error } = await S.sb.from('allocations').delete().eq('id', x.dataset.undo);
+    if (error) return toast(errMsg(error), 'err');
+    S.alloc = S.alloc.filter(a => a.id !== x.dataset.undo); toast('Removed'); renderDocket();
+  });
+}
+function giveForm(brand, techId) {
+  const team = whTeam(brand), list = issuesOf('fault');
+  openModal(`${modalHead(`Give ${brand} batteries`)}<form id="giveF" class="p-5 space-y-4">
+    <label class="block"><span class="text-sm font-medium">Technician</span><select name="tech" required class="${inputC} mt-1.5"><option value="">Choose…</option>${team.map(t => `<option value="${t.id}" ${t.id === techId ? 'selected' : ''}>${esc(t.full_name)}</option>`).join('')}</select></label>
+    <div class="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
+      <label class="block"><span class="text-sm font-medium">Issue to work on</span><select name="issue" required class="${inputC} mt-1.5">${list.map(i => `<option>${esc(i)}</option>`).join('')}</select></label>
+      <label class="block"><span class="text-sm font-medium">How many</span><input name="qty" type="number" inputmode="numeric" min="1" max="1000" required class="${inputC} mt-1.5 text-center tnum"></label></div>
+    <p id="giveErr" class="hidden text-sm text-terra-700"></p>
+    <div class="flex justify-end gap-2"><button type="button" data-close class="${btnS}">Cancel</button><button class="${btnP}">Give</button></div></form>`);
+  $('#giveF').onsubmit = async e => {
+    e.preventDefault(); const f = e.target, btn = f.querySelector('button:not([type=button])');
+    const qty = n0(f.qty.value); if (!f.tech.value || !qty) { $('#giveErr').textContent = 'Choose a technician and a number.'; $('#giveErr').classList.remove('hidden'); return; }
+    busy(btn, true);
+    const { data, error } = await S.sb.from('allocations').insert({ brand, tech_id: f.tech.value, issue: f.issue.value, qty, day: todayStr() }).select().single();
+    busy(btn, false);
+    if (error) { $('#giveErr').textContent = errMsg(error); $('#giveErr').classList.remove('hidden'); return; }
+    S.alloc.push(data); closeModal(); toast(`${qty} × ${f.issue.value} given to ${firstName(personName(f.tech.value))}`); renderDocket();
+  };
+}
+
+/* ================= FIELD: technicians log station visits; regional managers oversee and assign stations ================= */
+const myStations = () => S.stations.filter(s => s.field_tech_id === S.me.id);
+const regionStations = () => S.stations.filter(s => s.region && s.region === S.me.region);
+
+function renderFieldDay() {
+  setTitle('My day', fmtDay(todayStr()) + ' · you can edit until midnight');
+  const ex = myLog('field'), d = (ex && ex.data) || {}, picked = new Set(d.stations || []);
+  const mine = myStations(), others = regionStations().filter(s => s.field_tech_id !== S.me.id);
+  const showAll = S.fieldAll || [...picked].some(id => others.some(s => s.id === id));
+  const list = (showAll ? mine.concat(others) : mine);
+  const myTasks = S.tasks.filter(t => t.assignee === S.me.id && (t.day === todayStr() || !t.done));
+  $('#main').innerHTML = `<div class="p-4 md:p-6 max-w-3xl space-y-4">
+    <div class="flex items-center gap-2"><span class="text-xs text-espresso-500">${esc(S.me.region || 'No region set')} · ${mine.length} station${mine.length === 1 ? '' : 's'} assigned to you</span></div>
+    ${myTasks.length ? card(`<div class="p-4"><h2 class="font-display font-semibold">Your tasks</h2><ul class="mt-2 space-y-1">${myTasks.map(t => `<li><label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-cream-100 text-sm"><input type="checkbox" data-task="${t.id}" ${t.done ? 'checked' : ''} class="w-5 h-5 accent-[#8B5A2B]"><span class="${t.done ? 'line-through text-espresso-500' : ''}">${esc(t.title)}</span><span class="ml-auto text-xs text-espresso-500">from ${esc(firstName(personName(t.created_by)))}</span></label></li>`).join('')}</ul></div>`) : ''}
+    ${card(`<form id="fieldF" class="p-5 space-y-5" novalidate>
+      <div><div class="flex items-center"><h2 class="font-display font-semibold text-lg">Stations visited today</h2><span class="ml-auto text-xs text-espresso-500" id="stCount">${picked.size} picked</span></div>
+        ${list.length > 8 ? `<input id="stSearch" class="${inputC} mt-3" placeholder="Search your stations" aria-label="Search stations">` : ''}
+        <ul id="stList" class="mt-3 max-h-80 overflow-y-auto scroll-thin divide-y divide-cream-100 rounded-xl border border-cream-200">${list.length ? list.map(s => `<li data-name="${esc((s.name + ' ' + (s.sub_region || '')).toLowerCase())}"><label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-cream-100"><input type="checkbox" name="stations" value="${s.id}" ${picked.has(s.id) ? 'checked' : ''} class="w-5 h-5 accent-[#8B5A2B]"><span class="flex-1 min-w-0"><span class="block text-sm font-medium truncate">${esc(s.name)}</span><span class="block text-xs text-espresso-500">${esc([s.sub_region, s.region].filter(Boolean).join(' · '))}${s.field_tech_id !== S.me.id ? ' · ' + esc(s.field_tech_id ? 'assigned to ' + firstName(personName(s.field_tech_id)) : 'not assigned') : ''}</span></span></label></li>`).join('') : '<li class="p-4 text-sm text-espresso-500">No stations are assigned to you yet. Ask your regional manager.</li>'}</ul>
+        ${others.length ? `<button type="button" id="stAll" class="mt-2 text-sm font-medium text-caramel-700 hover:underline">${showAll ? 'Show only my stations' : `Also show other stations in ${esc(S.me.region)} (${others.length})`}</button>` : ''}</div>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="text-sm font-medium">Batteries repaired at stations</span>${numIn('repaired', d.repaired, 'Repaired')}</label>
+        <label class="block"><span class="text-sm font-medium">Failed, must come back to warehouse</span>${numIn('failed_back', d.failed_back, 'Failed, back to warehouse')}</label>
+      </div>
+      ${txtIn('issues', d.issues, 'Issues you found', 'e.g. rack 3 at Ntinda not charging')}
+      ${txtIn('improvements', d.improvements, 'Improvements you want us to make', '')}
+      ${txtIn('blockers', d.blockers, 'Blockers', 'What is stopping you?')}
+      <p id="fieldErr" class="hidden text-sm text-terra-700"></p>
+      <div class="flex items-center gap-3"><span class="text-xs text-espresso-500">${ex ? 'Saved ' + hhmm(ex.updated_at) : 'Not saved yet today'}</span><button class="${btnP} ml-auto"><i class="fa-solid fa-floppy-disk"></i>${ex ? 'Save changes' : 'Save today'}</button></div>
+    </form>`)}</div>`;
+  const recount = () => $('#stCount').textContent = $$('[name=stations]:checked').length + ' picked';
+  $$('[name=stations]').forEach(c => c.onchange = recount);
+  if ($('#stSearch')) $('#stSearch').oninput = e => { const q = e.target.value.trim().toLowerCase(); $$('#stList li[data-name]').forEach(li => li.classList.toggle('hidden', q && !li.dataset.name.includes(q))); };
+  if ($('#stAll')) $('#stAll').onclick = () => { S.fieldAll = !showAll; renderFieldDay(); };
+  $$('[data-task]').forEach(c => c.onchange = async () => {
+    const { error } = await S.sb.rpc('set_task_done', { p_id: c.dataset.task, p_done: c.checked });
+    if (error) { c.checked = !c.checked; return toast(errMsg(error), 'err'); }
+    const t = S.tasks.find(x => x.id === c.dataset.task); if (t) t.done = c.checked; renderFieldDay();
+  });
+  $('#fieldF').onsubmit = async e => {
+    e.preventDefault(); const f = e.target, btn = f.querySelector('button:not([type=button])');
+    const data = readStageForm(f); data.stations = $$('[name=stations]:checked').map(c => c.value);
+    busy(btn, true, 'Saving');
+    const row = { user_id: S.me.id, day: todayStr(), stage: 'field', data, note: null };
+    const { data: saved, error } = await S.sb.from('stage_logs').upsert(row, { onConflict: 'user_id,day,stage' }).select().single();
+    busy(btn, false);
+    if (error) { $('#fieldErr').textContent = errMsg(error); $('#fieldErr').classList.remove('hidden'); return; }
+    S.stage = S.stage.filter(l => !(l.user_id === S.me.id && l.day === row.day && l.stage === 'field')).concat(saved);
+    toast('Saved'); renderFieldDay();
+  };
+}
+
+/* ================= REGION DASHBOARD (regional managers; supervisor sees all with filters) ================= */
+function renderRegion() {
+  const [from, to, plabel] = periodRange(WH.period);
+  const techs = S.peopleList.filter(p => isTechProfile(p) && kindOf(p) === 'field' && inScope(p, true));
+  const ids = new Set(techs.map(t => t.id));
+  const logs = logsOf('field', from, to).filter(l => ids.has(l.user_id));
+  const sc = scope(), stations = S.stations.filter(s => sc.region === 'All' || s.region === sc.region);
+  const visited = new Set(logs.flatMap(l => l.data.stations || []));
+  const sum = f => logs.reduce((a, l) => a + (l.data[f] || 0), 0);
+  const today = todayStr(), loggedToday = new Set(logsOf('field', today, today).map(l => l.user_id));
+  const board = techs.map(t => { const ls = logs.filter(l => l.user_id === t.id);
+    return { t, rep: ls.reduce((a, l) => a + (l.data.repaired || 0), 0), back: ls.reduce((a, l) => a + (l.data.failed_back || 0), 0), st: new Set(ls.flatMap(l => l.data.stations || [])).size, days: ls.length, mine: S.stations.filter(s => s.field_tech_id === t.id).length }; })
+    .sort((a, b) => b.rep - a.rep || b.st - a.st);
+  const feed = key => [...logs].reverse().filter(l => l.data[key]).slice(0, 12);
+  const feedHtml = (key, tone) => { const f = feed(key); return f.length ? `<ul class="space-y-2">${f.map(l => `<li class="p-3 rounded-xl ${tone} text-sm">${esc(l.data[key])}<div class="text-xs opacity-80 mt-0.5">${esc(personName(l.user_id))} · ${fmtDay(l.day)}</div></li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">Nothing reported.</p>'; };
+  setTitle(sc.region === 'All' ? 'Regions' : `${sc.region} region`, plabel);
+  $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-5">
+    <div class="flex flex-wrap items-center gap-2">${scopeBar({ noKind: true })}<select data-wh="period" aria-label="Period" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${[['today', 'Today'], ['week', 'This week'], ['month', 'This month'], ['all', 'All time']].map(([v, l]) => `<option value="${v}" ${v === WH.period ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      ${statCard('Repaired at stations', sum('repaired'), 'fa-screwdriver-wrench', 'bg-olive-50 text-olive-700', plabel)}
+      ${statCard('Failed, back to warehouse', sum('failed_back'), 'fa-rotate-left', 'bg-terra-50 text-terra', plabel)}
+      ${statCard('Stations visited', `${visited.size}<span class="text-sm font-sans text-espresso-500"> / ${stations.length}</span>`, 'fa-charging-station', 'bg-caramel-100 text-caramel-800', `${stations.filter(s => !s.field_tech_id).length} not assigned`)}
+      ${statCard('Logged today', `${loggedToday.size}<span class="text-sm font-sans text-espresso-500"> / ${techs.length}</span>`, 'fa-user-check', 'bg-cream-100 text-espresso-700', 'field technicians')}
+    </div>
+    ${panel('Field technicians', board.length ? `<div class="overflow-x-auto"><table class="w-full text-sm min-w-[34rem]"><thead><tr class="text-espresso-500"><th class="text-left font-medium pb-2">Technician</th><th class="font-medium pb-2 text-right">Repaired</th><th class="font-medium pb-2 text-right">Failed back</th><th class="font-medium pb-2 text-right">Stations visited</th><th class="font-medium pb-2 text-right">Assigned</th><th class="font-medium pb-2 text-right">Days logged</th></tr></thead>
+      <tbody>${board.map((r, i) => `<tr class="border-t border-cream-100"><td class="py-2"><button data-person="${r.t.id}" class="flex items-center gap-2.5 text-left">${avatar(r.t, 'w-8 h-8 text-[11px]')}<span><span class="block font-medium">${i < 3 && r.rep ? ['🥇 ', '🥈 ', '🥉 '][i] : ''}${esc(r.t.full_name)}</span><span class="block text-xs text-espresso-500">${esc(r.t.staff_id)} · ${esc(r.t.region || 'no region')}${loggedToday.has(r.t.id) ? '' : ' · <span class="text-warn-800">not logged today</span>'}</span></span></button></td>
+        <td class="py-2 text-right tnum font-semibold text-olive-700">${r.rep}</td><td class="py-2 text-right tnum ${r.back ? 'text-terra' : ''}">${r.back}</td><td class="py-2 text-right tnum">${r.st}</td><td class="py-2 text-right tnum">${r.mine}</td><td class="py-2 text-right tnum">${r.days}</td></tr>`).join('')}</tbody></table></div>` : '<p class="text-sm text-espresso-500">No field technicians in this view.</p>', '', 'best performers first')}
+    <div class="grid xl:grid-cols-3 gap-5">
+      ${panel('Blockers', feedHtml('blockers', 'bg-warn-50 text-warn-800'))}
+      ${panel('Issues found', feedHtml('issues', 'bg-cream-100'))}
+      ${panel('Improvements asked for', feedHtml('improvements', 'bg-olive-50 text-olive-700'))}
+    </div></div>`;
+  bindScope(renderRegion); bindPeriod(renderRegion);
+  $$('#main [data-person]').forEach(b => b.onclick = () => S.role === 'admin' ? userDrawer(b.dataset.person) : personDrawer(b.dataset.person));
+}
+
+/* ================= STATIONS: regional manager assigns stations to their field technicians ================= */
+const ST = { q: '', show: 'all', limit: 60 };
+function renderStations() {
+  const sc = scope(), canAssign = S.role === 'admin' || (S.me.roles || []).includes('rm');
+  const all = S.stations.filter(s => sc.region === 'All' || s.region === sc.region);
+  const techsFor = region => S.peopleList.filter(p => isTechProfile(p) && kindOf(p) === 'field' && (!region || p.region === region)).sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const q = ST.q.toLowerCase();
+  const list = all.filter(s => (ST.show === 'all' || (ST.show === 'none' ? !s.field_tech_id : s.field_tech_id === ST.show)) && (!q || (s.name + ' ' + (s.sub_region || '') + ' ' + personName(s.field_tech_id)).toLowerCase().includes(q)));
+  const regionTechs = techsFor(sc.region === 'All' ? null : sc.region);
+  setTitle('Stations', `${all.length} stations · ${all.filter(s => !s.field_tech_id).length} not assigned`);
+  $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-4">
+    <div class="flex flex-wrap items-center gap-2">${scopeBar({ noKind: true })}
+      <input id="stQ" value="${esc(ST.q)}" class="${inputC} h-10 max-w-xs" placeholder="Search station or technician" aria-label="Search stations">
+      <select id="stShow" aria-label="Show" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium"><option value="all">All stations</option><option value="none" ${ST.show === 'none' ? 'selected' : ''}>Not assigned</option>${regionTechs.map(t => `<option value="${t.id}" ${ST.show === t.id ? 'selected' : ''}>${esc(t.full_name)} (${S.stations.filter(s => s.field_tech_id === t.id).length})</option>`).join('')}</select></div>
+    ${card(`<ul class="divide-y divide-cream-100">${list.slice(0, ST.limit).map(s => `<li class="px-4 py-2.5 flex flex-wrap items-center gap-3"><span class="flex-1 min-w-[12rem]"><span class="block font-medium">${esc(s.name)}</span><span class="block text-xs text-espresso-500">${esc([s.sub_region, s.region].filter(Boolean).join(' · '))}</span></span>
+      ${canAssign ? `<select data-assign="${s.id}" aria-label="Technician for ${esc(s.name)}" class="h-10 w-56 rounded-xl border border-cream-300 bg-surface px-3 text-sm"><option value="">Not assigned</option>${techsFor(s.region).map(t => `<option value="${t.id}" ${s.field_tech_id === t.id ? 'selected' : ''}>${esc(t.full_name)}</option>`).join('')}</select>` : `<span class="text-sm">${esc(s.field_tech_id ? personName(s.field_tech_id) : 'Not assigned')}</span>`}</li>`).join('') || '<li class="p-6 text-center text-sm text-espresso-500">No stations match.</li>'}</ul>
+      ${list.length > ST.limit ? `<div class="p-3 text-center"><button id="stMore" class="${btnS} h-10">Show more (${list.length - ST.limit} left)</button></div>` : ''}`)}
+  </div>`;
+  bindScope(() => { ST.limit = 60; renderStations(); });
+  $('#stQ').oninput = e => { ST.q = e.target.value; ST.limit = 60; clearTimeout(ST.t); ST.t = setTimeout(() => { renderStations(); const i = $('#stQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
+  $('#stShow').onchange = e => { ST.show = e.target.value; renderStations(); };
+  if ($('#stMore')) $('#stMore').onclick = () => { ST.limit += 100; renderStations(); };
+  $$('[data-assign]').forEach(sel => sel.onchange = async () => {
+    const s = S.stations.find(x => x.id === sel.dataset.assign), prev = s.field_tech_id;
+    sel.disabled = true;
+    const { error } = await S.sb.rpc('assign_station', { p_station: s.id, p_tech: sel.value || null });
+    sel.disabled = false;
+    if (error) { sel.value = prev || ''; return toast(errMsg(error), 'err'); }
+    s.field_tech_id = sel.value || null; toast(sel.value ? `${s.name} → ${firstName(personName(sel.value))}` : `${s.name} unassigned`);
+  });
+}
+
+/* ================= SETTINGS: supervisor edits issue lists ================= */
+const KIND_LABEL = { fault: 'Battery issues (diagnosis and repairs)', insulation: 'Insulation fail reasons', iot: 'IoT offline reasons', handover: 'Handover reasons (Quality / O&M)', scrap: 'Scrap reasons' };
+function renderSettings() {
+  setTitle('Settings', 'Lists people pick from');
+  $('#main').innerHTML = `<div class="p-4 md:p-6 grid lg:grid-cols-2 gap-5">${Object.entries(KIND_LABEL).map(([k, l]) => panel(l, `<ul class="space-y-1.5">${S.issues.filter(i => i.kind === k).sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)).map(i => `<li class="flex items-center gap-2"><input data-iname="${i.id}" value="${esc(i.name)}" maxlength="60" aria-label="Name" class="${inputC} h-10 flex-1 ${i.active ? '' : 'line-through text-espresso-500'}"><button data-itoggle="${i.id}" class="h-10 px-3 rounded-xl border border-cream-300 text-sm ${i.active ? '' : 'bg-cream-100'}">${i.active ? 'Hide' : 'Show'}</button></li>`).join('')}</ul>
+    <form data-iadd="${k}" class="mt-3 flex gap-2"><input name="n" maxlength="60" required placeholder="Add another" aria-label="New ${esc(l)}" class="${inputC} h-10 flex-1"><button class="${btnP} h-10">Add</button></form>`)).join('')}</div>`;
+  const save = async (id, patch) => { const { error } = await S.sb.from('issue_types').update(patch).eq('id', id); if (error) { toast(errMsg(error), 'err'); return false; } Object.assign(S.issues.find(i => i.id == id), patch); return true; };
+  $$('[data-iname]').forEach(inp => inp.onchange = async () => { const v = inp.value.trim(); if (!v) return; if (await save(inp.dataset.iname, { name: v })) toast('Renamed'); });
+  $$('[data-itoggle]').forEach(b => b.onclick = async () => { const i = S.issues.find(x => x.id == b.dataset.itoggle); if (await save(i.id, { active: !i.active })) renderSettings(); });
+  $$('[data-iadd]').forEach(f => f.onsubmit = async e => {
+    e.preventDefault(); const name = f.n.value.trim(); if (!name) return;
+    const { data, error } = await S.sb.from('issue_types').insert({ kind: f.dataset.iadd, name, sort: 50 }).select().single();
+    if (error) return toast(/duplicate/i.test(error.message) ? 'That one is already on the list' : errMsg(error), 'err');
+    S.issues.push(data); toast('Added'); renderSettings();
+  });
 }
 
 /* ================= BOOT ================= */
