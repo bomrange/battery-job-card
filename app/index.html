@@ -2459,6 +2459,7 @@ function whNumbers(from, to, brands = TEAMS) {
       addScrapped: sSum(dis, 'scrapped', brands), addWarranty: sSum(dis, 'warranty', brands), toQc: sSum(dis, 'to_qc', brands),
       qcChecked: tSum(qc, 'checked', brands), qcPassed: tSum(qc, 'passed', brands), qcFailed: tSum(qc, 'failed', brands),
       fabRet: fab.reduce((a, l) => a + Object.entries((l.data || {}).ret || {}).reduce((s, [u, n]) => s + (brands.includes((S.peopleList.find(p => p.id === u) || {}).team) ? n || 0 : 0), 0), 0),
+      repTotal: rSum(rep, 'repaired') + tSum(iot, 'recovered', brands),
       rwIn: brands.includes('CBAK') ? dis.reduce((a, l) => a + (((l.data || {}).rw || {}).in || 0), 0) : 0, rwDone: brands.includes('CBAK') ? dis.reduce((a, l) => a + (((l.data || {}).rw || {}).done || 0), 0) : 0
     };
   };
@@ -2536,7 +2537,7 @@ function renderWarehouse() {
   const g = whNumbers(from, to, brands), p = g.p;
   setTitle('Warehouse', `${plabel} · ${WH.brand === 'All' ? 'all brands' : WH.brand} · numbers only`);
   const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
-  const pipe = [['Received', p.received], ['Diagnosed', p.diagnosed], ['Repaired', p.repaired], ['Passed insulation', p.insPassed], ['Online (IoT)', p.online + p.recovered], ['Passed air leak', p.airPassed + p.refixed], ['Dispatched', p.sent]];
+  const pipe = [['Received', p.received], ['Diagnosed', p.diagnosed], ['Repaired', p.repTotal], ['Passed insulation', p.insPassed], ['Online (IoT)', p.online + p.recovered], ['Passed air leak', p.airPassed + p.refixed], ['Dispatched', p.sent]];
   const holds = [['Offline at IoT', g.iotOffline], ['Failed air leak, back in repair', g.airFail], ['Waiting for spares', g.spares], ['Under repair', g.underRepair], ['At fabrication (physical damage)', g.atFab], ['Under test', g.underTest], ['Waiting for diagnosis', g.awaitingDiag], ['With Quality / O&M', g.withPartner], ['Ready to dispatch', g.ready]].filter(r => r[1] > 0);
   const diag = sortedCounts(countMap(logsOf('diagnosis', from, to), 'issues', brands));
   const perBrandIssue = issue => TEAMS.filter(b => brands.includes(b)).map(b => { const n = countMap(logsOf('diagnosis', from, to), 'issues', [b])[issue] || 0; return n ? `${b} ${n}` : ''; }).filter(Boolean).join(' · ');
@@ -2591,7 +2592,7 @@ function renderWarehouse() {
     </div>
     <div class="grid xl:grid-cols-3 gap-5">
       ${panel('Biggest issues (diagnosis)', hbars(diag.slice(0, 10).map(([k, v]) => [k, v, perBrandIssue(k)])), 'xl:col-span-2', `${p.diagnosed} diagnosed`)}
-      ${panel('Repairs', `<div class="grid grid-cols-2 gap-2">${[['Repaired', p.repaired, 'text-olive-700'], ['Scrapped', p.scrapped, ''], ['Warranty', p.warranty, ''], ['Given out', repAlloc().filter(a => brands.includes(a.brand) && (!from || a.day >= from) && (!to || a.day <= to)).reduce((a, x) => a + x.qty, 0), '']].map(([l, v, c]) => `<div class="rounded-xl bg-cream-100 p-3"><div class="text-xs text-espresso-500">${l}</div><div class="font-display text-2xl font-semibold tnum ${c}">${v}</div></div>`).join('')}</div>`)}
+      ${panel('Repairs', `<div class="grid grid-cols-2 gap-2">${[['Repaired', p.repTotal, 'text-olive-700'], ['Scrapped', p.scrapped, ''], ['Warranty', p.warranty, ''], ['Given out', repAlloc().filter(a => brands.includes(a.brand) && (!from || a.day >= from) && (!to || a.day <= to)).reduce((a, x) => a + x.qty, 0), '']].map(([l, v, c]) => `<div class="rounded-xl bg-cream-100 p-3"><div class="text-xs text-espresso-500">${l}</div><div class="font-display text-2xl font-semibold tnum ${c}">${v}</div></div>`).join('')}</div>`)}
     </div>
     <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
       ${panel('Insulation test', `<p class="text-sm mb-3"><b class="tnum">${p.insPassed}</b> passed · <b class="tnum text-terra">${p.insFailed}</b> failed of <b class="tnum">${p.insTested}</b></p>${hbars(insR.slice(0, 6), 'No failures logged.', 'bg-terra')}`)}
@@ -2661,7 +2662,7 @@ function renderDocket() {
   const waiting = issues.reduce((a, r) => a + Math.max(0, r[1] - r[2]), 0);
   const team = whTeam(b).sort((x, y) => x.full_name.localeCompare(y.full_name));
   const todays = repAlloc().filter(a => a.brand === b && a.day === todayStr()).reverse();
-  const done = p.repaired + p.scrapped + p.warranty, left = Math.max(0, p.received - done), pct = p.received ? Math.min(100, Math.round(p.repaired / p.received * 100)) : 0;
+  const done = p.repaired + p.scrapped + p.warranty, left = Math.max(0, p.received - done), pct = p.received ? Math.min(100, Math.round(p.repTotal / p.received * 100)) : 0;
   const recvToday = tSum(logsOf('receiving', todayStr(), todayStr()), 'recv', [b]);
   $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-5">
     <div class="flex flex-wrap items-center gap-2">${S.role === 'admin' || S.role === 'viewer' ? `<select data-wh="brand" aria-label="Brand" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${TEAMS.map(t => `<option ${t === b ? 'selected' : ''}>${t}</option>`).join('')}</select>` : pill(b, 'bg-caramel-100 text-caramel-800')}
@@ -2671,7 +2672,7 @@ function renderDocket() {
     ${card(`<div class="p-5"><div class="flex flex-wrap items-baseline gap-2"><h2 class="font-display font-semibold text-lg">${b} received vs repaired</h2><span class="text-xs text-espresso-500">${plabel} · ${recvToday} received today</span></div>
       <div class="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3">
         <div><div class="text-xs text-espresso-500">Received</div><div class="font-display text-4xl font-semibold tnum">${p.received}</div></div>
-        <div><div class="text-xs text-espresso-500">Repaired</div><div class="font-display text-4xl font-semibold tnum text-olive-700">${p.repaired}</div></div>
+        <div><div class="text-xs text-espresso-500">Repaired</div><div class="font-display text-4xl font-semibold tnum text-olive-700">${p.repTotal}</div>${p.recovered ? `<div class="text-xs text-espresso-500 tnum">incl. ${p.recovered} brought back online</div>` : ''}</div>
         <div><div class="text-xs text-espresso-500">Scrapped / warranty</div><div class="font-display text-2xl font-semibold tnum">${p.scrapped} / ${p.warranty}</div></div>
         <div><div class="text-xs text-espresso-500">Still to finish</div><div class="font-display text-2xl font-semibold tnum ${left ? 'text-caramel-800' : ''}">${left}</div></div></div>
       <div class="mt-3 h-3 rounded-full bg-cream-200 overflow-hidden" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Repaired out of received"><div class="h-full rounded-full bg-olive" style="width:${pct}%"></div></div>
@@ -2684,7 +2685,7 @@ function renderDocket() {
       ${statCard('Waiting for spares', g.spares, 'fa-box-open', 'bg-warn-50 text-warn-800')}
       ${statCard('Under test', g.underTest, 'fa-vial')}
       ${statCard('Received', p.received, 'fa-truck-ramp-box', 'bg-cream-100 text-espresso-700', plabel)}
-      ${statCard('Repaired', p.repaired, 'fa-circle-check', 'bg-olive-50 text-olive-700', plabel)}
+      ${statCard('Repaired', p.repTotal, 'fa-circle-check', 'bg-olive-50 text-olive-700', plabel)}
       ${statCard('Scrapped', p.scrapped, 'fa-trash-can', 'bg-cream-100 text-espresso-700', plabel)}
       ${statCard('Warranty', p.warranty, 'fa-file-shield', 'bg-cream-100 text-espresso-700', plabel)}
     </div>
@@ -3332,7 +3333,7 @@ const GLOSSARY = {
   warranty: 'Manufacturer fault. Moved to QC and waiting for the manufacturer.',
   withPartner: 'Handed to Quality / O&M because it is beyond our repair (e.g. vandalism, cell imbalance).',
   incoming: 'Receiving says these are on the way today.',
-  whRepaired: 'Repaired by the warehouse repair lines.',
+  whRepaired: 'Repaired by the warehouse repair lines, plus offline batteries the IoT team brought back online.',
   fieldRepaired: 'Repaired by field technicians at swap stations.'
 };
 /* a stat card that opens its details when tapped */
@@ -3352,6 +3353,7 @@ function repairSeries(period, brands = TEAMS, fieldIds = null) {
   const days = graphDays(period), from = days[0], to = days[days.length - 1];
   const wh = {}, fd = {};
   repLogs(brands, from, to).forEach(l => { wh[l.day] = (wh[l.day] || 0) + (l.data.repaired || 0); });
+  logsOf('iot', from, to).forEach(l => { wh[l.day] = (wh[l.day] || 0) + tSum([l], 'recovered', brands); });
   const fr = fieldRepairs(from, to, fieldIds);
   let pts = days.map(d => [d, wh[d] || 0, fr.byDay(d)]);
   if (pts.length > 62) { const wk = []; for (let i = 0; i < pts.length; i += 7) { const s = pts.slice(i, i + 7); wk.push([s[0][0], s.reduce((a, x) => a + x[1], 0), s.reduce((a, x) => a + x[2], 0)]); } pts = wk; }
@@ -3360,7 +3362,7 @@ function repairSeries(period, brands = TEAMS, fieldIds = null) {
 function vsGraph(period, brands, fieldIds, plabel) {
   const { pts, weekly } = repairSeries(period, brands, fieldIds);
   const [from, to] = periodRange(period);
-  const whT = repLogs(brands, from, to).reduce((a, l) => a + (l.data.repaired || 0), 0);
+  const whT = repLogs(brands, from, to).reduce((a, l) => a + (l.data.repaired || 0), 0) + tSum(logsOf('iot', from, to), 'recovered', brands);
   const fdT = fieldRepairs(from, to, fieldIds).total;
   const W = 640, H = 170, P = 28, max = Math.max(4, ...pts.map(p => Math.max(p[1], p[2])));
   const x = i => P + (pts.length < 2 ? (W - 2 * P) / 2 : i * (W - 2 * P) / (pts.length - 1)), y = v => H - P - v * (H - 2 * P) / max;
@@ -3396,7 +3398,7 @@ function openDetail(key, from, to, brands, fieldIds) {
   if (key === 'warranty') { const why = {}; logsOf('repair', from, to).filter(l => brands.includes(l.data.brand)).forEach(l => Object.entries(l.data.wr || {}).forEach(([r, n]) => { why[r] = (why[r] || 0) + (n || 0); }));
     const wl = Object.entries(why).filter(x => x[1]).sort((a, b) => b[1] - a[1]); if (wl.length) body += `<h3 class="text-xs font-semibold text-espresso-500 mb-1">WHY THEY WERE MOVED TO QC</h3><ul class="divide-y divide-cream-100 mb-4">${wl.map(([r, n]) => row(esc(r), n)).join('')}</ul>`;
     logList('repair', l => brands.includes(l.data.brand) ? l.data.warranty : 0, l => esc(l.data.brand) + ' line' + (l.data.warranty_reason ? ' · ' + esc(l.data.warranty_reason) : '')); logList('dispatch', l => sSum([l], 'warranty', brands) + sSum([l], 'to_qc', brands), () => 'added to stock'); }
-  if (key === 'whRepaired') logList('repair', l => brands.includes(l.data.brand) ? l.data.repaired : 0, l => esc(l.data.brand));
+  if (key === 'whRepaired') { logList('repair', l => brands.includes(l.data.brand) ? l.data.repaired : 0, l => esc(l.data.brand)); logList('iot', l => tSum([l], 'recovered', brands), () => 'brought back online at IoT'); }
   if (key === 'fieldRepaired') { const fr = fieldRepairs(from, to, fieldIds);
     body += `<div class="rounded-xl bg-cream-100 p-3 mb-4 text-sm"><b class="tnum font-display text-2xl">${fr.total}</b> repaired = <b class="tnum">${fr.logged}</b> from daily logs + <b class="tnum">${fr.tagged}</b> from tagged jobs closed</div>`;
     Object.entries(fr.per).map(([u, r]) => [u, r, r.logged + r.tagged]).filter(x => x[2]).sort((a, b) => b[2] - a[2]).forEach(([u, r, t]) => people.push(row(esc(personName(u)), t, `${r.logged} logged${r.tagged ? ` + ${r.tagged} tagged` : ''} · ${r.days} day${r.days === 1 ? '' : 's'}`))); }
@@ -3655,7 +3657,7 @@ function renderTechHome() {
     <div class="flex flex-wrap items-center gap-2">${periodBar(renderTechHome, false)}<span class="h-10 px-3 rounded-xl bg-caramel-100 text-caramel-800 text-sm font-semibold inline-flex items-center gap-2"><i class="fa-solid fa-user-group"></i>${esc(mine.length === 1 ? mine[0] + ' team' : 'Warehouse')}</span></div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       ${st ? statCard('Still to work on', st.left, 'fa-screwdriver-wrench', 'bg-caramel-100 text-caramel-800', `${st.given} given · ${st.done} done`) : ''}
-      ${statCard(mine.length === 1 ? mine[0] + ' repaired' : 'Repaired', g.p.repaired, 'fa-circle-check', 'bg-olive-50 text-olive-700', plabel)}
+      ${statCard(mine.length === 1 ? mine[0] + ' repaired' : 'Repaired', g.p.repTotal, 'fa-circle-check', 'bg-olive-50 text-olive-700', plabel)}
       ${statCard('Under repair', g.underRepair, 'fa-gears', 'bg-cream-100 text-espresso-700', 'right now')}
       ${statCard('Ready to dispatch', g.ready, 'fa-truck-fast', 'bg-olive-50 text-olive-700', 'right now')}
     </div>
@@ -3707,7 +3709,7 @@ function renderOpsHome() {
 function handoverText(brands = TEAMS, day = todayStr()) {
   const g = whNumbers(day, day, brands), p = g.p, L = [];
   L.push(`SHIFT HANDOVER – ${fmtDay(day)}${brands.length < TEAMS.length ? ' – ' + brands.join(', ') : ''}`, `Prepared by ${S.me.full_name} (${S.me.staff_id}) at ${hhmm(new Date().toISOString())}`, '');
-  L.push('PROCESSED TODAY', `Received ${p.received} · Diagnosed ${p.diagnosed} · Repaired ${p.repaired} · Scrapped ${p.scrapped} · Warranty ${p.warranty}`, `Insulation passed ${p.insPassed}/${p.insTested} · IoT online ${p.online + p.recovered} · Air leak passed ${p.airPassed + p.refixed}/${p.airTested}`, `QC passed ${p.qcPassed}/${p.qcChecked} · Dispatched ${p.sent} · Handed to Quality/O&M ${p.out}`, '');
+  L.push('PROCESSED TODAY', `Received ${p.received} · Diagnosed ${p.diagnosed} · Repaired ${p.repTotal}${p.recovered ? ` (incl. ${p.recovered} brought back online)` : ''} · Scrapped ${p.scrapped} · Warranty ${p.warranty}`, `Insulation passed ${p.insPassed}/${p.insTested} · IoT online ${p.online + p.recovered} · Air leak passed ${p.airPassed + p.refixed}/${p.airTested}`, `QC passed ${p.qcPassed}/${p.qcChecked} · Dispatched ${p.sent} · Handed to Quality/O&M ${p.out}`, '');
   L.push('PENDING NOW', `Under repair ${g.underRepair} · Waiting for spares ${g.spares} · Under test ${g.underTest} · At fabrication ${g.atFab}`, `Offline at IoT ${g.iotOffline} · Failed air leak ${g.airFail} · Waiting for diagnosis ${g.awaitingDiag} · Left to give out ${g.toGive} · Ready to dispatch ${g.ready}`, '');
   const late = overdueNow();
   L.push('FLAGGED', late.length ? `Past turnaround: ${late.map(r => `${personName(r.uid)} ${r.n}`).join(', ')}` : 'Past turnaround: none');
@@ -3865,11 +3867,11 @@ function regionFaultTable(from, to, plabel) {
 /* regional managers / field technicians: new tags in their area since they last looked */
 function checkNewTags() {
   const r = S.me.roles || [];
-  if (!(r.includes('rm') || r.includes('field_tech') || S.role === 'admin')) return mdCheckin();
+  if (!(r.includes('rm') || r.includes('field_tech') || S.role === 'admin')) return checkWorkNudge();
   const keep = s => S.role === 'admin' || ((s.region === S.me.region) && (!(r.includes('rm') && areaOf(S.me)) || s.sub_region === S.me.sub_region || (person(s.field_tech_id) || {}).sub_region === S.me.sub_region));
   const seen = seenSet('bo_seen_tags_');
   const fresh = S.faults.filter(f => f.kind === 'tag' && recent(f.day, 2) && !seen.has(f.id) && keep(stationById(f.station_id) || { region: f.region, sub_region: f.sub_region }));
-  if (!fresh.length) return mdCheckin();
+  if (!fresh.length) return checkWorkNudge();
   const n = fresh.reduce((a, f) => a + f.qty, 0), st = new Set(fresh.map(f => f.station_id));
   popAlert({ icon: 'fa-tag', tone: 'bg-terra-50 text-terra', title: `${n} faulty batter${n === 1 ? 'y' : 'ies'} tagged`,
     items: fresh.slice(-12).reverse().map(f => liBox(`${f.qty} at ${esc((stationById(f.station_id) || {}).name || 'a station')}`, `${f.note ? esc(f.note) + ' · ' : ''}tagged by ${esc(personName(f.user_id))} · ${fmtDay(f.day)} ${hhmm(f.created_at)}`)),
@@ -4574,6 +4576,37 @@ function viewAsPicker() {
   $('#vaQ').oninput = e => { const q = e.target.value.trim().toLowerCase(); $$('#vaList li').forEach(li => li.classList.toggle('hidden', q && !li.dataset.q.includes(q))); };
   $$('#modal [data-va]').forEach(b => b.onclick = () => viewAs(b.dataset.va));
   $('#vaQ').focus();
+}
+
+/* ================= WORK REMINDERS: finish given batteries, close tagged jobs, SPOCs give out batteries ================= */
+function nudgeItems() {
+  if (!S.me || S.viewAs) return [];
+  const r = S.me.roles || [], out = [];
+  const d = techDocket(S.me.id);
+  if (d.left > 0) out.push({ k: 'dock', n: d.left, main: `${d.left} batter${d.left === 1 ? 'y' : 'ies'} given to you ${d.left === 1 ? 'is' : 'are'} not finished`, sub: 'Repair them and log what you did in My day (repaired, scrapped, warranty or handed over).', go: 'myday' });
+  if (r.includes('field_tech') && typeof openAt === 'function') {
+    const st = (S.stations || []).filter(s => s.field_tech_id === S.me.id).map(s => [s, openAt(s.id)]).filter(x => x[1] > 0);
+    const n = st.reduce((a, x) => a + x[1], 0);
+    if (n) out.push({ k: 'tags', n, main: `${n} tagged batter${n === 1 ? 'y' : 'ies'} at your station${st.length > 1 ? 's' : ''} still open`, sub: st.slice(0, 6).map(x => `${esc(x[0].name)}: ${x[1]}`).join(' · ') + '. Repair them and close the jobs.', go: 'home' });
+  }
+  if (r.includes('spoc') && S.me.team && TEAMS.includes(S.me.team)) {
+    const g = whNumbers(null, null, [S.me.team]).toGive;
+    if (g > 0) out.push({ k: 'give', n: g, main: `${g} ${esc(S.me.team)} batter${g === 1 ? 'y is' : 'ies are'} waiting to be given to technicians`, sub: 'Give them out to your technicians so repairs can start.', go: 'warehouse' });
+  }
+  return out;
+}
+function checkWorkNudge() {
+  const done = () => (typeof mdCheckin === 'function' ? mdCheckin() : null);
+  if (!S.me || !S.loaded || S.viewAs || !$('#modal').classList.contains('hidden')) return done();
+  let items; try { items = nudgeItems(); } catch (e) { return done(); }
+  if (!items.length) return done();
+  const key = 'bo_nudge_' + S.me.id, sig = items.map(i => i.k + i.n).join('|');
+  let last = {}; try { last = JSON.parse(store.get(key) || '{}'); } catch (e) {}
+  if (last.sig === sig && Date.now() - (last.t || 0) < 3 * 3600e3) return done();
+  const save = () => store.set(key, JSON.stringify({ sig, t: Date.now() }));
+  popAlert({ icon: 'fa-list-check', tone: 'bg-caramel-100 text-caramel-800', title: items.length > 1 ? 'Work waiting for you' : items[0].main,
+    items: items.map(i => liBox(i.main, i.sub)), notifyBody: items.map(i => i.main).join('\n'),
+    okLabel: 'Later', goLabel: items[0].k === 'give' ? 'Give out batteries' : items[0].k === 'tags' ? 'See tagged jobs' : 'Open My day', goView: items[0].go, onOk: save });
 }
 
 /* ================= BOOT ================= */
