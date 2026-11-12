@@ -611,7 +611,7 @@ async function startApp(fresh) {
   go(R().views.includes(want) ? want : R().home, true);
   if (S.timers) S.timers.forEach(clearInterval);
   heartbeat(); setTimeout(checkNewTasks, 800); setTimeout(flushQueue, 2000);
-  S.timers = [setInterval(() => { if (!document.hidden && S.loaded) softRefresh(); }, 120000),
+  S.timers = [setInterval(() => { if (!document.hidden && S.loaded) softRefresh(); }, 60000),
   setInterval(() => { if (!document.hidden && S.loaded) { heartbeat(); flushQueue(); } }, 120000),
   setInterval(() => { if (S.view === 'dispatch' && !document.hidden) renderDispatchLive(); }, 60000)];
 }
@@ -661,6 +661,8 @@ function subscribeLive() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => softRefresh(800))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'stage_logs' }, () => softRefresh(1500))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'allocations' }, () => softRefresh(1000))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'station_faults' }, () => softRefresh(1500))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'stock_adjust' }, () => softRefresh(1500))
       .subscribe();
   } catch (e) { console.warn('live updates off', e); }
 }
@@ -2237,9 +2239,9 @@ function repairForm(d) {
     ${st.byIssue.length ? `<p class="text-xs text-espresso-500">Given by issue: ${st.byIssue.map(([i, n]) => `${esc(i)} ${n}`).join(' · ')}</p>` : ''}
     ${section('Today', `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${[['repaired', 'Repaired'], ['scrapped', 'Scrapped'], ['warranty', 'Sent for warranty']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div>`, 'Batteries you finished today. <b>Repaired</b>: working again. <b>Scrapped</b>: totally dead, can\'t be repaired. <b>Warranty</b>: manufacturer fault, goes to QC to wait for the manufacturer.')}
     ${issuesOf('sop').length ? section('Checklist for the batteries you repaired', `<div class="grid sm:grid-cols-2 gap-2">${issuesOf('sop').map((s, i) => `<label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-cream-200 text-sm"><input type="checkbox" name="sop" value="${esc(s)}" ${(d.sop || []).includes(s) ? 'checked' : ''} class="w-5 h-5 accent-[#8B5A2B]"><span><b class="text-espresso-500">${i + 1}.</b> ${esc(s)}</span></label>`).join('')}</div>`, 'Tick every step before counting batteries as repaired. Your name and the time are recorded with it.') : ''}
-    ${section('Handed over to other teams', `<div class="grid grid-cols-2 gap-2">${[['handed_fab', 'Physical damage → Fabrication'], ['handed_iot', 'Offline → IoT']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div>`, 'Broken nails, threading, broken wires or burnt BMS go to fabrication. Offline batteries go to IoT.')}
+    ${section('Handed over to other teams', `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${[['handed_fab', 'Physical damage → Fabrication'], ['handed_iot', 'Offline → IoT'], ['to_spares', 'Needs a spare we don\'t have → Waiting for spares']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div><div class="mt-2">${txtIn('spares_missing', d.spares_missing, 'Which spare is missing?', 'e.g. charging port')}</div>`, `Broken nails, threading, broken wires or burnt BMS go to fabrication. Offline batteries go to IoT. Batteries waiting for a part (e.g. charging port) are added to Esther's waiting for spares and she is told. ${REPAIR_TO_AIR.includes(myBrand() || d.brand) ? 'Repaired ' + esc(myBrand() || d.brand) + ' batteries go straight to the air leak test.' : 'Repaired batteries go to the insulation test.'}`)}
     ${section('Why you moved batteries to QC (warranty)', issueGrid('wr', 'warranty', d) + `<div class="mt-2">${txtIn('warranty_reason', d.warranty_reason, 'Anything else about the warranty batteries?', 'e.g. 2 CBAK with swollen cells from the same batch')}</div>`, 'Give a reason for every battery you sent for warranty. The numbers here must add up to "Sent for warranty".')}
-    ${section('Still with you right now', `<div class="grid grid-cols-2 gap-2"><label class="block"><span class="text-xs font-medium text-espresso-600">Under test</span>${numIn('under_test', d.under_test, 'Under test')}</label></div>`, '<b>Under test</b>: repaired and being tested before it moves on. Give the number with you right now. Batteries waiting for spares are logged by Esther in the Spares tab.')}
+    ${section('Still with you right now', `<div class="grid grid-cols-2 gap-2"><label class="block"><span class="text-xs font-medium text-espresso-600">Under test</span>${numIn('under_test', d.under_test, 'Under test')}</label></div>`, '<b>Under test</b>: repaired and being tested before it moves on. Give the number with you right now.')}
     <label class="block"><span class="text-sm font-medium">Biggest issue you repaired today</span><select name="top_issue" class="${inputC} mt-1.5"><option value="">Choose…</option>${issuesOf('fault').map(i => `<option ${d.top_issue === i ? 'selected' : ''}>${esc(i)}</option>`).join('')}</select></label>
     <div class="grid md:grid-cols-2 gap-3">
       ${txtIn('spares_used', d.spares_used, 'Spares used', 'e.g. 2 BMS boards, 1 charge port')}
@@ -2292,7 +2294,7 @@ function renderWhDay() {
       <div class="flex items-center gap-3"><span class="w-10 h-10 rounded-xl bg-caramel-100 text-caramel-800 grid place-items-center"><i class="fa-solid ${STAGES[k].icon}"></i></span><div><h2 class="font-display font-semibold text-lg">${STAGES[k].label}</h2><p class="text-xs text-espresso-500">${past ? (ex ? 'Already saved for this day.' : `Not logged for ${fmtDay(day)} yet.`) : !ex ? 'Not saved yet today.' : locked ? `Saved ${hhmm(ex.updated_at)}${(ex.data._adds || []).length > 1 ? ` · ${ex.data._adds.length - 1} additions` : ''}. Saved numbers can't be changed. Anything you enter below is added on top.` : 'Saved ' + hhmm(ex.updated_at) + '. You can correct it (supervisor).'}</p></div></div>
       ${locked ? `<div class="rounded-xl border border-cream-200 bg-cream-100 p-3 text-sm"><div class="text-xs font-semibold text-espresso-500 mb-1">SAVED TODAY</div>${savedSummary(ex.data)}${ex.note ? `<div class="mt-1 text-xs"><b>Note:</b> ${esc(ex.note)}</div>` : ''}<div class="mt-1.5 text-xs text-espresso-500"><i class="fa-solid fa-signature"></i> Signed by ${esc(S.me.full_name)} (${esc(S.me.staff_id)}) · ${hhmm(ex.updated_at)}${(ex.data.sop || []).length ? ' · checklist done' : ''}</div></div><h3 class="font-display font-semibold text-lg">Add more</h3>` : ''}
       ${pendingCount() ? `<div class="rounded-xl bg-warn-50 text-warn-800 p-3 text-sm"><i class="fa-solid fa-cloud-arrow-up"></i> ${pendingCount()} saved count${pendingCount() > 1 ? 's are' : ' is'} waiting for internet and will send by itself.</div>` : ''}
-      ${past && ex ? pastSaved(ex, k) : `${past ? '' : roomLine(k) + teamLine(k)}
+      ${past && ex ? pastSaved(ex, k) : `${past ? '' : roomLine(k) + pendingLine(k) + teamLine(k)}
       ${openingSection(k, d)}
       ${STAGE_FORM[k](d)}
       ${txtIn('note', locked ? '' : ex && ex.note, locked ? 'Add a note' : 'Anything else? Blockers?', 'Optional')}
@@ -2350,7 +2352,7 @@ function stageCheck(k, d) {
     if (n > r.room) return `${b}: only ${r.received} received so far and ${r.prior} already ${STAGE_NOUN[k]}. You can enter at most ${r.room}.`;
   }
   if (k === 'repair') {
-    const st = techDocket(S.me.id, true), out = ['repaired', 'scrapped', 'warranty', 'handed_fab', 'handed_iot'].reduce((a, f) => a + (d[f] || 0), 0);
+    const st = techDocket(S.me.id, true), out = ['repaired', 'scrapped', 'warranty', 'handed_fab', 'handed_iot', 'to_spares'].reduce((a, f) => a + (d[f] || 0), 0);
     if (out > st.given - st.done) return `You were given ${st.given} and already finished or handed over ${st.done}. Today you can enter at most ${Math.max(0, st.given - st.done)}. Ask your SPOC to give you more.`;
   }
   if (k === 'fabrication') for (const b of TEAMS) {
@@ -2417,7 +2419,7 @@ function whNumbers(from, to, brands = TEAMS) {
     return {
       received: tSum(rec, 'recv', brands), diagnosed: Object.values(diag).reduce((a, b) => a + b, 0),
       repaired: rSum(rep, 'repaired'), scrapped: rSum(rep, 'scrapped'), warranty: rSum(rep, 'warranty'),
-      handedFab: rSum(rep, 'handed_fab'), handedIot: rSum(rep, 'handed_iot'), iotFab: tSum(iot, 'to_fab', brands), airFab: tSum(air, 'to_fab', brands), fabFixed: tSum(fab, 'fixed', brands), fabScrapped: tSum(fab, 'scrapped', brands),
+      handedFab: rSum(rep, 'handed_fab'), handedIot: rSum(rep, 'handed_iot'), toSpares: rSum(rep, 'to_spares'), iotFab: tSum(iot, 'to_fab', brands), airFab: tSum(air, 'to_fab', brands), fabFixed: tSum(fab, 'fixed', brands), fabScrapped: tSum(fab, 'scrapped', brands),
       insTested: tSum(ins, 'tested', brands), insPassed: tSum(ins, 'passed', brands), insFailed: tSum(ins, 'failed', brands),
       iotChecked: tSum(iot, 'checked', brands), online: tSum(iot, 'online', brands), offline: tSum(iot, 'offline', brands), recovered: tSum(iot, 'recovered', brands),
       airTested: tSum(air, 'tested', brands), airPassed: tSum(air, 'passed', brands), airFailed: tSum(air, 'failed', brands), refixed: tSum(air, 'refixed', brands),
@@ -2428,7 +2430,7 @@ function whNumbers(from, to, brands = TEAMS) {
   };
   const p = flow(from, to), A = from || to ? flow(null, null) : p;
   const hold = latestPerUser(repLogs(brands)), spL = latestSpares();
-  const spares = spL ? sparesNow(brands) : 0, underTest = rSum(hold, 'under_test');
+  const spares = sparesNow(brands), underTest = rSum(hold, 'under_test');
   const opening = k => brands.reduce((a, b) => a + openingOf(k, b, false), 0);
   const allocated = repAlloc().filter(a => brands.includes(a.brand)).reduce((a, x) => a + x.qty, 0);
   const incoming = tSum(logsOf('receiving', todayStr(), todayStr()), 'incoming', brands);
@@ -2436,10 +2438,10 @@ function whNumbers(from, to, brands = TEAMS) {
     p, A, spares, underTest, allocated, incoming,
     onHand: Math.max(0, A.received + A.back - A.sent - A.out),
     awaitingDiag: Math.max(0, A.received - A.diagnosed),
-    underRepair: Math.max(0, allocated - A.repaired - A.scrapped - A.warranty - A.handedFab - A.handedIot - spares - underTest),
+    underRepair: Math.max(0, allocated - A.repaired - A.scrapped - A.warranty - A.handedFab - A.handedIot - A.toSpares - underTest),
     atFab: Math.max(0, A.handedFab + A.iotFab + A.airFab + opening('fabrication') - A.fabFixed - A.fabScrapped),
-    airWaiting: brands.reduce((a, b) => a + airWaitingOf(b), 0),
-    toGive: Math.max(0, A.received + A.fabFixed - allocated),
+    airWaiting: brands.reduce((a, b) => a + pendingOf('air_leak', b), 0), insPending: brands.reduce((a, b) => a + pendingOf('insulation', b), 0), iotPending: brands.reduce((a, b) => a + pendingOf('iot', b), 0),
+    toGive: Math.max(0, A.received + A.fabFixed + sparesBack(brands) - allocated),
     iotOffline: Math.max(0, A.offline + opening('iot') - A.recovered - A.iotFab),
     airFail: Math.max(0, A.airFailed - A.refixed - A.airFab),
     ready: Math.max(0, A.airPassed + A.refixed - A.sent),
@@ -2452,7 +2454,7 @@ function techDocket(uid, skipToday) {
   const al = repAlloc().filter(a => a.tech_id === uid);
   const given = al.reduce((a, x) => a + x.qty, 0);
   const mine = logsOf('repair').filter(l => l.user_id === uid && !(skipToday && l.day === todayStr()));
-  const handed = rSum(mine, 'handed_fab') + rSum(mine, 'handed_iot');
+  const handed = rSum(mine, 'handed_fab') + rSum(mine, 'handed_iot') + rSum(mine, 'to_spares');
   const done = rSum(mine, 'repaired') + rSum(mine, 'scrapped') + rSum(mine, 'warranty') + handed;
   const last = latestPerUser(mine)[0], holding = last ? ((last.data.spares || 0) + (last.data.under_test || 0)) : 0;
   const by = {}; al.forEach(a => by[a.issue] = (by[a.issue] || 0) + a.qty);
@@ -2522,7 +2524,9 @@ function renderWarehouse() {
       ${statBtn('underTest', 'Under test', g.underTest, 'fa-vial', 'bg-cream-100 text-espresso-700')}
       ${statBtn('atFab', 'At fabrication', g.atFab, 'fa-fire-burner', 'bg-warn-50 text-warn-800')}
       ${statBtn('iotOffline', 'Offline at IoT', g.iotOffline, 'fa-tower-broadcast', 'bg-terra-50 text-terra')}
-      ${statBtn('airWaiting', 'Waiting for air leak', g.airWaiting, 'fa-wind', 'bg-caramel-100 text-caramel-800')}
+      ${statBtn('insPending', 'Pending insulation test', g.insPending, 'fa-bolt', 'bg-caramel-100 text-caramel-800')}
+      ${statBtn('iotPending', 'Pending IoT check', g.iotPending, 'fa-tower-broadcast', 'bg-caramel-100 text-caramel-800')}
+      ${statBtn('airWaiting', 'Pending air leak test', g.airWaiting, 'fa-wind', 'bg-caramel-100 text-caramel-800')}
       ${statBtn('airFail', 'Failed air leak', g.airFail, 'fa-wind', 'bg-terra-50 text-terra')}
       ${statBtn('ready', 'Ready to dispatch', g.ready, 'fa-truck-fast', 'bg-olive-50 text-olive-700')}
       ${statBtn('awaitingDiag', 'Waiting for diagnosis', g.awaitingDiag, 'fa-stethoscope', 'bg-cream-100 text-espresso-700')}
@@ -2782,7 +2786,7 @@ function renderRegion() {
     <div class="flex flex-wrap items-center gap-2">${regionPicker()}<select data-wh="period" aria-label="Period" class="h-10 rounded-xl border border-cream-300 bg-surface px-3 text-sm font-medium">${PERIOD_OPTS().map(([v, l]) => `<option value="${v}" ${v === WH.period ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     ${board.length ? `<div class="rounded-2xl ${myPos === 0 ? 'bg-olive-50 text-olive-700' : 'bg-caramel-100 text-caramel-800'} p-4 text-sm">${board.length && board[0].rep ? `<b>${esc(firstName(board[0].t.full_name))}</b> is leading ${esc(rvLabel(rv))} with <b class="tnum">${board[0].rep}</b> repaired (${esc(plabel)}).` : 'No repairs logged yet in this period.'}${myPos >= 0 ? ` You are <b>#${myPos + 1}</b> of ${board.length}${myPos === 0 && board[0].rep ? ' 🎉' : ''}.` : ''}</div>` : ''}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      ${statBtn('fieldRepaired', 'Repaired at stations', sum('repaired') + fs.repaired, 'fa-screwdriver-wrench', 'bg-olive-50 text-olive-700', plabel)}
+      ${statBtn('fieldRepaired', 'Repaired at stations', fieldRepairs(from, to, ids).total, 'fa-screwdriver-wrench', 'bg-olive-50 text-olive-700', plabel)}
       ${statCard('Failed, back to hub', sum('failed_back') + fs.failed, 'fa-rotate-left', 'bg-terra-50 text-terra', plabel)}
       ${statCard('Stations visited', `${visited.size}<span class="text-sm font-sans text-espresso-500"> / ${stations.length}</span>`, 'fa-charging-station', 'bg-caramel-100 text-caramel-800', `${stations.filter(s => !s.field_tech_id).length} not assigned`)}
       ${statCard('Logged today', `${loggedToday.size}<span class="text-sm font-sans text-espresso-500"> / ${techs.length}</span>`, 'fa-user-check', 'bg-cream-100 text-espresso-700', 'field technicians')}
@@ -2909,8 +2913,7 @@ const stageAlloc = k => S.alloc.filter(a => a.stage === k);
 /* batteries that reached this stage so far, per brand */
 function stageInflow(k, b) {
   const op = openingOf(k, b, false), rep = logsOf('repair').filter(l => (l.data || {}).brand === b);
-  if (k === 'iot') return op + rSum(rep, 'handed_iot') + tSum(logsOf('insulation'), 'passed', [b]);
-  if (k === 'air_leak') return op + iotToAir(b);
+  if (k === 'iot' || k === 'air_leak') return op + flowIn(k, b, null, null);
   return op + rSum(rep, 'handed_fab');
 }
 const memberGiven = (k, uid, b) => stageAlloc(k).filter(a => a.tech_id === uid && (!b || a.brand === b)).reduce((a, x) => a + x.qty, 0);
@@ -2946,7 +2949,7 @@ function renderTeamWork() {
       <button id="tGive" class="${btnP} h-10 ml-auto"><i class="fa-solid fa-hand-holding"></i>Give batteries</button></div>
     ${panel('Batteries at this stage', `<table class="w-full text-sm"><thead><tr class="text-espresso-500"><th class="text-left font-medium pb-2">Brand</th><th class="font-medium pb-2 text-right">Came in</th><th class="font-medium pb-2 text-right">Given out</th><th class="font-medium pb-2 text-right">Left to give</th></tr></thead>
       <tbody>${brandRows.map(([b, i, g, l]) => `<tr class="border-t border-cream-100"><td class="py-2 font-semibold">${b}</td><td class="py-2 text-right tnum">${i}</td><td class="py-2 text-right tnum">${g}</td><td class="py-2 text-right tnum font-semibold ${l ? 'text-caramel-800' : 'text-espresso-500'}">${l}</td></tr>`).join('')}</tbody></table>
-      <p class="mt-3 text-xs text-espresso-500">"Came in" = opening stock you declared + what earlier stages passed on${k === 'iot' ? ' (handed over as offline by repair lines, passed insulation)' : k === 'air_leak' ? ' (handed over by the IoT team)' : ' (handed over by repair lines as physical damage)'}. Add opening stock in your My day form.</p>`, '', 'all time')}
+      <p class="mt-3 text-xs text-espresso-500">"Came in" = opening stock you declared + what earlier stages passed on${k === 'iot' ? ' (handed over as offline by repair lines, passed insulation)' : k === 'air_leak' ? ` (handed over by the IoT team, and ${REPAIR_TO_AIR.join(', ')} repaired by the lines)` : ' (handed over by repair lines as physical damage)'}. Add opening stock in your My day form.</p>`, '', 'all time')}
     ${panel('Your team', members.length ? `<ul class="divide-y divide-cream-100">${members.map(m => { const g = memberGiven(k, m.id), dn = memberDone(k, m.id);
       return `<li class="py-3 flex items-center gap-3">${avatar(m)}<span class="flex-1 min-w-0"><span class="block font-medium truncate">${esc(m.full_name)}${m.id === S.me.id ? ' (you)' : ''}</span><span class="block text-xs text-espresso-500 truncate">${TEAMS.map(b => { const x = memberGiven(k, m.id, b); return x ? `${b} ${x}` : ''; }).filter(Boolean).join(' · ') || 'Nothing given yet'}</span></span>
         <span class="text-right text-xs leading-5 tnum"><span class="block"><b>${g}</b> given · <b class="text-olive-700">${dn}</b> ${TEAM_STAGES[k].doneLabel}</span><span class="block"><b class="${g - dn > 0 ? 'text-caramel-800' : 'text-espresso-500'}">${Math.max(0, g - dn)} left</b></span>${(() => { const s = tatSummary(personTat(m.id, k), monthStart(), todayStr()); return `<span class="block ${tatTone(s)}">${fmtTat(s)}${s.overdue ? ` · ${s.overdue} late` : ''}</span>`; })()}</span>
@@ -2987,7 +2990,8 @@ function giveTeamForm(k, uid) {
 
 /* ================= SPARES: one person keeps the "waiting for spares" stock up to date ================= */
 function sparesForm(d) {
-  return `<div class="rounded-xl bg-cream-100 p-3 text-sm"><b>Waiting for spares now:</b> ${TEAMS.map(b => `${b} <b class="tnum">${sparesNow([b])}</b>`).join(' · ')}</div>`
+  const lines = logsOf('repair').filter(l => (l.data.to_spares || 0) > 0).slice(-6).reverse();
+  return `<div class="rounded-xl bg-cream-100 p-3 text-sm"><b>Waiting for spares now:</b> ${TEAMS.map(b => `${b} <b class="tnum">${sparesNow([b])}</b>`).join(' · ')}${lines.length ? `<div class="mt-1.5 text-xs text-espresso-600"><b>Added by the repair lines:</b> ${lines.map(l => `${esc(firstName(personName(l.user_id)))} ${l.data.to_spares} ${esc(l.data.brand || '')}${l.data.spares_missing ? ' (' + esc(l.data.spares_missing) + ')' : ''} · ${fmtDay(l.day)}`).join(' · ')}</div>` : ''}</div>`
     + section('New batteries waiting for spares', brandGrid('add', [['n', 'Add today']], d), 'Only the new ones since your last entry. They are added to the number above.')
     + section('Spares arrived today', brandGrid('arrived', [['n', 'Batteries sent back to repair']], d), 'They are taken off the number above.')
     + txtIn('missing', d.missing, 'Which spares are we waiting for?', 'e.g. 6 BMS boards for CBAK');
@@ -2998,8 +3002,11 @@ const latestSpares = () => sparesSorted().pop();
 function sparesNow(brands = TEAMS) {
   const L = sparesSorted(), bi = L.map(l => !!(l.data || {}).waiting).lastIndexOf(true);
   const n = (l, key, b) => ((((l.data || {})[key] || {})[b] || {}).n || 0);
-  return brands.reduce((s, b) => s + Math.max(0, L.reduce((a, l, i) => i < bi ? a : i === bi ? n(l, 'waiting', b) + n(l, 'add', b) : a + n(l, 'add', b) - n(l, 'arrived', b), 0)), 0);
+  const fromLines = b => logsOf('repair').filter(l => (l.data || {}).brand === b).reduce((a, l) => a + (l.data.to_spares || 0), 0);
+  return brands.reduce((s, b) => s + Math.max(0, fromLines(b) + L.reduce((a, l, i) => i < bi ? a : i === bi ? n(l, 'waiting', b) + n(l, 'add', b) : a + n(l, 'add', b) - n(l, 'arrived', b), 0)), 0);
 }
+/* spares arrived: those batteries go back to the SPOC to give out again */
+const sparesBack = (brands = TEAMS) => logsOf('spares').reduce((a, l) => a + brands.reduce((s, b) => s + ((((l.data || {}).arrived || {})[b] || {}).n || 0), 0), 0);
 
 /* ================= ADD-ONLY: after the first save, people add to today's numbers instead of editing them ================= */
 const SNAP_KEYS = { repair: ['spares', 'under_test'], spares: ['waiting'] };
@@ -3020,7 +3027,7 @@ function mergeAdd(old, add, k) {
   out._adds = (old && old._adds ? old._adds : [{ at: null }]).concat({ at: new Date().toISOString() });
   return out;
 }
-const NUM_LABEL = { recv: 'received', incoming: 'still incoming', tested: 'tested', passed: 'passed', failed: 'failed', refixed: 'fixed on retest', checked: 'checked', online: 'online', offline: 'offline', recovered: 'brought back', sent: 'dispatched', out: 'handed over', back: 'returned', fixed: 'fixed', scrapped: 'scrapped', warranty: 'warranty', to_qc: 'moved to QC', repaired: 'repaired', handed_fab: 'to fabrication', handed_iot: 'to IoT', to_air: 'to air leak', to_fab: 'to fabrication', spares: 'waiting for spares', under_test: 'under test' };
+const NUM_LABEL = { recv: 'received', incoming: 'still incoming', tested: 'tested', passed: 'passed', failed: 'failed', refixed: 'fixed on retest', checked: 'checked', online: 'online', offline: 'offline', recovered: 'brought back', sent: 'dispatched', out: 'handed over', back: 'returned', fixed: 'fixed', scrapped: 'scrapped', warranty: 'warranty', to_qc: 'moved to QC', repaired: 'repaired', handed_fab: 'to fabrication', handed_iot: 'to IoT', to_spares: 'to waiting for spares', to_air: 'to air leak', to_fab: 'to fabrication', spares: 'waiting for spares', under_test: 'under test' };
 function savedSummary(d) {
   const out = [];
   const walk = (o, path) => Object.entries(o || {}).forEach(([k, v]) => {
@@ -3250,8 +3257,10 @@ function storeEditForm(id) {
 const GLOSSARY = {
   onHand: 'All batteries in the building: received + returned − dispatched − handed over.',
   underRepair: 'Given to a repair technician and not finished yet.',
-  spares: 'Need a part we don\'t have yet. Esther adds new ones and takes off the ones whose spares arrived.',
-  airWaiting: 'Handed over by IoT and not tested for air leak yet. The air leak lead can correct it.',
+  spares: 'Need a part we don\'t have yet. The repair lines and Esther add them; Esther takes off the ones whose spares arrived.',
+  airWaiting: 'Waiting for the air leak test: CBAK repaired by the lines and batteries handed over by IoT, minus what was tested. The air leak lead can correct it.',
+  insPending: 'Repaired by the lines (not CBAK) and not tested for insulation yet.',
+  iotPending: 'Passed insulation or handed to IoT as offline, and not checked by IoT yet.',
   underTest: 'Repaired and now being tested (e.g. charge cycle) before moving on.',
   atFab: 'Physical damage (broken nails, threading, broken wires, burnt BMS) waiting for fabrication.',
   iotOffline: 'Not showing online. The IoT team is working to bring them back.',
@@ -3282,8 +3291,8 @@ function repairSeries(period, brands = TEAMS, fieldIds = null) {
   const days = graphDays(period), from = days[0], to = days[days.length - 1];
   const wh = {}, fd = {};
   repLogs(brands, from, to).forEach(l => { wh[l.day] = (wh[l.day] || 0) + (l.data.repaired || 0); });
-  logsOf('field', from, to).filter(l => !fieldIds || fieldIds.has(l.user_id)).forEach(l => { fd[l.day] = (fd[l.day] || 0) + (l.data.repaired || 0); });
-  let pts = days.map(d => [d, wh[d] || 0, fd[d] || 0]);
+  const fr = fieldRepairs(from, to, fieldIds);
+  let pts = days.map(d => [d, wh[d] || 0, fr.byDay(d)]);
   if (pts.length > 62) { const wk = []; for (let i = 0; i < pts.length; i += 7) { const s = pts.slice(i, i + 7); wk.push([s[0][0], s.reduce((a, x) => a + x[1], 0), s.reduce((a, x) => a + x[2], 0)]); } pts = wk; }
   return { pts, weekly: days.length > 62 };
 }
@@ -3291,7 +3300,7 @@ function vsGraph(period, brands, fieldIds, plabel) {
   const { pts, weekly } = repairSeries(period, brands, fieldIds);
   const [from, to] = periodRange(period);
   const whT = repLogs(brands, from, to).reduce((a, l) => a + (l.data.repaired || 0), 0);
-  const fdT = logsOf('field', from, to).filter(l => !fieldIds || fieldIds.has(l.user_id)).reduce((a, l) => a + (l.data.repaired || 0), 0);
+  const fdT = fieldRepairs(from, to, fieldIds).total;
   const W = 640, H = 170, P = 28, max = Math.max(4, ...pts.map(p => Math.max(p[1], p[2])));
   const x = i => P + (pts.length < 2 ? (W - 2 * P) / 2 : i * (W - 2 * P) / (pts.length - 1)), y = v => H - P - v * (H - 2 * P) / max;
   const line = (k, c) => `<polyline fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${pts.map((p, i) => `${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join(' ')}"/>${pts.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p[k]).toFixed(1)}" r="3" fill="${c}"><title>${fmtDay(p[0])}: ${p[k]}</title></circle>`).join('')}`;
@@ -3302,20 +3311,21 @@ function vsGraph(period, brands, fieldIds, plabel) {
       <button type="button" data-detail="fieldRepaired" class="text-left rounded-xl bg-cream-100 p-3 hover:ring-2 hover:ring-caramel-400/50"><div class="text-xs text-espresso-500 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#6B8E4E]"></span>Swap stations</div><div class="font-display text-2xl font-semibold tnum">${fdT}</div></button>
       <div class="rounded-xl bg-espresso-900 text-cream-50 p-3"><div class="text-xs opacity-80">Total repaired</div><div class="font-display text-2xl font-semibold tnum">${whT + fdT}</div></div></div>
     <svg viewBox="0 0 ${W} ${H}" class="w-full h-auto text-espresso-900 dark:text-cream-50" role="img" aria-label="Line graph of batteries repaired per ${weekly ? 'week' : 'day'}, warehouse against swap stations">${ticks}${line(1, '#8B5A2B')}${line(2, '#6B8E4E')}${lbl}</svg>
-    <p class="text-xs text-espresso-500 mt-1">Batteries repaired per ${weekly ? 'week' : 'day'}. Totals are for ${esc(plabel)}. Swap station numbers come from field technicians' daily logs.</p>`, '', plabel);
+    <p class="text-xs text-espresso-500 mt-1">Batteries repaired per ${weekly ? 'week' : 'day'}. Totals are for ${esc(plabel)}. Swap station numbers are field technicians' daily logs plus tagged jobs they closed as repaired.</p>`, '', plabel);
 }
 
 /* ---- tapping a card shows where the number comes from ---- */
 function openDetail(key, from, to, brands, fieldIds) {
   const per = TEAMS.filter(b => brands.includes(b)).map(b => [b, whNumbers(from, to, [b])]);
-  const pick = { onHand: g => g.onHand, underRepair: g => g.underRepair, spares: g => g.spares, underTest: g => g.underTest, atFab: g => g.atFab, iotOffline: g => g.iotOffline, airWaiting: g => g.airWaiting, airFail: g => g.airFail, ready: g => g.ready, awaitingDiag: g => g.awaitingDiag, scrapped: g => g.scrapped, warranty: g => g.warranty, withPartner: g => g.withPartner, incoming: g => g.incoming };
-  const titles = { onHand: 'In the warehouse', underRepair: 'Under repair', spares: 'Waiting for spares', underTest: 'Under test', atFab: 'At fabrication', iotOffline: 'Offline at IoT', airWaiting: 'Waiting for air leak', airFail: 'Failed air leak', ready: 'Ready to dispatch', awaitingDiag: 'Waiting for diagnosis', scrapped: 'Scrapped', warranty: 'Warranty (moved to QC)', withPartner: 'With Quality / O&M', incoming: 'Incoming today', whRepaired: 'Warehouse repairs', fieldRepaired: 'Swap station repairs' };
+  const pick = { onHand: g => g.onHand, underRepair: g => g.underRepair, spares: g => g.spares, underTest: g => g.underTest, atFab: g => g.atFab, iotOffline: g => g.iotOffline, airWaiting: g => g.airWaiting, insPending: g => g.insPending, iotPending: g => g.iotPending, airFail: g => g.airFail, ready: g => g.ready, awaitingDiag: g => g.awaitingDiag, scrapped: g => g.scrapped, warranty: g => g.warranty, withPartner: g => g.withPartner, incoming: g => g.incoming };
+  const titles = { onHand: 'In the warehouse', underRepair: 'Under repair', spares: 'Waiting for spares', underTest: 'Under test', atFab: 'At fabrication', iotOffline: 'Offline at IoT', airWaiting: 'Pending air leak test', insPending: 'Pending insulation test', iotPending: 'Pending IoT check', airFail: 'Failed air leak', ready: 'Ready to dispatch', awaitingDiag: 'Waiting for diagnosis', scrapped: 'Scrapped', warranty: 'Warranty (moved to QC)', withPartner: 'With Quality / O&M', incoming: 'Incoming today', whRepaired: 'Warehouse repairs', fieldRepaired: 'Swap station repairs' };
   const goTo = { underRepair: 'docket', atFab: 'teamwork', iotOffline: 'teamwork', airFail: 'teamwork', fieldRepaired: 'region' };
   const row = (a, b, c = '') => `<li class="py-2 flex items-center gap-3 text-sm"><span class="flex-1 min-w-0">${a}</span>${c ? `<span class="text-xs text-espresso-500">${c}</span>` : ''}<b class="tnum">${b}</b></li>`;
   let body = '';
   if (pick[key]) body += `<h3 class="text-xs font-semibold text-espresso-500 mb-1">BY BRAND</h3><ul class="divide-y divide-cream-100 mb-4">${per.map(([b, g]) => row(b, pick[key](g))).join('')}</ul>`;
   const people = [];
   if (key === 'underRepair') S.peopleList.filter(p => TEAMS.includes(p.team) && brands.includes(p.team)).forEach(p => { const d = techDocket(p.id); if (d.left) people.push(row(esc(p.full_name), d.left, `${esc(p.team)} · given ${d.given}`)); });
+  if (key === 'spares') logList('repair', l => brands.includes(l.data.brand) ? l.data.to_spares : 0, l => esc(l.data.brand) + ' line' + (l.data.spares_missing ? ' · ' + esc(l.data.spares_missing) : ''));
   if (key === 'spares') { const l = latestSpares(); if (l) { people.push(row(`Updated by ${esc(personName(l.user_id))}`, '', fmtDay(l.day))); if (l.data.missing) people.push(`<li class="py-2 text-sm"><b>Waiting for:</b> ${esc(l.data.missing)}</li>`); } }
   const logList = (stage, f, label, filter = () => true) => logsOf(stage, from, to).filter(filter).map(l => [l, f(l)]).filter(x => x[1]).reverse().slice(0, 40).forEach(([l, n]) => people.push(row(`${esc(personName(l.user_id))}${label ? ' · ' + label(l) : ''}`, n, fmtDay(l.day))));
   if (key === 'scrapped') { logList('repair', l => brands.includes(l.data.brand) ? l.data.scrapped : 0, l => esc(l.data.brand) + ' line'); logList('fabrication', l => tSum([l], 'scrapped', brands), () => 'fabrication'); logList('dispatch', l => sSum([l], 'scrapped', brands), () => 'added to stock'); }
@@ -3323,7 +3333,9 @@ function openDetail(key, from, to, brands, fieldIds) {
     const wl = Object.entries(why).filter(x => x[1]).sort((a, b) => b[1] - a[1]); if (wl.length) body += `<h3 class="text-xs font-semibold text-espresso-500 mb-1">WHY THEY WERE MOVED TO QC</h3><ul class="divide-y divide-cream-100 mb-4">${wl.map(([r, n]) => row(esc(r), n)).join('')}</ul>`;
     logList('repair', l => brands.includes(l.data.brand) ? l.data.warranty : 0, l => esc(l.data.brand) + ' line' + (l.data.warranty_reason ? ' · ' + esc(l.data.warranty_reason) : '')); logList('dispatch', l => sSum([l], 'warranty', brands) + sSum([l], 'to_qc', brands), () => 'added to stock'); }
   if (key === 'whRepaired') logList('repair', l => brands.includes(l.data.brand) ? l.data.repaired : 0, l => esc(l.data.brand));
-  if (key === 'fieldRepaired') logList('field', l => (!fieldIds || fieldIds.has(l.user_id)) ? l.data.repaired : 0, l => `${(l.data.stations || []).length} station${(l.data.stations || []).length === 1 ? '' : 's'}`);
+  if (key === 'fieldRepaired') { const fr = fieldRepairs(from, to, fieldIds);
+    body += `<div class="rounded-xl bg-cream-100 p-3 mb-4 text-sm"><b class="tnum font-display text-2xl">${fr.total}</b> repaired = <b class="tnum">${fr.logged}</b> from daily logs + <b class="tnum">${fr.tagged}</b> from tagged jobs closed</div>`;
+    Object.entries(fr.per).map(([u, r]) => [u, r, r.logged + r.tagged]).filter(x => x[2]).sort((a, b) => b[2] - a[2]).forEach(([u, r, t]) => people.push(row(esc(personName(u)), t, `${r.logged} logged${r.tagged ? ` + ${r.tagged} tagged` : ''} · ${r.days} day${r.days === 1 ? '' : 's'}`))); }
   if (key === 'iotOffline' || key === 'airFail' || key === 'atFab') { const k = key === 'iotOffline' ? 'iot' : key === 'airFail' ? 'air_leak' : 'fabrication'; teamMembers(k).forEach(m => { const g = memberGiven(k, m.id), dn = memberDone(k, m.id); if (g) people.push(row(esc(m.full_name), Math.max(0, g - dn), `given ${g} · ${TEAM_STAGES[k].doneLabel} ${dn}`)); }); }
   if (people.length) body += `<h3 class="text-xs font-semibold text-espresso-500 mb-1">${key === 'underRepair' || key.startsWith('iot') || key === 'airFail' || key === 'atFab' ? 'STILL WITH' : 'ENTRIES'}</h3><ul class="divide-y divide-cream-100 max-h-[45vh] overflow-y-auto">${people.join('')}</ul>`;
   if (!body) body = '<p class="text-sm text-espresso-500">Nothing to show for this period.</p>';
@@ -3536,9 +3548,9 @@ async function shareProcurement(items) {
 }
 function downloadText(name, txt, type = 'text/plain') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 function checkLowStock() {
-  if (!isStorekeeper()) return checkNewTags();
+  if (!isStorekeeper()) return checkSparesScrap();
   const seen = seenSet('bo_seen_low_'), low = lowStockItems(), fresh = low.filter(i => !seen.has(i.id + '|' + itemStock(i.id).inStore));
-  if (!fresh.length) return checkNewTags();
+  if (!fresh.length) return checkSparesScrap();
   popAlert({ icon: 'fa-triangle-exclamation', tone: 'bg-warn-50 text-warn-800', title: fresh.length > 1 ? `${fresh.length} items are running low` : `${fresh[0].name} is running low`,
     items: fresh.map(i => liBox(esc(i.name), `${itemStock(i.id).inStore} ${esc(i.unit)} left · minimum ${i.min_qty}`, 'bg-warn-50')),
     extra: `<button id="paReq" class="${btnS}"><i class="fa-solid fa-paper-plane"></i>Request from procurement</button>`, okLabel: 'Later',
@@ -4141,7 +4153,7 @@ const isIotPerson = (p = S.me) => ((p && p.roles) || []).some(r => ['iot', 'iot_
 const canAdjust = k => S.adjOk && (S.role === 'admin' || (isLead() && STAGES[k].roles.some(r => (S.me.roles || []).includes(r))));
 const iotOfflineOf = b => whNumbers(null, null, [b]).iotOffline;
 /* batteries handed to air leak and not tested yet */
-const airWaitingOf = b => Math.max(0, stageInflow('air_leak', b) - tSum(logsOf('air_leak'), 'tested', [b]));
+const airWaitingOf = b => pendingOf('air_leak', b);
 const STOCK_FIX = { iot: { title: 'Batteries offline at IoT now', of: iotOfflineOf, btn: 'Correct offline at IoT', what: 'offline batteries are really at IoT', flow: 'found offline, brought back online, sent to fabrication' },
                     air_leak: { title: 'Batteries waiting for air leak test now', of: airWaitingOf, btn: 'Correct waiting for air leak', what: 'batteries are really waiting for the air leak test', flow: 'handed over by IoT, tested' } };
 const stockFixBtn = (k, cls = 'h-9') => canAdjust(k) ? `<button type="button" data-adj="${k}" class="${btnS} ${cls}"><i class="fa-solid fa-pen"></i>${STOCK_FIX[k].btn}</button>` : '';
@@ -4285,6 +4297,66 @@ function bindDayBar(after) {
 }
 /* what an earlier day looks like once it is saved */
 const pastSaved = (ex, k) => `<div class="rounded-xl border border-cream-200 bg-cream-100 p-3 text-sm"><div class="text-xs font-semibold text-espresso-500 mb-1">SAVED FOR ${esc(fmtDay(ex.day).toUpperCase())}</div>${k === 'field' ? `Repaired <b>${ex.data.repaired || 0}</b> · failed back <b>${ex.data.failed_back || 0}</b> · ${(ex.data.stations || []).length} stations${ex.data.blockers ? ` · blockers: ${esc(ex.data.blockers)}` : ''}` : savedSummary(ex.data)}${ex.note ? `<div class="mt-1 text-xs"><b>Note:</b> ${esc(ex.note)}</div>` : ''}<div class="mt-1.5 text-xs text-espresso-500">Earlier days can't be changed once saved. Ask the supervisor if something is wrong.</div></div>`;
+
+/* ================= BATTERY FLOW BETWEEN TEAMS =================
+   repair lines → waiting for spares (Esther), scrapped (Esther is told), and repaired batteries move on to their test:
+   CBAK repaired → air leak test; other brands repaired → insulation → IoT → air leak.
+   "Pending" for a test = what came in, ever (plus opening stock / corrections), minus what was tested. Yesterday's
+   pending is today's opening; what the repair lines and earlier tests log today is added on top. */
+const REPAIR_TO_AIR = ['CBAK'];   // brands whose repaired batteries go straight to the air leak test
+const TEST_STAGES = {
+  insulation: { label: 'insulation test', done: 'tested', icon: 'fa-bolt' },
+  iot:        { label: 'IoT check', done: 'checked', icon: 'fa-tower-broadcast' },
+  air_leak:   { label: 'air leak test', done: 'tested', icon: 'fa-wind' }
+};
+/* batteries that reached test stage k for brand b between from and to (inclusive), from the teams before it */
+function flowIn(k, b, from, to) {
+  const rep = logsOf('repair', from, to).filter(l => (l.data || {}).brand === b), toAir = REPAIR_TO_AIR.includes(b);
+  if (k === 'insulation') return toAir ? 0 : rSum(rep, 'repaired');
+  if (k === 'iot') return rSum(rep, 'handed_iot') + tSum(logsOf('insulation', from, to), 'passed', [b]);
+  if (k === 'air_leak') return iotToAir(b, logsOf('iot', from, to)) + (toAir ? rSum(rep, 'repaired') : 0);
+  return 0;
+}
+/* waiting for test k at the end of day `to` (null = right now) */
+function pendingOf(k, b, to = null) {
+  return Math.max(0, openingOf(k, b, false) + flowIn(k, b, null, to) - tSum(logsOf(k, null, to), TEST_STAGES[k].done, [b]));
+}
+const yesterdayStr = () => { const d = new Date(todayStr() + 'T12:00:00'); d.setDate(d.getDate() - 1); return ymd(d); };
+function pendingParts(k, b) { return { before: pendingOf(k, b, yesterdayStr()), today: flowIn(k, b, todayStr(), todayStr()), now: pendingOf(k, b) }; }
+/* shown at the top of a test team's daily form */
+function pendingLine(k) {
+  if (!TEST_STAGES[k]) return '';
+  const rows = TEAMS.map(b => [b, pendingParts(k, b)]);
+  return `<div class="rounded-xl border border-caramel-200 bg-caramel-100/50 p-3 text-sm"><b>Pending ${TEST_STAGES[k].label}:</b>
+    <div class="mt-1.5 grid sm:grid-cols-3 gap-2">${rows.map(([b, p]) => `<div class="rounded-lg bg-surface px-3 py-2"><div class="font-semibold">${b} <span class="tnum font-display text-lg">${p.now}</span></div><div class="text-xs text-espresso-500">${p.before} from before + ${p.today} came in today${p.before + p.today - p.now > 0 ? ` − ${p.before + p.today - p.now} done` : ''}</div></div>`).join('')}</div>
+    <div class="mt-1.5 text-xs text-espresso-500">${k === 'air_leak' ? `${REPAIR_TO_AIR.join(', ')} come straight from the repair lines when they are repaired; other brands come from IoT.` : k === 'insulation' ? `Repaired batteries from the repair lines (${TEAMS.filter(b => !REPAIR_TO_AIR.includes(b)).join(', ')}).` : 'Passed insulation, or handed to IoT by the repair lines as offline.'} What is not tested today is still pending tomorrow.</div></div>`;
+}
+
+/* ---- swap station repairs: daily logs + tagged jobs closed as repaired, so every place shows the same number ---- */
+function fieldRepairs(from, to, ids) {
+  const logs = logsOf('field', from, to).filter(l => !ids || ids.has(l.user_id));
+  const closes = S.faults.filter(f => f.kind === 'close' && (!ids || ids.has(f.user_id)) && (!from || f.day >= from) && (!to || f.day <= to));
+  const per = {};
+  logs.forEach(l => { const r = per[l.user_id] = per[l.user_id] || { logged: 0, tagged: 0, days: 0 }; r.logged += l.data.repaired || 0; r.days++; });
+  closes.forEach(f => { const r = per[f.user_id] = per[f.user_id] || { logged: 0, tagged: 0, days: 0 }; r.tagged += f.repaired || 0; });
+  const logged = logs.reduce((a, l) => a + (l.data.repaired || 0), 0), tagged = closes.reduce((a, f) => a + (f.repaired || 0), 0);
+  return { total: logged + tagged, logged, tagged, per, byDay: d => logs.filter(l => l.day === d).reduce((a, l) => a + (l.data.repaired || 0), 0) + closes.filter(f => f.day === d).reduce((a, f) => a + (f.repaired || 0), 0) };
+}
+
+/* ---- Esther (dispatch / spares) is told when the repair lines add batteries to waiting for spares or scrapped ---- */
+const isSparesKeeper = () => (S.me.roles || []).some(r => ['dispatch', 'spares'].includes(r));
+function checkSparesScrap() {
+  if (!isSparesKeeper()) return checkNewTags();
+  const seen = seenSet('bo_seen_ss_');
+  const fresh = logsOf('repair').filter(l => recent(l.day, 2) && ((l.data.to_spares || 0) + (l.data.scrapped || 0)) > 0)
+    .map(l => ({ l, key: `${l.id}|${l.data.to_spares || 0}|${l.data.scrapped || 0}` })).filter(x => !seen.has(x.key));
+  if (!fresh.length) return checkNewTags();
+  const sp = fresh.reduce((a, x) => a + (x.l.data.to_spares || 0), 0), sc = fresh.reduce((a, x) => a + (x.l.data.scrapped || 0), 0);
+  popAlert({ icon: 'fa-box-open', tone: 'bg-warn-50 text-warn-800', title: [sp && `${sp} added to waiting for spares`, sc && `${sc} scrapped`].filter(Boolean).join(' · '),
+    items: fresh.map(({ l }) => liBox(`${esc(personName(l.user_id))} · ${esc(l.data.brand || '')}`, [l.data.to_spares && `${l.data.to_spares} waiting for spares${l.data.spares_missing ? ' (' + esc(l.data.spares_missing) + ')' : ''}`, l.data.scrapped && `${l.data.scrapped} scrapped${l.data.scrap_reason ? ' (' + esc(l.data.scrap_reason) + ')' : ''}`].filter(Boolean).join(' · ') + ` · ${fmtDay(l.day)}`, 'bg-warn-50')),
+    notifyBody: 'From the repair lines', okLabel: 'Got it', goLabel: 'See waiting for spares', goView: 'myday',
+    onOk: () => markSeenKeys('bo_seen_ss_', seen, fresh.map(x => x.key)) });
+}
 
 /* ================= BOOT ================= */
 (async function boot() {
