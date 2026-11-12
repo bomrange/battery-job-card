@@ -2434,7 +2434,7 @@ function whNumbers(from, to, brands = TEAMS) {
   const opening = k => brands.reduce((a, b) => a + openingOf(k, b, false), 0);
   const allocated = repAlloc().filter(a => brands.includes(a.brand)).reduce((a, x) => a + x.qty, 0);
   const incoming = tSum(logsOf('receiving', todayStr(), todayStr()), 'incoming', brands);
-  return {
+  const o = {
     p, A, spares, underTest, allocated, incoming,
     onHand: Math.max(0, A.received + A.back - A.sent - A.out),
     awaitingDiag: Math.max(0, A.received - A.diagnosed),
@@ -2448,6 +2448,9 @@ function whNumbers(from, to, brands = TEAMS) {
     withPartner: Math.max(0, A.out - A.back),
     scrapped: A.scrapped + A.addScrapped + A.fabScrapped, warranty: A.warranty + A.addWarranty + A.toQc, toQc: A.toQc, dispatched: A.sent
   };
+  /* corrections typed by Esther (or the supervisor) */
+  if (typeof DIRECT_FIX !== 'undefined') DIRECT_FIX.forEach(k => { o[k] = Math.max(0, o[k] + brands.reduce((a, b) => a + adjOf(k, b), 0)); });
+  return o;
 }
 /* one technician: given by SPOC vs finished vs still holding */
 function techDocket(uid, skipToday) {
@@ -2513,7 +2516,7 @@ function renderWarehouse() {
   const feed = (arr, fn) => arr.length ? `<ul class="space-y-2 text-sm">${arr.map(fn).join('')}</ul>` : '';
   const who = l => `<span class="text-xs text-espresso-500">${esc(firstName(personName(l.user_id)))} · ${fmtDay(l.day)}</span>`;
   $('#main').innerHTML = `<div class="p-4 md:p-6 space-y-5">
-    <div class="flex flex-wrap items-center gap-2">${periodBar(renderWarehouse)}${S.role === 'admin' || S.role === 'viewer' ? `<button id="csvBtn" class="${btnS} h-10 ml-auto"><i class="fa-solid fa-file-arrow-down"></i>Download numbers (CSV)</button>` : ''}</div>
+    <div class="flex flex-wrap items-center gap-2">${periodBar(renderWarehouse)}<span class="ml-auto"></span>${canEditStock() ? `<button id="editStock" class="${btnP} h-10"><i class="fa-solid fa-pen"></i>Edit stock numbers</button>` : ''}${S.role === 'admin' || S.role === 'viewer' ? `<button id="csvBtn" class="${btnS} h-10"><i class="fa-solid fa-file-arrow-down"></i>Download numbers (CSV)</button>` : ''}</div>
     ${S.role === 'admin' ? notLoggedHtml() : ''}
     ${vsGraph(WH.period, brands, null, plabel)}
     <div><h2 class="text-xs uppercase tracking-wider font-semibold text-espresso-500 mb-2">Stock at the warehouse now</h2>
@@ -2563,6 +2566,7 @@ function renderWarehouse() {
         ${[['spares_used', 'Spares used'], ['cause', 'Keeps happening because'], ['scrap_reason', 'Scrapped because'], ['spares_reason', 'Waiting for'], ['test_under', 'Test'], ['recommendation', 'Recommends']].filter(([k]) => l.data[k]).map(([k, t]) => `<div class="mt-1"><b>${t}:</b> ${esc(l.data[k])}</div>`).join('')}</li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">No notes yet.</p>', '', 'causes, spares, recommendations')}
     </div></div>`;
   bindPeriod(renderWarehouse); bindDetails(from, to, brands, null); bindIot(renderWarehouse);
+  if ($('#editStock')) $('#editStock').onclick = () => editStockForm(renderWarehouse);
   $$('#main [data-person]').forEach(b => b.onclick = () => S.role === 'admin' ? userDrawer(b.dataset.person) : personDrawer(b.dataset.person));
   if ($('#csvBtn')) $('#csvBtn').onclick = () => downloadCsv(from, to, plabel);
 }
@@ -3003,7 +3007,7 @@ function sparesNow(brands = TEAMS) {
   const L = sparesSorted(), bi = L.map(l => !!(l.data || {}).waiting).lastIndexOf(true);
   const n = (l, key, b) => ((((l.data || {})[key] || {})[b] || {}).n || 0);
   const fromLines = b => logsOf('repair').filter(l => (l.data || {}).brand === b).reduce((a, l) => a + (l.data.to_spares || 0), 0);
-  return brands.reduce((s, b) => s + Math.max(0, fromLines(b) + L.reduce((a, l, i) => i < bi ? a : i === bi ? n(l, 'waiting', b) + n(l, 'add', b) : a + n(l, 'add', b) - n(l, 'arrived', b), 0)), 0);
+  return brands.reduce((s, b) => s + Math.max(0, fromLines(b) + (typeof adjOf === 'function' ? adjOf('spares', b) : 0) + L.reduce((a, l, i) => i < bi ? a : i === bi ? n(l, 'waiting', b) + n(l, 'add', b) : a + n(l, 'add', b) - n(l, 'arrived', b), 0)), 0);
 }
 /* spares arrived: those batteries go back to the SPOC to give out again */
 const sparesBack = (brands = TEAMS) => logsOf('spares').reduce((a, l) => a + brands.reduce((s, b) => s + ((((l.data || {}).arrived || {})[b] || {}).n || 0), 0), 0);
@@ -4272,6 +4276,39 @@ function iotToAirCheck(d) {
     if (x.to_air > online - given) return `${b}: only ${Math.max(0, online - given)} online batteries are at IoT waiting to go to air leak, so you can't hand over ${x.to_air}.`;
   }
   return '';
+}
+
+/* ---- Esther (dispatch / spares) keeps the warehouse stock numbers right: she types the real total, the difference is saved ----
+   every stock number on the warehouse dashboard except the IoT ones (the IoT lead keeps those) */
+const STOCK_EDIT = [
+  ['onHand', 'In the warehouse', 'onHand'], ['underRepair', 'Under repair', 'underRepair'], ['spares', 'Waiting for spares', 'spares'],
+  ['underTest', 'Under test', 'underTest'], ['atFab', 'At fabrication', 'fabrication'], ['insPending', 'Pending insulation test', 'insulation'],
+  ['airWaiting', 'Pending air leak test', 'air_leak'], ['airFail', 'Failed air leak', 'airFail'], ['ready', 'Ready to dispatch', 'ready'],
+  ['awaitingDiag', 'Waiting for diagnosis', 'awaitingDiag'], ['scrapped', 'Scrapped', 'scrapped'], ['warranty', 'Warranty (moved to QC)', 'warranty'],
+  ['withPartner', 'With Quality / O&M', 'withPartner']];
+/* numbers whose corrections are added straight onto the dashboard figure (the others go in through opening stock) */
+const DIRECT_FIX = ['onHand', 'underRepair', 'underTest', 'airFail', 'ready', 'awaitingDiag', 'scrapped', 'warranty', 'withPartner'];
+const canEditStock = () => S.adjOk && (S.role === 'admin' || isSparesKeeper());
+function editStockForm(after, pick = 'scrapped') {
+  const row = STOCK_EDIT.find(r => r[0] === pick) || STOCK_EDIT[0], [key, label, stage] = row;
+  const cur = Object.fromEntries(TEAMS.map(b => [b, whNumbers(null, null, [b])[key]]));
+  openModal(`${modalHead('Edit warehouse stock')}<form id="esF" class="p-5 space-y-4" novalidate>
+    <label class="block"><span class="text-sm font-medium">Which number?</span><select name="key" class="${inputC} mt-1.5">${STOCK_EDIT.map(([k, l]) => `<option value="${k}" ${k === key ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+    <p class="text-sm text-espresso-600">Type the <b>real total</b> there is now for each brand. The difference is saved, and what the teams log from now on keeps adding and taking away. Offline at IoT and pending IoT check are kept by the IoT lead.</p>
+    <div class="space-y-2">${TEAMS.map(b => `<label class="flex items-center gap-3 p-2.5 rounded-xl border border-cream-200"><span class="flex-1"><b>${b}</b><span class="block text-xs text-espresso-500">${esc(label)} now ${cur[b]}</span></span><span class="w-24">${numIn('n_' + b, cur[b], b + ' ' + label)}</span></label>`).join('')}</div>
+    ${txtIn('note', '', 'Why are you changing it?', 'e.g. counted the store this morning')}
+    <p id="esErr" class="hidden text-sm text-terra-700"></p>
+    <div class="flex justify-end gap-2"><button type="button" data-close class="${btnS}">Cancel</button><button class="${btnP}"><i class="fa-solid fa-floppy-disk"></i>Save</button></div></form>`);
+  $('#esF').key.onchange = e => editStockForm(after, e.target.value);
+  $('#esF').onsubmit = async e => {
+    e.preventDefault(); const f = e.target, err = m => { $('#esErr').textContent = m; $('#esErr').classList.remove('hidden'); };
+    const rows = TEAMS.map(b => ({ stage, brand: b, delta: n0(f['n_' + b].value) - cur[b], note: f.note.value.trim() || null })).filter(r => r.delta);
+    if (!rows.length) return err('Nothing changed.');
+    const btn = f.querySelector('button:not([type=button])'); busy(btn, true);
+    const { data, error } = await S.sb.from('stock_adjust').insert(rows).select();
+    busy(btn, false); if (error) return err(errMsg(error));
+    S.adj.push(...(data || rows)); closeModal(); toast(`${label} updated`); (after || renderView)();
+  };
 }
 
 /* ================= EARLIER DAYS: log a day you missed, from the start of last month up to yesterday =================
