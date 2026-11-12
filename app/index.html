@@ -156,19 +156,25 @@ const isTechProfile = p => p && p.active !== false && appRoleOf(p) === 'tech' &&
 const kindOf = p => { const id = String((p && p.staff_id) || '').toUpperCase();
   if (id.startsWith('FT')) return 'field'; if (id.startsWith('WH')) return 'wh';
   return (p && (p.roles || []).includes('field_tech')) ? 'field' : 'wh'; };
+/* someone with more than one daily form gets one page per form (e.g. Insulation and Air leak), otherwise one My day page */
+function stageViews(p) {
+  if (typeof STAGES === 'undefined') return ['myday'];
+  const ks = Object.keys(STAGES).filter(k => STAGES[k].roles.some(x => ((p && p.roles) || []).includes(x)));
+  return ks.length > 1 ? ks.map(k => 'st_' + k) : ['myday'];
+}
 /* which screens each person gets */
 function viewsFor(p) {
   const r = (p && p.roles) || [], role = appRoleOf(p);
   if (role === 'admin') return { views: ['home', 'warehouse', 'region', 'docket', 'teamwork', 'store', 'team', 'users', 'settings', 'profile'], home: 'home' };
   if (role === 'viewer') return { views: ['home', 'warehouse', 'region', 'profile'], home: 'home' };
   if (role === 'mgr' && r.includes('rm')) return { views: ['home', ...(r.includes('tagger') ? ['tag'] : []), 'team', 'profile'], home: 'home' };    // RM: home is the region dashboard
-  if (role === 'mgr') return { views: ['home', 'docket', 'myday', 'team', 'profile'], home: 'home' };
+  if (role === 'mgr') return { views: ['home', 'docket', ...stageViews(p), 'warehouse', 'team', 'profile'], home: 'home' };
   if (tagOnly(p)) return { views: ['tag', 'profile'], home: 'tag' };
   if (kindOf(p) === 'field') return { views: ['home', 'myday', ...(r.includes('tagger') ? ['tag'] : []), 'field', 'team', 'profile'], home: 'home' };
   if (r.includes('storekeeper') && !Object.keys(STAGES).some(k => STAGES[k].roles.some(x => r.includes(x)))) return { views: ['store', 'warehouse', 'team', 'profile'], home: 'store' };
   const repair = r.some(x => ['repair_tech', 'wh_tech'].includes(x)) && TEAMS.includes(p.team);
   const lead = r.includes('team_lead') && ['iot', 'iot_test', 'air_leak', 'fabrication'].some(x => r.includes(x));
-  return { views: ['home', 'myday', ...(r.includes('tagger') ? ['tag'] : []), ...(lead ? ['teamwork'] : []), ...(repair ? ['docket'] : []), ...(r.includes('storekeeper') ? ['store'] : []), 'warehouse', 'team', 'profile'], home: 'home' };
+  return { views: ['home', ...stageViews(p), ...(r.includes('tagger') ? ['tag'] : []), ...(lead ? ['teamwork'] : []), ...(repair ? ['docket'] : []), ...(r.includes('storekeeper') ? ['store'] : []), 'warehouse', 'team', 'profile'], home: 'home' };
 }
 const isFieldTech = () => S.me && (S.me.roles || []).includes('field_tech') && appRoleOf(S.me) === 'tech';
 
@@ -663,6 +669,7 @@ function subscribeLive() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'allocations' }, () => softRefresh(1000))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'station_faults' }, () => softRefresh(1500))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'stock_adjust' }, () => softRefresh(1500))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blockers' }, () => softRefresh(1500))
       .subscribe();
   } catch (e) { console.warn('live updates off', e); }
 }
@@ -690,6 +697,8 @@ function renderNav() {
   $('#sideUser').onclick = () => go('profile');
 }
 function go(view, replace) {
+  if (view === 'myday' && !R().views.includes('myday')) { const sv = R().views.find(v => v === 'st_' + S.stageTab) || R().views.find(v => v.startsWith('st_')); if (sv) view = sv; }
+  if (view.startsWith('st_')) S.stageTab = view.slice(3);
   if (!R().views.includes(view)) view = R().home;
   if (S.view === 'analytics' && view !== 'analytics') destroyCharts();
   if (S.view === 'map' && view !== 'map') stopMap();
@@ -704,6 +713,7 @@ function go(view, replace) {
 window.addEventListener('popstate', () => { if (!S.loaded) return; const v = (location.hash || '').slice(1); if (R().views.includes(v) && v !== S.view) go(v, true); });
 function setTitle(t, sub = '') { $('#pageTitle').textContent = t; $('#pageSub').textContent = (S.role === 'admin' && S.viewAs && ['dispatch', 'team', 'map', 'region', 'stations', 'docket'].includes(S.view) ? `${firstName(personName(S.viewAs))}'s view · ` : '') + sub; document.title = t + ' · Battery Ops'; renderNav(); }
 function renderView() {
+  if (S.view.startsWith('st_')) { S.stageTab = S.view.slice(3); renderWhDay(); if (typeof addTourButton === 'function') addTourButton(); return; }
   const fn = { tag: renderTag, home: renderHome, team: renderTeamHub, warehouse: renderWarehouse, region: renderRegion, docket: renderDocket, teamwork: renderTeamWork, store: renderStore, stations: renderStations, settings: renderSettings, dispatch: renderDispatch, map: renderMap, users: renderUsers, analytics: renderAnalytics, myday: () => kindOf(S.me) === 'field' ? renderFieldDay() : renderWhDay(), field: renderField, month: renderMonth, profile: renderProfile }[S.view];
   fn && fn();
   if (typeof addTourButton === 'function') { addTourButton(); maybeTour(); }
@@ -1529,7 +1539,7 @@ async function renderUsers() {
     <div class="flex flex-wrap gap-2 items-center">
       <div class="relative flex-1 min-w-[200px]"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-espresso-500"></i><input id="uq" value="${esc(U.q)}" class="${inputC} pl-9" placeholder="Name, staff ID, phone or role"></div>
       ${scopeBar({ noKind: true })}
-      <button id="addUser" class="${btnP}"><i class="fa-solid fa-user-plus"></i>Add user</button>
+      <button id="viewAsBtn" class="${btnS}"><i class="fa-solid fa-eye"></i>View the app as…</button><button id="addUser" class="${btnP}"><i class="fa-solid fa-user-plus"></i>Add user</button>
     </div>
     <div class="flex gap-1.5 overflow-x-auto scroll-thin pb-1">${groups.map(([g, l]) => `<button data-ug="${g}" aria-pressed="${U.group === g}" class="shrink-0 h-9 px-3 rounded-lg text-sm font-medium ${U.group === g ? 'bg-espresso-900 text-cream-50' : 'bg-cream-100 text-espresso-700'}">${l}</button>`).join('')}</div>
     ${card(`<div class="overflow-x-auto scroll-thin"><table class="w-full text-sm min-w-[760px]"><thead><tr class="text-left text-xs text-espresso-500 border-b border-cream-200">
@@ -1546,6 +1556,7 @@ async function renderUsers() {
   $('#uq').oninput = e => { U.q = e.target.value; clearTimeout(U.t); U.t = setTimeout(() => { const pos = e.target.selectionStart; renderUsers().then(() => { const i = $('#uq'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }); }, 250); };
   bindScope(renderUsers);
   $$('[data-ug]').forEach(b => b.onclick = () => { U.group = b.dataset.ug; renderUsers(); });
+  if ($('#viewAsBtn')) $('#viewAsBtn').onclick = viewAsPicker;
   $$('[data-user]').forEach(r => r.onclick = () => userDrawer(r.dataset.user));
   $('#addUser').onclick = () => userForm(null);
 }
@@ -1560,6 +1571,7 @@ async function userDrawer(id) {
       <div class="flex items-center gap-4">${avatar(p, 'w-16 h-16 text-xl')}<div class="min-w-0"><div class="font-display text-xl font-semibold">${esc(p.full_name)}</div><div class="text-sm text-espresso-500 tnum">${esc(p.staff_id)} · ${esc(APP_ROLES[appRoleOf(p)].label)}</div>
         <div class="mt-1 flex flex-wrap gap-1.5">${p.active === false ? pill('Switched off', 'bg-terra-50 text-terra-700') : pill('Active', 'bg-olive-50 text-olive-700')}${p.must_change_pin ? pill('First PIN not changed', 'bg-warn-50 text-warn-800') : ''}</div></div></div>
       <dl class="grid grid-cols-2 gap-3 text-sm">${[['Phone', p.phone || '—'], ['Team', p.team || '—'], ['Region', p.region || '—'], ['Warehouse', p.warehouse || '—'], ['Reports to', p.reports_to || '—'], ['Title', p.title || '—'], ['Last seen', agoTxt(p.last_seen)], ['Logins (30 days)', U.logins[p.id] || 0]].map(([a, b]) => `<div class="bg-surface rounded-xl border border-cream-200 p-3"><dt class="text-xs text-espresso-500">${a}</dt><dd class="font-medium mt-0.5 truncate tnum">${esc(b)}</dd></div>`).join('')}</dl>
+      ${p.active !== false && p.id !== S.me.id ? `<button id="dwViewAs" class="${btnS} w-full"><i class="fa-solid fa-eye"></i>See the app as ${esc(firstName(p.full_name))} (read only)</button>` : ''}
       <div><div class="text-xs text-espresso-500 mb-1">Roles</div><div class="flex flex-wrap gap-1.5">${(p.roles || []).map(r => pill(ROLE_LABEL[r] || r, 'bg-caramel-100 text-caramel-800')).join('')}</div></div>
       ${log ? `<div class="bg-surface rounded-xl border border-cream-200 p-3 text-sm"><div class="text-xs text-espresso-500 mb-1">Today's log</div>${LOG_FIELDS.filter(f => log[f.key]).map(f => `${log[f.key]} ${f.label.toLowerCase()}`).join(' · ') || 'No counts'}${log.stations && log.stations.length ? `<div class="mt-1">Stations: ${esc(log.stations.join(', '))}</div>` : ''}${log.blockers ? `<div class="mt-1 text-warn-800">Blocker: ${esc(log.blockers)}</div>` : ''}</div>` : ''}
       ${given.length ? `<div class="bg-surface rounded-xl border border-cream-200 p-3 text-sm"><div class="text-xs text-espresso-500 mb-1">Tasks this person gave today</div>${given.map(x => `<div class="flex gap-2 py-0.5"><i class="fa-${x.done ? 'solid fa-circle-check text-olive' : 'regular fa-circle text-espresso-500'} mt-1"></i><span>${esc(x.title)} <span class="text-espresso-500">→ ${esc(firstName(personName(x.assignee)))}</span></span></div>`).join('')}</div>` : ''}
@@ -1571,7 +1583,7 @@ async function userDrawer(id) {
         ${p.id !== S.me.id ? `<button id="uOff" class="${btnS} ${p.active === false ? 'text-olive-700' : 'text-terra-700'} col-span-2"><i class="fa-solid ${p.active === false ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>${p.active === false ? 'Switch account back on' : 'Switch account off'}</button>` : ''}
       </div>
     </div>`);
-  $('#dwClose').onclick = closeDrawer;
+  $('#dwClose').onclick = closeDrawer; if ($('#dwViewAs')) $('#dwViewAs').onclick = () => viewAs(id);
   $('#uEdit').onclick = () => userForm(p);
   if ($('#uDay')) $('#uDay').onclick = () => personDrawer(p.id);
 
@@ -2103,6 +2115,7 @@ const STAGES = {
   fabrication:{ label: 'Fabrication',          icon: 'fa-fire-burner',      roles: ['fabrication'] },
   spares:     { label: 'Waiting for spares',   icon: 'fa-box-open',         roles: ['spares', 'dispatch'] }
 };
+Object.keys(STAGES).forEach(k => { VIEW_META['st_' + k] = { label: STAGES[k].label.replace(' test', '').replace('Repair line', 'Repair'), icon: STAGES[k].icon }; });
 const myStages = () => Object.keys(STAGES).filter(k => STAGES[k].roles.some(r => (S.me.roles || []).includes(r)));
 const n0 = v => { const n = parseInt(v, 10); return isNaN(n) || n < 0 ? 0 : Math.min(n, 100000); };
 const getp = (o, path) => path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
@@ -2121,13 +2134,13 @@ async function fetchAll(build) {
 }
 async function loadStageData() {
   const [st, al, is] = await Promise.all([
-    fetchAll(() => S.sb.from('stage_logs').select('id,user_id,day,stage,data,note,updated_at').order('day')),
-    fetchAll(() => S.sb.from('allocations').select('*').order('created_at')),
+    fetchAll(() => S.sb.from('stage_logs').select('id,user_id,day,stage,data,note,updated_at').order('day').order('id')),
+    fetchAll(() => S.sb.from('allocations').select('*').order('created_at').order('id')),
     S.sb.from('issue_types').select('*').order('sort')
   ]);
   if (is.error) throw is.error;
   S.stage = st; S.alloc = al; S.issues = is.data || [];
-  await Promise.all([loadStore(), loadSettings(), loadFaults().catch(e => console.warn('faults', e)), loadAdjust().catch(e => console.warn('adjust', e))]);
+  await Promise.all([loadStore(), loadSettings(), loadFaults().catch(e => console.warn('faults', e)), loadAdjust().catch(e => console.warn('adjust', e)), loadBlockers()]);
 }
 const repAlloc = () => S.alloc.filter(a => !a.stage || a.stage === 'repair');
 const logsOf = (stage, from, to) => S.stage.filter(l => l.stage === stage && (!from || l.day >= from) && (!to || l.day <= to));
@@ -2218,11 +2231,22 @@ function stageRoom(k, b) {   // how many more this stage may count for brand b
   return { received: P.received + back + op, prior, room: Math.max(0, P.received + back + op - prior) };
 }
 const roomLine = k => STAGE_COUNT[k] ? `<div class="rounded-xl bg-cream-100 p-3 text-sm"><b>You can count up to:</b> ${TEAMS.map(b => { const r = stageRoom(k, b); return `${b} <b class="tnum">${r.room}</b>`; }).join(' · ')} <span class="text-espresso-500">(received so far, minus what is already ${STAGE_NOUN[k]})</span></div>` : '';
+/* fabrication returns fixed batteries to the technician (line) who brought them */
+const fabRetTo = (uid, skipMineToday) => S.stage.filter(l => l.stage === 'fabrication' && !(skipMineToday && !notMineToday(l))).reduce((a, l) => a + ((((l.data || {}).ret) || {})[uid] || 0), 0);
+function fabWaiting(skipMineToday) {   // technicians with batteries at fabrication not yet returned to them
+  return S.peopleList.filter(p => p.active !== false).map(p => { const h = logsOf('repair').filter(l => l.user_id === p.id).reduce((a, l) => a + (l.data.handed_fab || 0), 0); return [p, h, Math.max(0, h - fabRetTo(p.id, skipMineToday))]; }).filter(x => x[1] > 0);
+}
+function fabReturnSection(d) {
+  const rows = fabWaiting(true);
+  if (!rows.length) return '';
+  return section('Give fixed batteries back to the line they came from', `<div class="space-y-2">${rows.map(([p, h, w]) => `<label class="flex items-center gap-3 p-2.5 rounded-xl border border-cream-200"><span class="flex-1 min-w-0"><b>${esc(p.full_name)}</b><span class="block text-xs text-espresso-500">${esc(p.team || '')} line · brought ${h} · waiting to go back ${w}</span></span><span class="w-24">${numIn('ret.' + p.id, ((d.ret || {})[p.id]), 'Back to ' + p.full_name)}</span></label>`).join('')}</div>`, 'They go back to that technician to finish the repair, then on to IoT, air leak, insulation and dispatch. Fixed batteries you don\'t give back to a person go to the SPOC to give out.');
+}
 function fabForm(d) {
   const rows = TEAMS.map(b => { const P = brandPool(b), op = openingOf('fabrication', b); return [b, P.handedFab + op, P.fabFixed + P.fabScrapped, Math.max(0, P.handedFab + op - P.fabFixed - P.fabScrapped)]; });
   return `<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-espresso-500"><th class="text-left font-medium pb-2">Brand</th><th class="font-medium pb-2 text-right">Handed to you by the lines</th><th class="font-medium pb-2 text-right">Done before today</th><th class="font-medium pb-2 text-right">Still with you</th></tr></thead>
     <tbody>${rows.map(([b, h, dn, l]) => `<tr class="border-t border-cream-100"><td class="py-2 font-semibold">${b}</td><td class="py-2 text-right tnum">${h}</td><td class="py-2 text-right tnum">${dn}</td><td class="py-2 text-right tnum font-semibold ${l ? 'text-caramel-800' : 'text-espresso-500'}">${l}</td></tr>`).join('')}</tbody></table></div>`
     + section('Done today', brandGrid('t', [['fixed', 'Fixed, back to the line'], ['scrapped', 'Scrapped']], d), 'Only batteries the repair lines handed to you as physical damage.')
+    + fabReturnSection(d)
     + section('What you fixed', issueGrid('damage', 'fabrication', d), 'Number of batteries per job. The supervisor can change this list in Settings.')
     + txtIn('used', d.used, 'Materials used', 'e.g. nickel strip, solder, 2 BMS');
 }
@@ -2239,7 +2263,7 @@ function repairForm(d) {
     ${st.byIssue.length ? `<p class="text-xs text-espresso-500">Given by issue: ${st.byIssue.map(([i, n]) => `${esc(i)} ${n}`).join(' · ')}</p>` : ''}
     ${section('Today', `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${[['repaired', 'Repaired'], ['scrapped', 'Scrapped'], ['warranty', 'Sent for warranty']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div>`, 'Batteries you finished today. <b>Repaired</b>: working again. <b>Scrapped</b>: totally dead, can\'t be repaired. <b>Warranty</b>: manufacturer fault, goes to QC to wait for the manufacturer.')}
     ${issuesOf('sop').length ? section('Checklist for the batteries you repaired', `<div class="grid sm:grid-cols-2 gap-2">${issuesOf('sop').map((s, i) => `<label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-cream-200 text-sm"><input type="checkbox" name="sop" value="${esc(s)}" ${(d.sop || []).includes(s) ? 'checked' : ''} class="w-5 h-5 accent-[#8B5A2B]"><span><b class="text-espresso-500">${i + 1}.</b> ${esc(s)}</span></label>`).join('')}</div>`, 'Tick every step before counting batteries as repaired. Your name and the time are recorded with it.') : ''}
-    ${section('Handed over to other teams', `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${[['handed_fab', 'Physical damage → Fabrication'], ['handed_iot', 'Offline → IoT'], ['to_spares', 'Needs a spare we don\'t have → Waiting for spares']].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div><div class="mt-2">${txtIn('spares_missing', d.spares_missing, 'Which spare is missing?', 'e.g. charging port')}</div>`, `Broken nails, threading, broken wires or burnt BMS go to fabrication. Offline batteries go to IoT. Batteries waiting for a part (e.g. charging port) are added to Esther's waiting for spares and she is told. ${REPAIR_TO_AIR.includes(myBrand() || d.brand) ? 'Repaired ' + esc(myBrand() || d.brand) + ' batteries go straight to the air leak test.' : 'Repaired batteries go to the insulation test.'}`)}
+    ${section('Handed over to other teams', `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${[['handed_fab', 'Physical damage → Fabrication'], ['handed_iot', 'Offline → IoT'], ['to_spares', 'Needs a spare we don\'t have → Waiting for spares'], ...((S.me.roles || []).includes('spoc') ? [['to_air', 'Of the repaired: straight to air leak']] : [])].map(([k, l]) => `<label class="block"><span class="text-xs font-medium text-espresso-600">${l}</span>${numIn(k, d[k], l)}</label>`).join('')}</div><div class="mt-2">${txtIn('spares_missing', d.spares_missing, 'Which spare is missing?', 'e.g. charging port')}</div>`, `Broken nails, threading, broken wires or burnt BMS go to fabrication. Offline batteries go to IoT. Batteries waiting for a part (e.g. charging port) are added to Esther's waiting for spares and she is told. Repaired batteries go to the IoT check, then air leak, then insulation, then dispatch. A SPOC can send repaired ones straight to air leak.`)}
     ${section('Why you moved batteries to QC (warranty)', issueGrid('wr', 'warranty', d) + `<div class="mt-2">${txtIn('warranty_reason', d.warranty_reason, 'Anything else about the warranty batteries?', 'e.g. 2 CBAK with swollen cells from the same batch')}</div>`, 'Give a reason for every battery you sent for warranty. The numbers here must add up to "Sent for warranty".')}
     ${section('Still with you right now', `<div class="grid grid-cols-2 gap-2"><label class="block"><span class="text-xs font-medium text-espresso-600">Under test</span>${numIn('under_test', d.under_test, 'Under test')}</label></div>`, '<b>Under test</b>: repaired and being tested before it moves on. Give the number with you right now.')}
     <label class="block"><span class="text-sm font-medium">Biggest issue you repaired today</span><select name="top_issue" class="${inputC} mt-1.5"><option value="">Choose…</option>${issuesOf('fault').map(i => `<option ${d.top_issue === i ? 'selected' : ''}>${esc(i)}</option>`).join('')}</select></label>
@@ -2258,7 +2282,9 @@ function dispatchForm(d) {
     + `<div class="rounded-xl bg-cream-100 p-3 text-sm"><b>In the warehouse so far:</b> ${TEAMS.map(b => { const x = whNumbers(null, null, [b]); return `${b} <b class="tnum">${x.scrapped}</b> scrapped · <b class="tnum">${x.warranty}</b> warranty`; }).join(' &nbsp;|&nbsp; ')}</div>`
     + section('Add to warehouse stock', brandGrid('stock', [['scrapped', 'New scrapped'], ['warranty', 'New warranty (moved to QC)']], d), 'Enter <b>only the new ones</b> since your last entry, not the whole total. They are added to the numbers above. <b>Scrapped</b>: totally dead. <b>Warranty</b>: manufacturer fault, moved to QC to wait for the manufacturer. Waiting for spares has its own tab.')
     + `<div class="rounded-xl bg-cream-100 p-3 text-sm"><b>What is holding batteries back right now:</b> ${g.iotOffline} offline at IoT · ${g.airFail} failed air leak · ${g.spares} waiting for spares · ${g.underRepair} under repair · ${g.ready} ready to dispatch</div>`
-    + txtIn('why_low', d.why_low, 'Why couldn\'t more be dispatched?', 'e.g. 4 still offline with IoT, 6 failed air leak');
+    + txtIn('why_low', d.why_low, 'Why couldn\'t more be dispatched?', 'e.g. 4 still offline with IoT, 6 failed air leak')
+    + `<div class="rounded-xl bg-cream-100 p-3 text-sm"><b>Reworks (CBAK):</b> <b class="tnum">${whNumbers(null, null, ['CBAK']).reworkPending}</b> pending · <b class="tnum">${whNumbers(null, null, ['CBAK']).reworked}</b> reworked so far</div>`
+    + section('Reworks (CBAK)', `<div class="grid grid-cols-2 gap-2"><label class="block"><span class="text-xs font-medium text-espresso-600">New CBAK for rework</span>${numIn('rw.in', (d.rw || {}).in, 'New CBAK for rework')}</label><label class="block"><span class="text-xs font-medium text-espresso-600">CBAK reworked today</span>${numIn('rw.done', (d.rw || {}).done, 'CBAK reworked today')}</label></div>`, 'Only the new ones since your last entry. They are added to the numbers above.');
 }
 function qcForm(d) {
   const techs = S.peopleList.filter(p => (p.roles || []).some(r => ['repair_tech', 'wh_tech', 'spoc'].includes(r)));
@@ -2279,7 +2305,7 @@ function cleanStageData(stage, data) {
 /* --- My day for warehouse staff --- */
 function renderWhDay() {
   const stages = myStages();
-  setTitle('My day', isPastDay() ? `${fmtDay(S.logDay)} · filling in an earlier day` : fmtDay(todayStr()) + ' · you can edit until midnight');
+  setTitle(S.view.startsWith('st_') ? STAGES[S.view.slice(3)].label : 'My day', isPastDay() ? `${fmtDay(S.logDay)} · filling in an earlier day` : fmtDay(todayStr()) + ' · you can edit until midnight');
   if (!stages.length) {
     $('#main').innerHTML = `<div class="p-4 md:p-6 max-w-3xl">${card(`<div class="p-6 text-center"><i class="fa-solid fa-warehouse text-3xl text-caramel-700"></i><h2 class="mt-3 font-display font-semibold text-lg">No daily count for your role yet</h2><p class="mt-1 text-sm text-espresso-500">Ask the supervisor to set your role (receiving, diagnosis, repair, fabrication, spares, insulation, IoT, air leak, dispatch or QC).</p></div>`)}</div>`;
     return;
@@ -2289,7 +2315,7 @@ function renderWhDay() {
   const d = !ex ? {} : !locked ? ex.data || {} : Object.fromEntries(Object.entries(ex.data || {}).filter(([key]) => (SNAP_KEYS[k] || []).includes(key) || key === 'brand'));
   $('#main').innerHTML = `<div class="p-4 md:p-6 max-w-4xl space-y-4">
     ${dayBar(stages)}
-    ${stages.length > 1 ? `<div class="flex gap-2 overflow-x-auto scroll-thin" role="tablist">${stages.map(s => `<button role="tab" aria-selected="${s === k}" data-stab="${s}" class="h-10 px-4 rounded-xl shrink-0 text-sm font-medium inline-flex items-center gap-2 ${s === k ? 'bg-espresso-900 text-cream-50' : 'bg-surface border border-cream-200'}"><i class="fa-solid ${STAGES[s].icon}"></i>${STAGES[s].label}${myLogOn(s, day) ? ' <i class="fa-solid fa-circle-check text-[#9BB585]"></i>' : ''}</button>`).join('')}</div>` : ''}
+    ${stages.length > 1 && !S.view.startsWith('st_') ? `<div class="flex gap-2 overflow-x-auto scroll-thin" role="tablist">${stages.map(s => `<button role="tab" aria-selected="${s === k}" data-stab="${s}" class="h-10 px-4 rounded-xl shrink-0 text-sm font-medium inline-flex items-center gap-2 ${s === k ? 'bg-espresso-900 text-cream-50' : 'bg-surface border border-cream-200'}"><i class="fa-solid ${STAGES[s].icon}"></i>${STAGES[s].label}${myLogOn(s, day) ? ' <i class="fa-solid fa-circle-check text-[#9BB585]"></i>' : ''}</button>`).join('')}</div>` : ''}
     ${card(`<form id="stageForm" class="p-5 space-y-5" novalidate>
       <div class="flex items-center gap-3"><span class="w-10 h-10 rounded-xl bg-caramel-100 text-caramel-800 grid place-items-center"><i class="fa-solid ${STAGES[k].icon}"></i></span><div><h2 class="font-display font-semibold text-lg">${STAGES[k].label}</h2><p class="text-xs text-espresso-500">${past ? (ex ? 'Already saved for this day.' : `Not logged for ${fmtDay(day)} yet.`) : !ex ? 'Not saved yet today.' : locked ? `Saved ${hhmm(ex.updated_at)}${(ex.data._adds || []).length > 1 ? ` · ${ex.data._adds.length - 1} additions` : ''}. Saved numbers can't be changed. Anything you enter below is added on top.` : 'Saved ' + hhmm(ex.updated_at) + '. You can correct it (supervisor).'}</p></div></div>
       ${locked ? `<div class="rounded-xl border border-cream-200 bg-cream-100 p-3 text-sm"><div class="text-xs font-semibold text-espresso-500 mb-1">SAVED TODAY</div>${savedSummary(ex.data)}${ex.note ? `<div class="mt-1 text-xs"><b>Note:</b> ${esc(ex.note)}</div>` : ''}<div class="mt-1.5 text-xs text-espresso-500"><i class="fa-solid fa-signature"></i> Signed by ${esc(S.me.full_name)} (${esc(S.me.staff_id)}) · ${hhmm(ex.updated_at)}${(ex.data.sop || []).length ? ' · checklist done' : ''}</div></div><h3 class="font-display font-semibold text-lg">Add more</h3>` : ''}
@@ -2352,8 +2378,14 @@ function stageCheck(k, d) {
     if (n > r.room) return `${b}: only ${r.received} received so far and ${r.prior} already ${STAGE_NOUN[k]}. You can enter at most ${r.room}.`;
   }
   if (k === 'repair') {
+    if ((d.to_air || 0) > (d.repaired || 0)) return `You repaired ${d.repaired || 0}, so you can't send ${d.to_air} straight to air leak.`;
     const st = techDocket(S.me.id, true), out = ['repaired', 'scrapped', 'warranty', 'handed_fab', 'handed_iot', 'to_spares'].reduce((a, f) => a + (d[f] || 0), 0);
     if (out > st.given - st.done) return `You were given ${st.given} and already finished or handed over ${st.done}. Today you can enter at most ${Math.max(0, st.given - st.done)}. Ask your SPOC to give you more.`;
+  }
+  if (k === 'fabrication' && d.ret) {
+    const fixed = TEAMS.reduce((a, b) => a + ((t[b] || {}).fixed || 0), 0), back = Object.values(d.ret).reduce((a, n) => a + (n || 0), 0);
+    if (back > fixed) return `You fixed ${fixed} today, so you can't give back ${back}.`;
+    for (const [p, , w] of fabWaiting(true)) { const n = d.ret[p.id] || 0; if (n > w) return `${p.full_name} has only ${w} waiting to go back.`; }
   }
   if (k === 'fabrication') for (const b of TEAMS) {
     const x = t[b] || {}, n = (x.fixed || 0) + (x.scrapped || 0); if (!n) continue;
@@ -2425,7 +2457,9 @@ function whNumbers(from, to, brands = TEAMS) {
       airTested: tSum(air, 'tested', brands), airPassed: tSum(air, 'passed', brands), airFailed: tSum(air, 'failed', brands), refixed: tSum(air, 'refixed', brands),
       sent: tSum(dis, 'sent', brands), out: tSum(dis, 'out', brands), back: tSum(dis, 'back', brands),
       addScrapped: sSum(dis, 'scrapped', brands), addWarranty: sSum(dis, 'warranty', brands), toQc: sSum(dis, 'to_qc', brands),
-      qcChecked: tSum(qc, 'checked', brands), qcPassed: tSum(qc, 'passed', brands), qcFailed: tSum(qc, 'failed', brands)
+      qcChecked: tSum(qc, 'checked', brands), qcPassed: tSum(qc, 'passed', brands), qcFailed: tSum(qc, 'failed', brands),
+      fabRet: fab.reduce((a, l) => a + Object.entries((l.data || {}).ret || {}).reduce((s, [u, n]) => s + (brands.includes((S.peopleList.find(p => p.id === u) || {}).team) ? n || 0 : 0), 0), 0),
+      rwIn: brands.includes('CBAK') ? dis.reduce((a, l) => a + (((l.data || {}).rw || {}).in || 0), 0) : 0, rwDone: brands.includes('CBAK') ? dis.reduce((a, l) => a + (((l.data || {}).rw || {}).done || 0), 0) : 0
     };
   };
   const p = flow(from, to), A = from || to ? flow(null, null) : p;
@@ -2441,12 +2475,13 @@ function whNumbers(from, to, brands = TEAMS) {
     underRepair: Math.max(0, allocated - A.repaired - A.scrapped - A.warranty - A.handedFab - A.handedIot - A.toSpares - underTest),
     atFab: Math.max(0, A.handedFab + A.iotFab + A.airFab + opening('fabrication') - A.fabFixed - A.fabScrapped),
     airWaiting: brands.reduce((a, b) => a + pendingOf('air_leak', b), 0), insPending: brands.reduce((a, b) => a + pendingOf('insulation', b), 0), iotPending: brands.reduce((a, b) => a + pendingOf('iot', b), 0),
-    toGive: Math.max(0, A.received + A.fabFixed + sparesBack(brands) - allocated),
+    toGive: Math.max(0, A.received + A.fabFixed - A.fabRet + sparesBack(brands) - allocated),
     iotOffline: Math.max(0, A.offline + opening('iot') - A.recovered - A.iotFab),
     airFail: Math.max(0, A.airFailed - A.refixed - A.airFab),
-    ready: Math.max(0, A.airPassed + A.refixed - A.sent),
+    ready: Math.max(0, A.insPassed - A.sent),
     withPartner: Math.max(0, A.out - A.back),
-    scrapped: A.scrapped + A.addScrapped + A.fabScrapped, warranty: A.warranty + A.addWarranty + A.toQc, toQc: A.toQc, dispatched: A.sent
+    scrapped: A.scrapped + A.addScrapped + A.fabScrapped, warranty: A.warranty + A.addWarranty + A.toQc, toQc: A.toQc, dispatched: A.sent,
+    reworked: A.rwDone, reworkPending: Math.max(0, A.rwIn - A.rwDone), received: p.received, dispatchedP: p.sent, handedOut: p.out
   };
   /* corrections typed by Esther (or the supervisor) */
   if (typeof DIRECT_FIX !== 'undefined') DIRECT_FIX.forEach(k => { o[k] = Math.max(0, o[k] + brands.reduce((a, b) => a + adjOf(k, b), 0)); });
@@ -2455,7 +2490,8 @@ function whNumbers(from, to, brands = TEAMS) {
 /* one technician: given by SPOC vs finished vs still holding */
 function techDocket(uid, skipToday) {
   const al = repAlloc().filter(a => a.tech_id === uid);
-  const given = al.reduce((a, x) => a + x.qty, 0);
+  const fromFab = typeof fabRetTo === 'function' ? fabRetTo(uid) : 0;   // fixed batteries fabrication gave back to this technician
+  const given = al.reduce((a, x) => a + x.qty, 0) + fromFab;
   const mine = logsOf('repair').filter(l => l.user_id === uid && !(skipToday && l.day === todayStr()));
   const handed = rSum(mine, 'handed_fab') + rSum(mine, 'handed_iot') + rSum(mine, 'to_spares');
   const done = rSum(mine, 'repaired') + rSum(mine, 'scrapped') + rSum(mine, 'warranty') + handed;
@@ -2519,6 +2555,10 @@ function renderWarehouse() {
     <div class="flex flex-wrap items-center gap-2">${periodBar(renderWarehouse)}<span class="ml-auto"></span>${canEditStock() ? `<button id="editStock" class="${btnP} h-10"><i class="fa-solid fa-pen"></i>Edit stock numbers</button>` : ''}${S.role === 'admin' || S.role === 'viewer' ? `<button id="csvBtn" class="${btnS} h-10"><i class="fa-solid fa-file-arrow-down"></i>Download numbers (CSV)</button>` : ''}</div>
     ${S.role === 'admin' ? notLoggedHtml() : ''}
     ${vsGraph(WH.period, brands, null, plabel)}
+    ${panel('In and out of the warehouse', `<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+      ${[['Received', g.received, 'fa-truck-ramp-box', 'received'], ['Dispatched', g.dispatchedP, 'fa-truck-fast', 'dispatched'], ['Handed to Quality / O&M', g.handedOut, 'fa-people-arrows', 'withPartner'], ['In the warehouse now', g.onHand, 'fa-warehouse', 'onHand']].map(([l, v, ic, k]) => `<button type="button" data-detail="${k}" class="text-left rounded-xl bg-cream-100 p-3 hover:ring-2 hover:ring-caramel-400/50"><div class="text-xs text-espresso-500"><i class="fa-solid ${ic}"></i> ${l}</div><div class="font-display text-2xl font-semibold tnum">${v}</div><div class="text-[11px] text-espresso-500">${k === 'onHand' ? 'right now' : esc(plabel)}</div></button>`).join('')}</div>
+      <h3 class="mt-4 mb-2 text-sm font-semibold">Where the batteries in the warehouse are now</h3>
+      ${hbars([['Under repair', g.underRepair], ['Waiting for spares', g.spares], ['Under test', g.underTest], ['At fabrication', g.atFab], ['Offline at IoT', g.iotOffline], ['Pending IoT check', g.iotPending], ['Pending air leak test', g.airWaiting], ['Failed air leak', g.airFail], ['Pending insulation test', g.insPending], ['Ready to dispatch', g.ready], ['Waiting for diagnosis', g.awaitingDiag], ['Scrapped', g.scrapped], ['Warranty (moved to QC)', g.warranty], ...(brands.includes('CBAK') ? [['Pending rework (CBAK)', g.reworkPending]] : [])].filter(r => r[1] > 0), 'Nothing in the warehouse.')}`, '', plabel)}
     <div><h2 class="text-xs uppercase tracking-wider font-semibold text-espresso-500 mb-2">Stock at the warehouse now</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3">
       ${statBtn('onHand', 'In the warehouse', g.onHand, 'fa-warehouse', 'bg-espresso-900 text-cream-50')}
@@ -2536,6 +2576,7 @@ function renderWarehouse() {
       ${statBtn('scrapped', 'Scrapped', g.scrapped, 'fa-trash-can', 'bg-cream-100 text-espresso-700')}
       ${statBtn('warranty', 'Warranty (moved to QC)', g.warranty, 'fa-file-shield', 'bg-olive-50 text-olive-700')}
       ${statBtn('withPartner', 'With Quality / O&M', g.withPartner, 'fa-people-arrows', 'bg-cream-100 text-espresso-700')}
+      ${brands.includes('CBAK') ? statBtn('reworkPending', 'Pending rework (CBAK)', g.reworkPending, 'fa-rotate', 'bg-warn-50 text-warn-800') + statBtn('reworked', 'Reworked so far (CBAK)', g.reworked, 'fa-rotate', 'bg-olive-50 text-olive-700') : ''}
       ${statBtn('incoming', 'Incoming today', g.incoming, 'fa-truck-ramp-box', 'bg-caramel-100 text-caramel-800')}
     </div></div>
     <details class="rounded-2xl border border-cream-200 bg-surface"><summary class="cursor-pointer px-5 py-3 text-sm font-semibold">What these numbers mean</summary><div class="-mt-2">${glossaryPanel()}</div></details>
@@ -2696,7 +2737,7 @@ const regionStations = () => S.stations.filter(s => s.region && s.region === S.m
 function renderFieldDay() {
   const day = logDay(), past = isPastDay();
   setTitle('My day', past ? `${fmtDay(day)} · filling in an earlier day` : fmtDay(todayStr()) + ' · you can edit until midnight');
-  const ex = myLogOn('field', day), d = (ex && ex.data) || {}, picked = new Set(d.stations || []);
+  const ex = myLogOn('field', day), saved = (ex && ex.data) || {}, d = {}, picked = new Set(saved.stations || []);   // boxes start empty; what you add is added on top
   const mine = myStations(), others = regionStations().filter(s => s.field_tech_id !== S.me.id);
   const showAll = S.fieldAll || [...picked].some(id => others.some(s => s.id === id));
   const list = (showAll ? mine.concat(others) : mine);
@@ -2706,6 +2747,7 @@ function renderFieldDay() {
     ${myTasks.length ? card(`<div class="p-4"><h2 class="font-display font-semibold">Your tasks</h2><ul class="mt-2 space-y-1">${myTasks.map(t => `<li><label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-cream-100 text-sm"><input type="checkbox" data-task="${t.id}" ${t.done ? 'checked' : ''} class="w-5 h-5 accent-[#8B5A2B]"><span class="${t.done ? 'line-through text-espresso-500' : ''}">${esc(t.title)}</span><span class="ml-auto text-xs text-espresso-500">from ${esc(firstName(personName(t.created_by)))}</span></label></li>`).join('')}</ul></div>`) : ''}
     ${dayBar(['field'])}
     ${past && ex ? card(`<div class="p-5">${pastSaved(ex, 'field')}</div>`) : card(`<form id="fieldF" class="p-5 space-y-5" novalidate>
+      ${ex ? `<div class="rounded-xl border border-cream-200 bg-cream-100 p-3 text-sm"><div class="text-xs font-semibold text-espresso-500 mb-1">SAVED ${past ? 'FOR ' + esc(fmtDay(day).toUpperCase()) : 'TODAY'} · ${hhmm(ex.updated_at)}</div>Repaired <b class="tnum">${saved.repaired || 0}</b> · failed back <b class="tnum">${saved.failed_back || 0}</b> · ${(saved.stations || []).length} station${(saved.stations || []).length === 1 ? '' : 's'}${saved.issues ? `<div class="text-xs mt-1"><b>Issues:</b> ${esc(saved.issues)}</div>` : ''}<div class="text-xs text-espresso-500 mt-1">The boxes below are empty again. Anything you enter now is <b>added</b> to this.</div></div>` : ''}
       <div><div class="flex items-center"><h2 class="font-display font-semibold text-lg">Stations visited ${past ? 'on ' + esc(fmtDay(day)) : 'today'}</h2><span class="ml-auto text-xs text-espresso-500" id="stCount">${picked.size} picked</span></div>
         ${list.length > 8 ? `<input id="stSearch" class="${inputC} mt-3" placeholder="Search your stations" aria-label="Search stations">` : ''}
         <ul id="stList" class="mt-3 max-h-80 overflow-y-auto scroll-thin divide-y divide-cream-100 rounded-xl border border-cream-200">${list.length ? list.map(s => `<li data-name="${esc((s.name + ' ' + (s.sub_region || '')).toLowerCase())}"><label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-cream-100"><input type="checkbox" name="stations" value="${s.id}" ${picked.has(s.id) ? 'checked' : ''} class="w-5 h-5 accent-[#8B5A2B]"><span class="flex-1 min-w-0"><span class="block text-sm font-medium truncate">${esc(s.name)}</span><span class="block text-xs text-espresso-500">${esc([s.sub_region, s.region].filter(Boolean).join(' · '))}${s.field_tech_id !== S.me.id ? ' · ' + esc(s.field_tech_id ? 'assigned to ' + firstName(personName(s.field_tech_id)) : 'not assigned') : ''}</span></span></label></li>`).join('') : '<li class="p-4 text-sm text-espresso-500">No stations are assigned to you yet. Ask your regional manager.</li>'}</ul>
@@ -2716,14 +2758,15 @@ function renderFieldDay() {
       </div>
       ${txtIn('issues', d.issues, 'Issues you found', 'e.g. rack 3 at Ntinda not charging')}
       ${txtIn('improvements', d.improvements, 'Improvements you want us to make', '')}
-      ${txtIn('blockers', d.blockers, 'Blockers', 'What is stopping you?')}
+      ${txtIn('blockers', '', 'Blockers', 'What is stopping you? Your manager will answer.')}
       <p id="fieldErr" class="hidden text-sm text-terra-700"></p>
-      <div class="flex items-center gap-3"><span class="text-xs text-espresso-500">${ex ? 'Saved ' + hhmm(ex.updated_at) : past ? 'Not logged for this day yet' : 'Not saved yet today'}</span><button class="${btnP} ml-auto"><i class="fa-solid fa-floppy-disk"></i>${past ? 'Save for ' + esc(fmtDay(day)) : ex ? 'Save changes' : 'Save today'}</button></div>
+      <div class="flex items-center gap-3"><span class="text-xs text-espresso-500">${ex ? 'Saved ' + hhmm(ex.updated_at) : past ? 'Not logged for this day yet' : 'Not saved yet today'}</span><button class="${btnP} ml-auto"><i class="fa-solid ${ex ? 'fa-plus' : 'fa-floppy-disk'}"></i>${ex ? 'Add to ' + (past ? esc(fmtDay(day)) : 'today') : past ? 'Save for ' + esc(fmtDay(day)) : 'Save today'}</button></div>
     </form>`)}</div>`;
   bindDayBar(renderFieldDay);
   const recount = () => $('#stCount') && ($('#stCount').textContent = $$('[name=stations]:checked').length + ' picked');
   $$('[name=stations]').forEach(c => c.onchange = recount);
   if ($('#stSearch')) $('#stSearch').oninput = e => { const q = e.target.value.trim().toLowerCase(); $$('#stList li[data-name]').forEach(li => li.classList.toggle('hidden', q && !li.dataset.name.includes(q))); };
+  { const host = $('#main > div'); if (host && myBlockersPanel()) host.insertAdjacentHTML('beforeend', myBlockersPanel()); }
   { const host = $('#main > div'); if (host) host.insertAdjacentHTML('afterbegin', taggedPanel(st => st.region === S.me.region, 'Tagged faulty batteries in your region', renderFieldDay)); bindTagged(renderFieldDay); }
   appendMyTools();
   if ($('#stAll')) $('#stAll').onclick = () => { S.fieldAll = !showAll; renderFieldDay(); };
@@ -2734,14 +2777,22 @@ function renderFieldDay() {
   });
   if ($('#fieldF')) $('#fieldF').onsubmit = async e => {
     e.preventDefault(); const f = e.target, btn = f.querySelector('button:not([type=button])');
-    const data = readStageForm(f); data.stations = $$('[name=stations]:checked').map(c => c.value);
+    const add = readStageForm(f), blk = (add.blockers || '').trim(); delete add.blockers;
+    const stations = $$('[name=stations]:checked').map(c => c.value);
+    const joinTxt = (a, b) => [a, b].filter(Boolean).join(' · ');
+    const data = { ...saved, repaired: (saved.repaired || 0) + (add.repaired || 0), failed_back: (saved.failed_back || 0) + (add.failed_back || 0),
+      stations: [...new Set([...(saved.stations || []), ...stations])], issues: joinTxt(saved.issues, add.issues), improvements: joinTxt(saved.improvements, add.improvements) };
+    ['issues', 'improvements'].forEach(k => { if (!data[k]) delete data[k]; });
+    if (blk && !S.blkOk) data.blockers = joinTxt(saved.blockers, blk);   // before the blockers list exists, keep it in the log
+    if (ex && !blk && !(add.repaired || add.failed_back || add.issues || add.improvements) && stations.every(id => (saved.stations || []).includes(id))) { $('#fieldErr').textContent = 'Nothing new to add.'; $('#fieldErr').classList.remove('hidden'); return; }
     busy(btn, true, 'Saving');
     const row = { user_id: S.me.id, day, stage: 'field', data, note: null };
-    const { data: saved, error } = await saveStageRow(row);
+    const { data: savedRow, error } = await saveStageRow(row);
     busy(btn, false);
     if (error) { $('#fieldErr').textContent = errMsg(error); $('#fieldErr').classList.remove('hidden'); return; }
-    S.stage = S.stage.filter(l => !(l.user_id === S.me.id && l.day === row.day && l.stage === 'field')).concat(saved);
-    toast(past ? `Saved for ${fmtDay(day)}` : 'Saved'); renderFieldDay();
+    S.stage = S.stage.filter(l => !(l.user_id === S.me.id && l.day === row.day && l.stage === 'field')).concat(savedRow);
+    if (blk && S.blkOk) { const r = await S.sb.from('blockers').insert({ text: blk, region: S.me.region, station_ids: stations.length ? stations : null }).select(); if (r.error) toast('Blocker not sent: ' + errMsg(r.error), 'err'); else S.blockers.push(...(r.data || [])); }
+    toast(past ? `Saved for ${fmtDay(day)}` : ex ? 'Added' : 'Saved'); renderFieldDay();
   };
 }
 
@@ -2805,14 +2856,14 @@ function renderRegion() {
       <tbody>${board.map((r, i) => `<tr class="border-t border-cream-100 ${r.t.id === me ? 'bg-caramel-100/60' : ''}"><td class="py-2"><button data-person="${r.t.id}" class="flex items-center gap-2.5 text-left">${avatar(r.t, 'w-8 h-8 text-[11px]')}<span><span class="block font-medium">${i < 3 && r.rep ? ['🥇 ', '🥈 ', '🥉 '][i] : ''}${esc(r.t.full_name)}${r.t.id === me ? ' (you)' : ''}</span><span class="block text-xs text-espresso-500">${esc(r.t.staff_id)} · ${esc(areaOf(r.t) ? areaName(areaOf(r.t)) : r.t.region || 'no region')}${loggedToday.has(r.t.id) ? '' : ' · <span class="text-warn-800">not logged today</span>'}</span></span></button></td>
         <td class="py-2 text-right tnum font-semibold text-olive-700">${r.rep}</td><td class="py-2 text-right tnum ${r.back ? 'text-terra' : ''}">${r.back}</td><td class="py-2 text-right tnum">${r.st}</td><td class="py-2 text-right tnum">${r.mine}</td><td class="py-2 text-right tnum">${r.days}</td></tr>`).join('')}</tbody></table></div>` : '<p class="text-sm text-espresso-500">No field technicians in this view.</p>', '', 'best performers first')}
     ${isTech ? '' : `<div class="grid xl:grid-cols-3 gap-5">
-      ${panel('Blockers', feedHtml('blockers', 'bg-warn-50 text-warn-800'))}
+      ${blockerPanel(id => !ids || ids.has(id))}
       ${panel('Issues found', feedHtml('issues', 'bg-cream-100'))}
       ${panel('Improvements asked for', feedHtml('improvements', 'bg-olive-50 text-olive-700'))}
     </div>`}</div>`;
   bindScope(renderRegion); bindPeriod(renderRegion); bindDetails(from, to, TEAMS, ids);
   if ($('#rvSel')) $('#rvSel').onchange = e => { RV.v = e.target.value; renderRegion(); };
   $$('#main [data-person]').forEach(b => b.onclick = () => isTech ? null : fieldTechDrawer(b.dataset.person));
-  bindTagged(renderRegion); bindTagCards(stKeep, from, to, plabel);
+  bindTagged(renderRegion); bindTagCards(stKeep, from, to, plabel); bindBlockers(renderRegion);
   if (isTech) appendMyMonths();
 }
 
@@ -2885,7 +2936,7 @@ function showActive() {
 
 /* ================= TASK REMINDERS: pop up when someone gives you a task ================= */
 function checkNewTasks() {
-  if (!S.me || !S.loaded) return;
+  if (!S.me || !S.loaded || S.viewAs) return;
   if (!$('#modal').classList.contains('hidden') || (S.view === 'field' && S.fieldJob)) return;
   const key = 'bo_seen_tasks_' + S.me.id, seen = new Set(JSON.parse(store.get(key) || '[]'));
   const fresh = S.tasks.filter(t => t.assignee === S.me.id && !t.done && !seen.has(t.id));
@@ -2953,7 +3004,7 @@ function renderTeamWork() {
       <button id="tGive" class="${btnP} h-10 ml-auto"><i class="fa-solid fa-hand-holding"></i>Give batteries</button></div>
     ${panel('Batteries at this stage', `<table class="w-full text-sm"><thead><tr class="text-espresso-500"><th class="text-left font-medium pb-2">Brand</th><th class="font-medium pb-2 text-right">Came in</th><th class="font-medium pb-2 text-right">Given out</th><th class="font-medium pb-2 text-right">Left to give</th></tr></thead>
       <tbody>${brandRows.map(([b, i, g, l]) => `<tr class="border-t border-cream-100"><td class="py-2 font-semibold">${b}</td><td class="py-2 text-right tnum">${i}</td><td class="py-2 text-right tnum">${g}</td><td class="py-2 text-right tnum font-semibold ${l ? 'text-caramel-800' : 'text-espresso-500'}">${l}</td></tr>`).join('')}</tbody></table>
-      <p class="mt-3 text-xs text-espresso-500">"Came in" = opening stock you declared + what earlier stages passed on${k === 'iot' ? ' (handed over as offline by repair lines, passed insulation)' : k === 'air_leak' ? ` (handed over by the IoT team, and ${REPAIR_TO_AIR.join(', ')} repaired by the lines)` : ' (handed over by repair lines as physical damage)'}. Add opening stock in your My day form.</p>`, '', 'all time')}
+      <p class="mt-3 text-xs text-espresso-500">"Came in" = opening stock you declared + what earlier stages passed on${k === 'iot' ? ' (repaired by the lines, and offline batteries they handed to IoT)' : k === 'air_leak' ? ' (handed over by the IoT team, and repaired batteries SPOCs sent straight to air leak)' : ' (handed over by repair lines as physical damage)'}. Add opening stock in your My day form.</p>`, '', 'all time')}
     ${panel('Your team', members.length ? `<ul class="divide-y divide-cream-100">${members.map(m => { const g = memberGiven(k, m.id), dn = memberDone(k, m.id);
       return `<li class="py-3 flex items-center gap-3">${avatar(m)}<span class="flex-1 min-w-0"><span class="block font-medium truncate">${esc(m.full_name)}${m.id === S.me.id ? ' (you)' : ''}</span><span class="block text-xs text-espresso-500 truncate">${TEAMS.map(b => { const x = memberGiven(k, m.id, b); return x ? `${b} ${x}` : ''; }).filter(Boolean).join(' · ') || 'Nothing given yet'}</span></span>
         <span class="text-right text-xs leading-5 tnum"><span class="block"><b>${g}</b> given · <b class="text-olive-700">${dn}</b> ${TEAM_STAGES[k].doneLabel}</span><span class="block"><b class="${g - dn > 0 ? 'text-caramel-800' : 'text-espresso-500'}">${Math.max(0, g - dn)} left</b></span>${(() => { const s = tatSummary(personTat(m.id, k), monthStart(), todayStr()); return `<span class="block ${tatTone(s)}">${fmtTat(s)}${s.overdue ? ` · ${s.overdue} late` : ''}</span>`; })()}</span>
@@ -3036,6 +3087,8 @@ function savedSummary(d) {
   const out = [];
   const walk = (o, path) => Object.entries(o || {}).forEach(([k, v]) => {
     if (k === '_adds') return;
+    if (typeof v === 'number' && path[0] === 'ret') { out.push(`given back to ${esc(personName(k))}: <b class="tnum">${v}</b>`); return; }
+    if (typeof v === 'number' && path[0] === 'rw') { out.push(`CBAK ${k === 'in' ? 'added for rework' : 'reworked'}: <b class="tnum">${v}</b>`); return; }
     if (typeof v === 'number') { const last = path.concat(k); const name = k === 'n' ? path[0] === 'opening' ? 'opening stock' : path[0] === 'waiting' ? 'waiting for spares' : path[0] === 'add' ? 'added to waiting for spares' : path[0] === 'arrived' ? 'spares arrived' : '' : (NUM_LABEL[k] || k); const brand = last.find(x => TEAMS.includes(x)); out.push(`${brand ? brand + ' ' : ''}${name}${path[0] === 'issues' || path[0] === 'reasons' || path[0] === 'damage' || path[0] === 'out_reasons' ? ` (${k})` : ''}: <b class="tnum">${v}</b>`.replace(` ${k} (${k})`, ` ${k}`)); }
     else if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, path.concat(k));
   });
@@ -3269,7 +3322,11 @@ const GLOSSARY = {
   atFab: 'Physical damage (broken nails, threading, broken wires, burnt BMS) waiting for fabrication.',
   iotOffline: 'Not showing online. The IoT team is working to bring them back.',
   airFail: 'Failed the air leak test and need fixing before they can go.',
-  ready: 'Passed every test and waiting to be dispatched.',
+  ready: 'Passed the insulation test (the last test) and not dispatched yet.',
+  reworkPending: 'CBAK batteries waiting for rework. Esther adds new ones and logs the ones reworked; she can also edit it.',
+  reworked: 'CBAK batteries reworked so far, from Esther\'s daily log.',
+  received: 'Batteries received at the warehouse in this period.',
+  dispatched: 'Batteries dispatched in this period.',
   awaitingDiag: 'Received but not yet diagnosed.',
   scrapped: 'Totally dead. Cannot be repaired.',
   warranty: 'Manufacturer fault. Moved to QC and waiting for the manufacturer.',
@@ -3321,14 +3378,17 @@ function vsGraph(period, brands, fieldIds, plabel) {
 /* ---- tapping a card shows where the number comes from ---- */
 function openDetail(key, from, to, brands, fieldIds) {
   const per = TEAMS.filter(b => brands.includes(b)).map(b => [b, whNumbers(from, to, [b])]);
-  const pick = { onHand: g => g.onHand, underRepair: g => g.underRepair, spares: g => g.spares, underTest: g => g.underTest, atFab: g => g.atFab, iotOffline: g => g.iotOffline, airWaiting: g => g.airWaiting, insPending: g => g.insPending, iotPending: g => g.iotPending, airFail: g => g.airFail, ready: g => g.ready, awaitingDiag: g => g.awaitingDiag, scrapped: g => g.scrapped, warranty: g => g.warranty, withPartner: g => g.withPartner, incoming: g => g.incoming };
-  const titles = { onHand: 'In the warehouse', underRepair: 'Under repair', spares: 'Waiting for spares', underTest: 'Under test', atFab: 'At fabrication', iotOffline: 'Offline at IoT', airWaiting: 'Pending air leak test', insPending: 'Pending insulation test', iotPending: 'Pending IoT check', airFail: 'Failed air leak', ready: 'Ready to dispatch', awaitingDiag: 'Waiting for diagnosis', scrapped: 'Scrapped', warranty: 'Warranty (moved to QC)', withPartner: 'With Quality / O&M', incoming: 'Incoming today', whRepaired: 'Warehouse repairs', fieldRepaired: 'Swap station repairs' };
+  const pick = { onHand: g => g.onHand, underRepair: g => g.underRepair, spares: g => g.spares, underTest: g => g.underTest, atFab: g => g.atFab, iotOffline: g => g.iotOffline, airWaiting: g => g.airWaiting, insPending: g => g.insPending, iotPending: g => g.iotPending, airFail: g => g.airFail, ready: g => g.ready, awaitingDiag: g => g.awaitingDiag, scrapped: g => g.scrapped, warranty: g => g.warranty, withPartner: g => g.withPartner, incoming: g => g.incoming, reworkPending: g => g.reworkPending, reworked: g => g.reworked, received: g => g.received, dispatched: g => g.dispatchedP };
+  const titles = { onHand: 'In the warehouse', underRepair: 'Under repair', spares: 'Waiting for spares', underTest: 'Under test', atFab: 'At fabrication', iotOffline: 'Offline at IoT', airWaiting: 'Pending air leak test', insPending: 'Pending insulation test', iotPending: 'Pending IoT check', airFail: 'Failed air leak', ready: 'Ready to dispatch', awaitingDiag: 'Waiting for diagnosis', scrapped: 'Scrapped', warranty: 'Warranty (moved to QC)', withPartner: 'With Quality / O&M', incoming: 'Incoming today', reworkPending: 'Pending rework (CBAK)', reworked: 'Reworked so far (CBAK)', received: 'Received', dispatched: 'Dispatched', whRepaired: 'Warehouse repairs', fieldRepaired: 'Swap station repairs' };
   const goTo = { underRepair: 'docket', atFab: 'teamwork', iotOffline: 'teamwork', airFail: 'teamwork', fieldRepaired: 'region' };
   const row = (a, b, c = '') => `<li class="py-2 flex items-center gap-3 text-sm"><span class="flex-1 min-w-0">${a}</span>${c ? `<span class="text-xs text-espresso-500">${c}</span>` : ''}<b class="tnum">${b}</b></li>`;
   let body = '';
   if (pick[key]) body += `<h3 class="text-xs font-semibold text-espresso-500 mb-1">BY BRAND</h3><ul class="divide-y divide-cream-100 mb-4">${per.map(([b, g]) => row(b, pick[key](g))).join('')}</ul>`;
   const people = [];
   if (key === 'underRepair') S.peopleList.filter(p => TEAMS.includes(p.team) && brands.includes(p.team)).forEach(p => { const d = techDocket(p.id); if (d.left) people.push(row(esc(p.full_name), d.left, `${esc(p.team)} · given ${d.given}`)); });
+  if (key === 'received') logList('receiving', l => tSum([l], 'recv', brands));
+  if (key === 'dispatched') logList('dispatch', l => tSum([l], 'sent', brands));
+  if (key === 'reworkPending' || key === 'reworked') logList('dispatch', l => key === 'reworked' ? ((l.data.rw || {}).done || 0) : ((l.data.rw || {}).in || 0), () => key === 'reworked' ? 'reworked' : 'added for rework');
   if (key === 'spares') logList('repair', l => brands.includes(l.data.brand) ? l.data.to_spares : 0, l => esc(l.data.brand) + ' line' + (l.data.spares_missing ? ' · ' + esc(l.data.spares_missing) : ''));
   if (key === 'spares') { const l = latestSpares(); if (l) { people.push(row(`Updated by ${esc(personName(l.user_id))}`, '', fmtDay(l.day))); if (l.data.missing) people.push(`<li class="py-2 text-sm"><b>Waiting for:</b> ${esc(l.data.missing)}</li>`); } }
   const logList = (stage, f, label, filter = () => true) => logsOf(stage, from, to).filter(filter).map(l => [l, f(l)]).filter(x => x[1]).reverse().slice(0, 40).forEach(([l, n]) => people.push(row(`${esc(personName(l.user_id))}${label ? ' · ' + label(l) : ''}`, n, fmtDay(l.day))));
@@ -3366,28 +3426,6 @@ function whStaffPanel() {
 }
 
 /* ---- regional managers (and supervisor) get a pop-up when a field technician reports a blocker ---- */
-function checkNewBlockers() {
-  if (!S.me || !S.loaded || !$('#modal').classList.contains('hidden')) return;
-  if (!(S.role === 'admin' || (S.role === 'mgr' && (S.me.roles || []).includes('rm')))) return checkNewGiven();
-  const key = 'bo_seen_blk_' + S.me.id, seen = new Set(JSON.parse(store.get(key) || '[]'));
-  const since = (() => { const d = new Date(todayStr() + 'T12:00:00'); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); })();
-  const fresh = S.stage.filter(l => l.stage === 'field' && l.day >= since && l.data && l.data.blockers && inScopeId(l.user_id))
-    .filter(l => !seen.has(l.id + '|' + (l.updated_at || '')));
-  if (!fresh.length) return checkNewGiven();
-  const markSeen = () => store.set(key, JSON.stringify([...seen, ...fresh.map(l => l.id + '|' + (l.updated_at || ''))].slice(-400)));
-  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-    try { new Notification(fresh.length > 1 ? `${fresh.length} new blockers` : 'New blocker reported', { body: fresh.map(l => `${firstName(personName(l.user_id))}: ${l.data.blockers}`).join('\n').slice(0, 240), tag: 'bo-blockers' }); } catch (e) {}
-  }
-  const canAsk = 'Notification' in window && Notification.permission === 'default';
-  const stName = id => (S.stations.find(s => s.id === id) || {}).name;
-  openModal(`<div class="p-5 text-center"><span class="w-14 h-14 mx-auto rounded-full bg-warn-50 text-warn-800 grid place-items-center text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></span>
-    <h2 class="mt-3 font-display font-semibold text-xl">${fresh.length > 1 ? `${fresh.length} blockers reported` : 'A blocker was reported'}</h2></div>
-    <ul class="px-5 space-y-2 max-h-[50vh] overflow-y-auto">${fresh.map(l => `<li class="p-3 rounded-xl bg-warn-50 text-warn-800"><div class="text-sm font-medium">${esc(l.data.blockers)}</div><div class="text-xs opacity-80 mt-0.5">${esc(personName(l.user_id))} · ${fmtDay(l.day)}${(l.data.stations || []).length ? ' · ' + esc((l.data.stations || []).map(stName).filter(Boolean).slice(0, 3).join(', ')) : ''}</div></li>`).join('')}</ul>
-    <div class="p-5 flex flex-wrap gap-2 justify-end">${canAsk ? `<button id="blAlerts" class="${btnS}"><i class="fa-solid fa-bell"></i>Alert me even when the app is closed</button>` : ''}<button id="blOk" class="${btnP}">Seen</button></div>`);
-  $('#blOk').onclick = () => { markSeen(); closeModal(); };
-  if ($('#blAlerts')) $('#blAlerts').onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} $('#blAlerts').remove(); };
-}
-
 /* ================= PERFORMANCE: who is leading, and each person's month by month ================= */
 const tsum1 = (d, f) => TEAMS.reduce((a, b) => a + ((((d || {}).t || {})[b] || {})[f] || 0), 0);
 const STAGE_SCORE = {
@@ -3630,12 +3668,12 @@ function renderOpsHome() {
   const brands = WH.brand === 'All' ? TEAMS : [WH.brand];
   const g = whNumbers(from, to, brands), t = todayStr();
   setTitle('Home', `${fmtDay(t)} · ${plabel}`);
-  const blk = S.stage.filter(l => l.day === t && l.stage === 'field' && l.data.blockers);
+  const blk = blockerList().filter(b => b.status === 'open').map(b => ({ user_id: b.user_id, data: { blockers: b.text } }));
   const late = overdueNow();
   const notLogged = (() => { const done = new Set(S.stage.filter(l => l.day === t).map(l => l.user_id)); return S.peopleList.filter(p => p.active !== false && appRoleOf(p) === 'tech' && (kindOf(p) === 'field' || Object.keys(STAGES).some(k => STAGES[k].roles.some(r => (p.roles || []).includes(r)))) && !done.has(p.id)); })();
   const low = lowStockItems(), toolsLate = toolsOut().filter(o => daysSince(o.since) >= OVERDUE_DAYS);
   const att = [
-    blk.length && [`${blk.length} blocker${blk.length > 1 ? 's' : ''} reported today`, blk.slice(0, 3).map(l => `${firstName(personName(l.user_id))}: ${l.data.blockers}`).join(' · '), 'region', 'bg-warn-50 text-warn-800', 'fa-triangle-exclamation'],
+    blk.length && [`${blk.length} blocker${blk.length > 1 ? 's' : ''} waiting for an answer`, blk.slice(0, 3).map(l => `${firstName(personName(l.user_id))}: ${l.data.blockers}`).join(' · '), 'region', 'bg-warn-50 text-warn-800', 'fa-triangle-exclamation'],
     late.length && [`${late.reduce((a, r) => a + r.n, 0)} batteries past the ${tatTarget()}-day turnaround`, late.slice(0, 4).map(r => `${firstName(personName(r.uid))} ${r.n} (${STAGE_NAME(r.stage)}, ${r.oldest} days)`).join(' · '), 'docket', 'bg-terra-50 text-terra', 'fa-clock'],
     g.toGive && [`${g.toGive} received batteries not given out yet`, TEAMS.filter(b => brands.includes(b)).map(b => `${b} ${whNumbers(null, null, [b]).toGive}`).join(' · '), 'docket', 'bg-caramel-100 text-caramel-800', 'fa-inbox'],
     notLogged.length && [`${notLogged.length} people haven't logged today`, notLogged.slice(0, 8).map(p => firstName(p.full_name)).join(', ') + (notLogged.length > 8 ? '…' : ''), 'team', 'bg-cream-100 text-espresso-700', 'fa-user-clock'],
@@ -3710,10 +3748,10 @@ S.faults = []; S.checkins = [];
 async function loadFaults() {
   const since = ymd(new Date(Date.now() - 30 * 864e5));
   const [a, b] = await Promise.all([
-    S.sb.from('station_faults').select('*').order('created_at').limit(20000),
+    fetchAll(() => S.sb.from('station_faults').select('*').order('created_at').order('id')).catch(() => null),
     S.sb.from('md_checkins').select('*').gte('day', since).order('created_at')
   ]);
-  S.faults = a.error ? [] : a.data || []; S.checkins = b.error ? [] : b.data || [];
+  S.faults = a || []; S.checkins = b.error ? [] : b.data || [];
 }
 const isTagger = (p = S.me) => ((p && p.roles) || []).includes('tagger');
 const canCloseTags = (p = S.me) => ((p && p.roles) || []).some(r => ['field_tech', 'rm', 'admin'].includes(r));
@@ -3757,12 +3795,12 @@ function renderTag() {
       ${statCard('Closed today', st.repaired + st.failed, 'fa-circle-check', 'bg-olive-50 text-olive-700', `${st.repaired} repaired · ${st.failed} to hub`)}
     </div>
     ${card(`<form id="tagF" class="p-5 space-y-4" novalidate>
-      <h2 class="font-display font-semibold text-lg">Tag faulty batteries at a station</h2>
+      <h2 class="font-display font-semibold text-lg">Tag faulty batteries at a station</h2><p class="text-xs text-espresso-500 -mt-2">A station can be tagged as many times as it sends a list. New batteries are added to the ones still open there.</p>
       ${allRegions ? `<label class="block"><span class="text-sm font-medium">Region</span>
         <select id="tagR" class="${inputC} mt-1.5" aria-label="Region"><option value="">All regions</option>${REGIONS.map(r => `<option${TG.r === r ? ' selected' : ''}>${r}</option>`).join('')}</select></label>` : ''}
       <label class="block"><span class="text-sm font-medium">Station</span>
         <input id="tagQ" class="${inputC} mt-1.5" placeholder="Type to search the station" value="${esc(TG.q)}" aria-label="Search station">
-        <select name="station" size="6" class="${inputC} mt-2 h-auto py-1" aria-label="Station" required>${mine.filter(s => !TG.q || s.name.toLowerCase().includes(TG.q.toLowerCase())).slice(0, 1000).map(s => `<option value="${s.id}">${esc(s.name)}${allRegions && !TG.r ? ' · ' + esc(s.region || '') : ''}${s.sub_region ? ' · ' + esc(areaName(s.sub_region)) : ''}${openAt(s.id) ? ` — ${openAt(s.id)} open` : ''}</option>`).join('')}</select></label>
+        <select name="station" size="6" class="${inputC} mt-2 h-auto py-1" aria-label="Station" required>${mine.filter(s => !TG.q || s.name.toLowerCase().includes(TG.q.toLowerCase())).slice(0, 1000).map(s => `<option value="${s.id}" ${TG.last === s.id ? 'selected' : ''}>${esc(s.name)}${allRegions && !TG.r ? ' · ' + esc(s.region || '') : ''}${s.sub_region ? ' · ' + esc(areaName(s.sub_region)) : ''}${openAt(s.id) ? ` — ${openAt(s.id)} open` : ''}</option>`).join('')}</select></label>
       <div class="grid grid-cols-2 gap-3">
         <label class="block"><span class="text-sm font-medium">Faulty batteries</span>${numIn('qty', '', 'Faulty batteries')}</label>
         <label class="block"><span class="text-sm font-medium">What is wrong? (optional)</span><input name="note" maxlength="200" class="${inputC} mt-1.5" placeholder="e.g. not charging, swollen"></label>
@@ -3770,9 +3808,10 @@ function renderTag() {
       <p id="tagErr" class="hidden text-sm text-terra-700"></p>
       <div class="flex justify-end"><button class="${btnP}"><i class="fa-solid fa-tag"></i>Tag batteries</button></div>
     </form>`)}
-    ${panel('What you tagged recently', recent.length ? `<ul class="divide-y divide-cream-100">${recent.map(f => `<li class="py-2 flex items-center gap-3 text-sm"><span class="flex-1"><b>${esc((stationById(f.station_id) || {}).name || 'Station')}</b>${f.note ? ` · ${esc(f.note)}` : ''}<span class="block text-xs text-espresso-500">${fmtDay(f.day)} · ${hhmm(f.created_at)}</span></span><span class="tnum font-semibold">${f.qty}</span><span class="text-xs text-espresso-500 w-20 text-right">${openAt(f.station_id)} open now</span></li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">Nothing tagged yet.</p>')}
+    ${panel('What you tagged recently', recent.length ? `<ul class="divide-y divide-cream-100">${recent.map(f => `<li class="py-2 flex items-center gap-3 text-sm"><span class="flex-1"><b>${esc((stationById(f.station_id) || {}).name || 'Station')}</b>${f.note ? ` · ${esc(f.note)}` : ''}<span class="block text-xs text-espresso-500">${fmtDay(f.day)} · ${hhmm(f.created_at)}</span></span><span class="tnum font-semibold">${f.qty}</span><span class="text-xs text-espresso-500 w-20 text-right">${openAt(f.station_id)} open now</span><button type="button" data-more="${f.station_id}" class="${btnS} h-8 px-2 text-xs" aria-label="Tag more at this station"><i class="fa-solid fa-plus"></i>More</button></li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">Nothing tagged yet.</p>')}
   </div>`;
   bindTagCards(regOk, todayStr(), todayStr(), 'today');
+  $$('[data-more]').forEach(b => b.onclick = () => { TG.last = b.dataset.more; TG.q = ''; renderTag(); const q = $('#tagF [name=qty]'); if (q) { q.focus(); q.scrollIntoView({ block: 'center' }); } });
   if ($('#tagR')) $('#tagR').onchange = e => { TG.r = e.target.value; renderTag(); };
   $('#tagQ').oninput = e => { TG.q = e.target.value; const pos = e.target.selectionStart; renderTag(); const i = $('#tagQ'); i.focus(); i.setSelectionRange(pos, pos); };
   $('#tagF').onsubmit = async e => {
@@ -3782,7 +3821,7 @@ function renderTag() {
     const btn = f.querySelector('button'); busy(btn, true);
     const { data, error } = await S.sb.rpc('tag_faults', { p_station: sid, p_qty: qty, p_note: f.note.value.trim() || null });
     busy(btn, false); if (error) return err(errMsg(error));
-    S.faults.push(Array.isArray(data) ? data[0] : data); TG.q = '';
+    S.faults.push(Array.isArray(data) ? data[0] : data); TG.q = ''; TG.last = sid;
     toast(`${qty} tagged at ${stationById(sid).name}`); renderTag();
   };
 }
@@ -3923,7 +3962,7 @@ function showTourStep() {
 }
 /* first visit to a page: start the tour by itself (after any alert is dismissed) */
 function maybeTour() {
-  if (!S.me || !TOUR[S.view] || store.get('bo_tour_' + S.me.id + '_' + S.view) || /\bTester\b/.test(S.me.full_name || '') || navigator.webdriver) return;
+  if (S.viewAs || !S.me || !TOUR[S.view] || store.get('bo_tour_' + S.me.id + '_' + S.view) || /\bTester\b/.test(S.me.full_name || '') || navigator.webdriver) return;
   setTimeout(() => { if ($('#modal') && !$('#modal').classList.contains('hidden')) return; if ($('#tourO') || !$('#mdPanel').classList.contains('hidden')) return; startTour(); }, 900);
 }
 function addTourButton() {
@@ -4064,7 +4103,7 @@ function mdMgrQuestion(asked, hour) {
   return null;
 }
 function mdCheckin() {
-  const a = mdLagQuestion(); if (!a) return;
+  if (S.viewAs) return; const a = mdLagQuestion(); if (!a) return;
   MD.ask = a; MD.msgs.push({ me: false, t: `Hi ${firstName(S.me.full_name)}. ${a.q}` }); openMd();
 }
 /* managers: what people answered */
@@ -4149,8 +4188,8 @@ function rmAddForm() {
    stock corrections (stock_adjust) are +/- numbers a team lead or the supervisor enters for the stock at their stage */
 S.adj = []; S.adjOk = false;
 async function loadAdjust() {
-  const r = await S.sb.from('stock_adjust').select('*').order('created_at');
-  S.adjOk = !r.error; S.adj = r.error ? [] : r.data || [];
+  try { S.adj = await fetchAll(() => S.sb.from('stock_adjust').select('*').order('created_at').order('id')); S.adjOk = true; }
+  catch (e) { S.adj = []; S.adjOk = false; }
 }
 const adjOf = (k, b) => S.adj.filter(a => a.stage === k && a.brand === b).reduce((s, a) => s + (a.delta || 0), 0);
 const isIotPerson = (p = S.me) => ((p && p.roles) || []).some(r => ['iot', 'iot_test'].includes(r));
@@ -4285,24 +4324,30 @@ const STOCK_EDIT = [
   ['underTest', 'Under test', 'underTest'], ['atFab', 'At fabrication', 'fabrication'], ['insPending', 'Pending insulation test', 'insulation'],
   ['airWaiting', 'Pending air leak test', 'air_leak'], ['airFail', 'Failed air leak', 'airFail'], ['ready', 'Ready to dispatch', 'ready'],
   ['awaitingDiag', 'Waiting for diagnosis', 'awaitingDiag'], ['scrapped', 'Scrapped', 'scrapped'], ['warranty', 'Warranty (moved to QC)', 'warranty'],
-  ['withPartner', 'With Quality / O&M', 'withPartner']];
+  ['withPartner', 'With Quality / O&M', 'withPartner'], ['reworkPending', 'Pending rework (CBAK)', 'reworkPending'], ['reworked', 'Reworked so far (CBAK)', 'reworked'],
+  ['toGive', 'To give out (SPOC)', 'toGive']];
+/* a SPOC keeps the numbers of their own line only */
+const SPOC_EDIT = ['toGive', 'underRepair', 'underTest', 'spares', 'airWaiting'];
+const isSpocOnly = () => (S.me.roles || []).includes('spoc') && S.role !== 'admin' && !isSparesKeeper();
 /* numbers whose corrections are added straight onto the dashboard figure (the others go in through opening stock) */
-const DIRECT_FIX = ['onHand', 'underRepair', 'underTest', 'airFail', 'ready', 'awaitingDiag', 'scrapped', 'warranty', 'withPartner'];
-const canEditStock = () => S.adjOk && (S.role === 'admin' || isSparesKeeper());
-function editStockForm(after, pick = 'scrapped') {
-  const row = STOCK_EDIT.find(r => r[0] === pick) || STOCK_EDIT[0], [key, label, stage] = row;
-  const cur = Object.fromEntries(TEAMS.map(b => [b, whNumbers(null, null, [b])[key]]));
+const DIRECT_FIX = ['onHand', 'underRepair', 'underTest', 'airFail', 'ready', 'awaitingDiag', 'scrapped', 'warranty', 'withPartner', 'reworkPending', 'reworked', 'toGive'];
+const canEditStock = () => S.adjOk && (S.role === 'admin' || isSparesKeeper() || ((S.me.roles || []).includes('spoc') && !!myBrand()));
+function editStockForm(after, pick) {
+  const spoc = isSpocOnly(), list = STOCK_EDIT.filter(r => spoc ? SPOC_EDIT.includes(r[0]) : r[0] !== 'toGive' || S.role === 'admin');
+  const brandsE = spoc ? [myBrand()] : TEAMS;
+  const row = list.find(r => r[0] === pick) || list.find(r => r[0] === (spoc ? 'toGive' : 'scrapped')) || list[0], [key, label, stage] = row;
+  const cur = Object.fromEntries(brandsE.map(b => [b, whNumbers(null, null, [b])[key]]));
   openModal(`${modalHead('Edit warehouse stock')}<form id="esF" class="p-5 space-y-4" novalidate>
-    <label class="block"><span class="text-sm font-medium">Which number?</span><select name="key" class="${inputC} mt-1.5">${STOCK_EDIT.map(([k, l]) => `<option value="${k}" ${k === key ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-    <p class="text-sm text-espresso-600">Type the <b>real total</b> there is now for each brand. The difference is saved, and what the teams log from now on keeps adding and taking away. Offline at IoT and pending IoT check are kept by the IoT lead.</p>
-    <div class="space-y-2">${TEAMS.map(b => `<label class="flex items-center gap-3 p-2.5 rounded-xl border border-cream-200"><span class="flex-1"><b>${b}</b><span class="block text-xs text-espresso-500">${esc(label)} now ${cur[b]}</span></span><span class="w-24">${numIn('n_' + b, cur[b], b + ' ' + label)}</span></label>`).join('')}</div>
+    <label class="block"><span class="text-sm font-medium">Which number?</span><select name="key" class="${inputC} mt-1.5">${list.map(([k, l]) => `<option value="${k}" ${k === key ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+    <p class="text-sm text-espresso-600">Type the <b>real total</b> there is now for each brand. The difference is saved, and what the teams log from now on keeps adding and taking away. ${spoc ? `You can change the ${esc(myBrand())} line's numbers.` : 'Offline at IoT and pending IoT check are kept by the IoT lead.'}</p>
+    <div class="space-y-2">${brandsE.map(b => `<label class="flex items-center gap-3 p-2.5 rounded-xl border border-cream-200"><span class="flex-1"><b>${b}</b><span class="block text-xs text-espresso-500">${esc(label)} now ${cur[b]}</span></span><span class="w-24">${numIn('n_' + b, cur[b], b + ' ' + label)}</span></label>`).join('')}</div>
     ${txtIn('note', '', 'Why are you changing it?', 'e.g. counted the store this morning')}
     <p id="esErr" class="hidden text-sm text-terra-700"></p>
     <div class="flex justify-end gap-2"><button type="button" data-close class="${btnS}">Cancel</button><button class="${btnP}"><i class="fa-solid fa-floppy-disk"></i>Save</button></div></form>`);
   $('#esF').key.onchange = e => editStockForm(after, e.target.value);
   $('#esF').onsubmit = async e => {
     e.preventDefault(); const f = e.target, err = m => { $('#esErr').textContent = m; $('#esErr').classList.remove('hidden'); };
-    const rows = TEAMS.map(b => ({ stage, brand: b, delta: n0(f['n_' + b].value) - cur[b], note: f.note.value.trim() || null })).filter(r => r.delta);
+    const rows = brandsE.map(b => ({ stage, brand: b, delta: n0(f['n_' + b].value) - cur[b], note: f.note.value.trim() || null })).filter(r => r.delta);
     if (!rows.length) return err('Nothing changed.');
     const btn = f.querySelector('button:not([type=button])'); busy(btn, true);
     const { data, error } = await S.sb.from('stock_adjust').insert(rows).select();
@@ -4336,22 +4381,22 @@ function bindDayBar(after) {
 const pastSaved = (ex, k) => `<div class="rounded-xl border border-cream-200 bg-cream-100 p-3 text-sm"><div class="text-xs font-semibold text-espresso-500 mb-1">SAVED FOR ${esc(fmtDay(ex.day).toUpperCase())}</div>${k === 'field' ? `Repaired <b>${ex.data.repaired || 0}</b> · failed back <b>${ex.data.failed_back || 0}</b> · ${(ex.data.stations || []).length} stations${ex.data.blockers ? ` · blockers: ${esc(ex.data.blockers)}` : ''}` : savedSummary(ex.data)}${ex.note ? `<div class="mt-1 text-xs"><b>Note:</b> ${esc(ex.note)}</div>` : ''}<div class="mt-1.5 text-xs text-espresso-500">Earlier days can't be changed once saved. Ask the supervisor if something is wrong.</div></div>`;
 
 /* ================= BATTERY FLOW BETWEEN TEAMS =================
-   repair lines → waiting for spares (Esther), scrapped (Esther is told), and repaired batteries move on to their test:
-   CBAK repaired → air leak test; other brands repaired → insulation → IoT → air leak.
+   repair lines → waiting for spares (Esther), scrapped (Esther is told), and repaired batteries move on through the tests:
+   receiving → diagnosis → repair (→ fabrication → back to the line) → IoT check → air leak test → insulation test → dispatch.
+   A SPOC can also send repaired batteries straight to the air leak test.
    "Pending" for a test = what came in, ever (plus opening stock / corrections), minus what was tested. Yesterday's
    pending is today's opening; what the repair lines and earlier tests log today is added on top. */
-const REPAIR_TO_AIR = ['CBAK'];   // brands whose repaired batteries go straight to the air leak test
 const TEST_STAGES = {
-  insulation: { label: 'insulation test', done: 'tested', icon: 'fa-bolt' },
   iot:        { label: 'IoT check', done: 'checked', icon: 'fa-tower-broadcast' },
-  air_leak:   { label: 'air leak test', done: 'tested', icon: 'fa-wind' }
+  air_leak:   { label: 'air leak test', done: 'tested', icon: 'fa-wind' },
+  insulation: { label: 'insulation test', done: 'tested', icon: 'fa-bolt' }
 };
 /* batteries that reached test stage k for brand b between from and to (inclusive), from the teams before it */
 function flowIn(k, b, from, to) {
-  const rep = logsOf('repair', from, to).filter(l => (l.data || {}).brand === b), toAir = REPAIR_TO_AIR.includes(b);
-  if (k === 'insulation') return toAir ? 0 : rSum(rep, 'repaired');
-  if (k === 'iot') return rSum(rep, 'handed_iot') + tSum(logsOf('insulation', from, to), 'passed', [b]);
-  if (k === 'air_leak') return iotToAir(b, logsOf('iot', from, to)) + (toAir ? rSum(rep, 'repaired') : 0);
+  const rep = logsOf('repair', from, to).filter(l => (l.data || {}).brand === b);
+  if (k === 'iot') return rSum(rep, 'repaired') - rSum(rep, 'to_air') + rSum(rep, 'handed_iot');
+  if (k === 'air_leak') return iotToAir(b, logsOf('iot', from, to)) + rSum(rep, 'to_air');
+  if (k === 'insulation') { const air = logsOf('air_leak', from, to); return tSum(air, 'passed', [b]) + tSum(air, 'refixed', [b]); }
   return 0;
 }
 /* waiting for test k at the end of day `to` (null = right now) */
@@ -4366,7 +4411,7 @@ function pendingLine(k) {
   const rows = TEAMS.map(b => [b, pendingParts(k, b)]);
   return `<div class="rounded-xl border border-caramel-200 bg-caramel-100/50 p-3 text-sm"><b>Pending ${TEST_STAGES[k].label}:</b>
     <div class="mt-1.5 grid sm:grid-cols-3 gap-2">${rows.map(([b, p]) => `<div class="rounded-lg bg-surface px-3 py-2"><div class="font-semibold">${b} <span class="tnum font-display text-lg">${p.now}</span></div><div class="text-xs text-espresso-500">${p.before} from before + ${p.today} came in today${p.before + p.today - p.now > 0 ? ` − ${p.before + p.today - p.now} done` : ''}</div></div>`).join('')}</div>
-    <div class="mt-1.5 text-xs text-espresso-500">${k === 'air_leak' ? `${REPAIR_TO_AIR.join(', ')} come straight from the repair lines when they are repaired; other brands come from IoT.` : k === 'insulation' ? `Repaired batteries from the repair lines (${TEAMS.filter(b => !REPAIR_TO_AIR.includes(b)).join(', ')}).` : 'Passed insulation, or handed to IoT by the repair lines as offline.'} What is not tested today is still pending tomorrow.</div></div>`;
+    <div class="mt-1.5 text-xs text-espresso-500">${k === 'iot' ? 'Repaired by the repair lines, and offline batteries they handed to IoT.' : k === 'air_leak' ? 'Handed over by the IoT team, and repaired batteries a SPOC sent straight to air leak.' : 'Passed the air leak test (and refixed ones).'} What is not done today is still pending tomorrow.</div></div>`;
 }
 
 /* ---- swap station repairs: daily logs + tagged jobs closed as repaired, so every place shows the same number ---- */
@@ -4383,6 +4428,7 @@ function fieldRepairs(from, to, ids) {
 /* ---- Esther (dispatch / spares) is told when the repair lines add batteries to waiting for spares or scrapped ---- */
 const isSparesKeeper = () => (S.me.roles || []).some(r => ['dispatch', 'spares'].includes(r));
 function checkSparesScrap() {
+  if (typeof checkBlockerReplies === 'function' && checkBlockerReplies()) return;
   if (!isSparesKeeper()) return checkNewTags();
   const seen = seenSet('bo_seen_ss_');
   const fresh = logsOf('repair').filter(l => recent(l.day, 2) && ((l.data.to_spares || 0) + (l.data.scrapped || 0)) > 0)
@@ -4393,6 +4439,141 @@ function checkSparesScrap() {
     items: fresh.map(({ l }) => liBox(`${esc(personName(l.user_id))} · ${esc(l.data.brand || '')}`, [l.data.to_spares && `${l.data.to_spares} waiting for spares${l.data.spares_missing ? ' (' + esc(l.data.spares_missing) + ')' : ''}`, l.data.scrapped && `${l.data.scrapped} scrapped${l.data.scrap_reason ? ' (' + esc(l.data.scrap_reason) + ')' : ''}`].filter(Boolean).join(' · ') + ` · ${fmtDay(l.day)}`, 'bg-warn-50')),
     notifyBody: 'From the repair lines', okLabel: 'Got it', goLabel: 'See waiting for spares', goView: 'myday',
     onOk: () => markSeenKeys('bo_seen_ss_', seen, fresh.map(x => x.key)) });
+}
+
+/* ================= BLOCKERS: they pile up until the manager answers; the answer goes back to the technician =================
+   Older blockers written in the daily log (data.blockers) still show, read-only. */
+S.blockers = []; S.blkOk = false;
+const BLK_STATUS = { open: ['Waiting for an answer', 'bg-warn-50 text-warn-800'], handled: ['Handled', 'bg-olive-50 text-olive-700'], in_transit: ['In transit', 'bg-caramel-100 text-caramel-800'], escalated: ['Escalated to management', 'bg-terra-50 text-terra'] };
+async function loadBlockers() {
+  try { S.blockers = await fetchAll(() => S.sb.from('blockers').select('*').order('created_at').order('id')); S.blkOk = true; }
+  catch (e) { S.blockers = []; S.blkOk = false; }
+}
+const canAnswerBlockers = () => S.role === 'admin' || (S.me.roles || []).includes('rm');
+/* everything a manager should see: new-style blockers plus old ones from daily logs (last 14 days) */
+function blockerList(keep = () => true) {
+  const since = (() => { const d = new Date(todayStr() + 'T12:00:00'); d.setDate(d.getDate() - 14); return ymd(d); })();
+  const fresh = S.blockers.filter(b => keep(b.user_id)).map(b => ({ ...b, kind: 'new', day: (b.created_at || '').slice(0, 10) }));
+  const old = S.stage.filter(l => l.stage === 'field' && l.day >= since && l.data && l.data.blockers && keep(l.user_id))
+    .map(l => ({ id: 'log:' + l.id + ':' + l.data.blockers.length, user_id: l.user_id, text: l.data.blockers, station_ids: l.data.stations || [], status: 'open', kind: 'old', day: l.day, created_at: l.updated_at }));
+  return fresh.concat(old).sort((a, b) => (b.created_at || b.day).localeCompare(a.created_at || a.day));
+}
+const blkStations = b => (b.station_ids || []).map(id => (stationById(id) || {}).name).filter(Boolean).slice(0, 3).join(', ');
+function blockerItem(b, canAnswer) {
+  const [lbl, tone] = BLK_STATUS[b.status] || BLK_STATUS.open;
+  return `<li class="p-3 rounded-xl border border-cream-200 bg-surface"><div class="flex items-start gap-2"><div class="flex-1 min-w-0"><div class="text-sm font-medium">${esc(b.text)}</div>
+    <div class="text-xs text-espresso-500 mt-0.5">${esc(personName(b.user_id))} · ${fmtDay(b.day)}${b.created_at && b.kind === 'new' ? ' ' + hhmm(b.created_at) : ''}${blkStations(b) ? ' · ' + esc(blkStations(b)) : ''}</div>
+    ${b.reply ? `<div class="mt-1 text-xs"><b>Answer:</b> ${esc(b.reply)}${b.replied_by ? ' — ' + esc(firstName(personName(b.replied_by))) : ''}</div>` : ''}</div>
+    <span class="shrink-0 text-[11px] font-semibold px-2 py-1 rounded-lg ${tone}">${lbl}</span></div>
+    ${canAnswer && b.kind === 'new' && S.blkOk ? `<div class="mt-2 flex flex-wrap gap-1.5">${['handled', 'in_transit', 'escalated'].map(s => `<button type="button" data-blk="${b.id}" data-st="${s}" class="h-8 px-3 rounded-lg text-xs font-semibold border ${b.status === s ? 'bg-espresso-900 text-cream-50 border-espresso-900' : 'border-cream-300 bg-surface hover:bg-cream-100'}">${BLK_STATUS[s][0]}</button>`).join('')}</div>` : ''}</li>`;
+}
+function blockerPanel(keep, title = 'Blockers') {
+  const list = blockerList(keep), open = list.filter(b => b.status === 'open');
+  return panel(`${title}${open.length ? ` · ${open.length} waiting` : ''}`, list.length ? `<ul class="space-y-2 max-h-[28rem] overflow-y-auto scroll-thin">${list.slice(0, 40).map(b => blockerItem(b, canAnswerBlockers())).join('')}</ul>` : '<p class="text-sm text-espresso-500">Nothing reported.</p>');
+}
+/* manager answers a blocker */
+function answerBlocker(id, status, after) {
+  openModal(`${modalHead(BLK_STATUS[status][0])}<form id="abF" class="p-5 space-y-4" novalidate>
+    ${txtIn('reply', '', 'Message to the technician (optional)', status === 'in_transit' ? 'e.g. BMS boards arrive Friday' : status === 'escalated' ? 'e.g. sent to the operations manager' : 'e.g. rack fixed')}
+    <p id="abErr" class="hidden text-sm text-terra-700"></p>
+    <div class="flex justify-end gap-2"><button type="button" data-close class="${btnS}">Cancel</button><button class="${btnP}"><i class="fa-solid fa-reply"></i>Send answer</button></div></form>`);
+  $('#abF').onsubmit = async e => {
+    e.preventDefault(); const btn = e.target.querySelector('button:not([type=button])'); busy(btn, true);
+    const { data, error } = await S.sb.rpc('answer_blocker', { p_id: id, p_status: status, p_reply: e.target.reply.value.trim() || null });
+    busy(btn, false); if (error) { $('#abErr').textContent = errMsg(error); $('#abErr').classList.remove('hidden'); return; }
+    const row = Array.isArray(data) ? data[0] : data; S.blockers = S.blockers.map(b => b.id === id ? row : b);
+    closeModal(); toast('Answer sent to the technician'); (after || renderView)();
+  };
+}
+function bindBlockers(after) { $$('[data-blk]').forEach(b => b.onclick = () => answerBlocker(b.dataset.blk, b.dataset.st, after)); }
+
+/* manager alert: only blockers not seen before (by id and text), with the whole pile still waiting below */
+function checkNewBlockers() {
+  if (!S.me || !S.loaded || !$('#modal').classList.contains('hidden')) return;
+  if (!(S.role === 'admin' || (S.role === 'mgr' && (S.me.roles || []).includes('rm')))) return checkNewGiven();
+  const key = 'bo_seen_blk2_' + S.me.id, seen = new Set(JSON.parse(store.get(key) || '[]'));
+  const all = blockerList(id => inScopeId(id)).filter(b => b.status === 'open');
+  const fresh = all.filter(b => !seen.has(String(b.id)) && b.day >= yesterdayStr());
+  if (!fresh.length) return checkNewGiven();
+  const markSeen = () => store.set(key, JSON.stringify([...seen, ...all.map(b => String(b.id))].slice(-600)));
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(fresh.length > 1 ? `${fresh.length} new blockers` : 'New blocker reported', { body: fresh.map(b => `${firstName(personName(b.user_id))}: ${b.text}`).join('\n').slice(0, 240), tag: 'bo-blockers' }); } catch (e) {}
+  }
+  const others = all.filter(b => !fresh.includes(b));
+  openModal(`<div class="p-5 text-center"><span class="w-14 h-14 mx-auto rounded-full bg-warn-50 text-warn-800 grid place-items-center text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></span>
+    <h2 class="mt-3 font-display font-semibold text-xl">${fresh.length > 1 ? `${fresh.length} new blockers` : 'A new blocker'}</h2>${others.length ? `<p class="text-sm text-espresso-500">${others.length} older blocker${others.length > 1 ? 's are' : ' is'} still waiting for an answer.</p>` : ''}</div>
+    <ul class="px-5 space-y-2 max-h-[55vh] overflow-y-auto">${fresh.concat(others).slice(0, 30).map(b => blockerItem(b, true)).join('')}</ul>
+    <div class="p-5 flex flex-wrap gap-2 justify-end"><button id="blOk" class="${btnP}">Seen</button></div>`);
+  $('#blOk').onclick = () => { markSeen(); closeModal(); };
+  $$('#modal [data-blk]').forEach(btn => btn.onclick = () => { markSeen(); closeModal(); answerBlocker(btn.dataset.blk, btn.dataset.st); });
+}
+/* technician: the manager answered */
+function checkBlockerReplies() {
+  if (!S.blkOk) return false;
+  const key = 'bo_seen_blr_' + S.me.id, seen = new Set(JSON.parse(store.get(key) || '[]'));
+  const fresh = S.blockers.filter(b => b.user_id === S.me.id && b.replied_at && !seen.has(b.id + '|' + b.replied_at));
+  if (!fresh.length) return false;
+  popAlert({ icon: 'fa-reply', tone: 'bg-olive-50 text-olive-700', title: fresh.length > 1 ? `${fresh.length} blockers answered` : 'Your blocker was answered',
+    items: fresh.map(b => liBox(esc(b.text), `${BLK_STATUS[b.status][0]}${b.reply ? ' · ' + esc(b.reply) : ''} · ${esc(firstName(personName(b.replied_by)))}`, BLK_STATUS[b.status][1])),
+    notifyBody: 'From your manager', okLabel: 'OK', onOk: () => markSeenKeys('bo_seen_blr_', seen, fresh.map(b => b.id + '|' + b.replied_at)) });
+  return true;
+}
+/* technician's own blockers on their day page */
+function myBlockersPanel() {
+  const mine = S.blockers.filter(b => b.user_id === S.me.id).slice(-8).reverse();
+  return mine.length ? panel('Your blockers', `<ul class="space-y-2">${mine.map(b => blockerItem({ ...b, kind: 'new', day: (b.created_at || '').slice(0, 10) }, false)).join('')}</ul>`) : '';
+}
+
+/* ================= SUPERVISOR: SEE THE APP AS SOMEONE ELSE (read only) =================
+   The supervisor picks a person and the whole app shows what that person sees: their pages, their forms, their numbers.
+   Nothing can be saved while viewing as someone else. */
+S.viewAs = null;
+function readOnlyResult() {
+  const R = { data: null, error: { message: `Read only: you are viewing the app as ${S.viewAs ? S.viewAs.full_name : 'someone else'}. Go back to your own view to make changes.` } };
+  const o = new Proxy({}, { get: (t, k) => k === 'then' ? (res, rej) => Promise.resolve(R).then(res, rej) : () => o });
+  return o;
+}
+const RO_RPC = new Set(['station_open_faults']);   // reading only
+function readOnlyClient(real) {
+  return new Proxy(real, { get(t, k) {
+    if (k === 'from') return name => { const q = t.from(name); return new Proxy(q, { get(qt, m) { if (['insert', 'update', 'upsert', 'delete'].includes(m)) return () => readOnlyResult(); const v = qt[m]; return typeof v === 'function' ? v.bind(qt) : v; } }); };
+    if (k === 'rpc') return (fn, args) => RO_RPC.has(fn) ? t.rpc(fn, args) : readOnlyResult();
+    const v = t[k]; return typeof v === 'function' ? v.bind(t) : v;
+  } });
+}
+function viewAs(id) {
+  if (!(S.viewAs ? S.realRole === 'admin' : S.role === 'admin')) return;
+  const p = S.peopleList.find(x => x.id === id) || (typeof U !== 'undefined' && U.list.find(x => x.id === id));
+  if (!p) return toast('Person not found', 'err');
+  if (!S.viewAs) { S.realMe = S.me; S.realRole = S.role; S.realSb = S.sb; S.sb = readOnlyClient(S.realSb); }
+  S.viewAs = p; S.me = p; S.role = appRoleOf(p);
+  Object.assign(APP_ROLES[S.role], viewsFor(p)); S.stageTab = null; S.logDay = null;
+  closeModal(); closeDrawer(); if (typeof closeMd === 'function') closeMd();
+  showViewAsBar(); renderNav(); go(R().home);
+  toast(`Viewing as ${p.full_name} — read only`);
+}
+function stopViewAs() {
+  if (!S.viewAs) return;
+  S.me = S.realMe; S.role = S.realRole; S.sb = S.realSb; S.viewAs = null;
+  Object.assign(APP_ROLES[S.role], viewsFor(S.me));
+  showViewAsBar(); renderNav(); go('users');
+}
+function showViewAsBar() {
+  let bar = document.getElementById('viewAsBar');
+  if (!S.viewAs) { if (bar) bar.remove(); document.body.style.paddingTop = ''; return; }
+  document.body.style.paddingTop = S.viewAs ? '44px' : '';
+  if (!bar) { bar = document.createElement('div'); bar.id = 'viewAsBar'; bar.className = 'fixed top-0 inset-x-0 z-[60] bg-warn-50 text-warn-800 border-b border-warn-300 text-sm px-4 py-2 flex flex-wrap items-center gap-2 shadow'; document.body.appendChild(bar); }
+  bar.innerHTML = `<i class="fa-solid fa-eye"></i><span class="flex-1 min-w-0">Viewing as <b>${esc(S.viewAs.full_name)}</b> · ${esc(S.viewAs.staff_id)} · ${esc(roleLabel(S.viewAs))} — read only, nothing is saved</span>
+    <button id="vaPick" class="h-8 px-3 rounded-lg border border-warn-300 bg-surface font-semibold">Someone else</button><button id="vaStop" class="h-8 px-3 rounded-lg bg-espresso-900 text-cream-50 font-semibold">Back to my view</button>`;
+  $('#vaStop').onclick = stopViewAs; $('#vaPick').onclick = viewAsPicker;
+}
+function viewAsPicker() {
+  const ppl = S.peopleList.filter(p => p.active !== false && p.id !== (S.realMe || S.me).id).sort((a, b) => a.full_name.localeCompare(b.full_name));
+  openModal(`${modalHead('View the app as…')}<div class="p-5 space-y-3"><input id="vaQ" class="${inputC}" placeholder="Type a name, staff ID or role" aria-label="Search people">
+    <ul id="vaList" class="max-h-[55vh] overflow-y-auto divide-y divide-cream-100 rounded-xl border border-cream-200">${ppl.map(p => `<li data-q="${esc((p.full_name + ' ' + p.staff_id + ' ' + roleLabel(p) + ' ' + (p.team || '') + ' ' + (p.region || '')).toLowerCase())}"><button data-va="${p.id}" class="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-cream-100">${avatar(p, 'w-8 h-8 text-[11px]')}<span class="flex-1 min-w-0"><span class="block font-medium truncate">${esc(p.full_name)}</span><span class="block text-xs text-espresso-500 truncate">${esc(p.staff_id)} · ${esc(roleLabel(p))}${p.team && p.team !== 'All' ? ' · ' + esc(p.team) : ''}${p.region ? ' · ' + esc(p.region) : ''}</span></span></button></li>`).join('')}</ul></div>`);
+  $('#vaQ').oninput = e => { const q = e.target.value.trim().toLowerCase(); $$('#vaList li').forEach(li => li.classList.toggle('hidden', q && !li.dataset.q.includes(q))); };
+  $$('#modal [data-va]').forEach(b => b.onclick = () => viewAs(b.dataset.va));
+  $('#vaQ').focus();
 }
 
 /* ================= BOOT ================= */
