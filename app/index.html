@@ -3699,23 +3699,29 @@ function tagClosedBy(uid, from, to) {
 }
 
 /* the tagger's page */
-const TG = { q: '' };
+const TG = { q: '', r: '' };
 function renderTag() {
-  const mine = S.me.region ? S.stations.filter(s => s.region === S.me.region && (!areaOf(S.me) || s.sub_region === S.me.sub_region || !s.sub_region)) : S.stations;
+  // a fault tagger works across every region; others tag in their own region
+  const allRegions = isTagger() || !S.me.region;
+  const regOk = s => allRegions ? (!TG.r || s.region === TG.r) : s.region === S.me.region;
+  const mine = S.stations.filter(s => regOk(s) && (allRegions || !areaOf(S.me) || s.sub_region === S.me.sub_region || !s.sub_region));
   const recent = S.faults.filter(f => f.kind === 'tag' && f.user_id === S.me.id).slice(-15).reverse();
-  const st = faultStats(s => !S.me.region || s.region === S.me.region, todayStr(), todayStr());
-  setTitle('Tag faulty batteries', `${S.me.region ? S.me.region + ' region · ' : ''}${fmtDay(todayStr())}`);
+  const st = faultStats(regOk, todayStr(), todayStr());
+  const scopeLbl = allRegions ? (TG.r ? TG.r + ' region' : 'All regions') : S.me.region + ' region';
+  setTitle('Tag faulty batteries', `${scopeLbl} · ${fmtDay(todayStr())}`);
   $('#main').innerHTML = `<div class="p-4 md:p-6 max-w-3xl space-y-4">
     <div class="grid grid-cols-3 gap-3">
-      ${statCard('Tagged today', st.tagged, 'fa-tag', 'bg-terra-50 text-terra', S.me.region || 'all regions')}
+      ${statCard('Tagged today', st.tagged, 'fa-tag', 'bg-terra-50 text-terra', scopeLbl.toLowerCase())}
       ${statCard('Still open', st.open, 'fa-hourglass-half', 'bg-warn-50 text-warn-800', 'waiting for a technician')}
       ${statCard('Closed today', st.repaired + st.failed, 'fa-circle-check', 'bg-olive-50 text-olive-700', `${st.repaired} repaired · ${st.failed} to hub`)}
     </div>
     ${card(`<form id="tagF" class="p-5 space-y-4" novalidate>
       <h2 class="font-display font-semibold text-lg">Tag faulty batteries at a station</h2>
+      ${allRegions ? `<label class="block"><span class="text-sm font-medium">Region</span>
+        <select id="tagR" class="${inputC} mt-1.5" aria-label="Region"><option value="">All regions</option>${REGIONS.map(r => `<option${TG.r === r ? ' selected' : ''}>${r}</option>`).join('')}</select></label>` : ''}
       <label class="block"><span class="text-sm font-medium">Station</span>
         <input id="tagQ" class="${inputC} mt-1.5" placeholder="Type to search the station" value="${esc(TG.q)}" aria-label="Search station">
-        <select name="station" size="6" class="${inputC} mt-2 h-auto py-1" aria-label="Station" required>${mine.filter(s => !TG.q || s.name.toLowerCase().includes(TG.q.toLowerCase())).slice(0, 200).map(s => `<option value="${s.id}">${esc(s.name)}${s.sub_region ? ' · ' + esc(areaName(s.sub_region)) : ''}${openAt(s.id) ? ` — ${openAt(s.id)} open` : ''}</option>`).join('')}</select></label>
+        <select name="station" size="6" class="${inputC} mt-2 h-auto py-1" aria-label="Station" required>${mine.filter(s => !TG.q || s.name.toLowerCase().includes(TG.q.toLowerCase())).slice(0, 1000).map(s => `<option value="${s.id}">${esc(s.name)}${allRegions && !TG.r ? ' · ' + esc(s.region || '') : ''}${s.sub_region ? ' · ' + esc(areaName(s.sub_region)) : ''}${openAt(s.id) ? ` — ${openAt(s.id)} open` : ''}</option>`).join('')}</select></label>
       <div class="grid grid-cols-2 gap-3">
         <label class="block"><span class="text-sm font-medium">Faulty batteries</span>${numIn('qty', '', 'Faulty batteries')}</label>
         <label class="block"><span class="text-sm font-medium">What is wrong? (optional)</span><input name="note" maxlength="200" class="${inputC} mt-1.5" placeholder="e.g. not charging, swollen"></label>
@@ -3725,6 +3731,7 @@ function renderTag() {
     </form>`)}
     ${panel('What you tagged recently', recent.length ? `<ul class="divide-y divide-cream-100">${recent.map(f => `<li class="py-2 flex items-center gap-3 text-sm"><span class="flex-1"><b>${esc((stationById(f.station_id) || {}).name || 'Station')}</b>${f.note ? ` · ${esc(f.note)}` : ''}<span class="block text-xs text-espresso-500">${fmtDay(f.day)} · ${hhmm(f.created_at)}</span></span><span class="tnum font-semibold">${f.qty}</span><span class="text-xs text-espresso-500 w-20 text-right">${openAt(f.station_id)} open now</span></li>`).join('')}</ul>` : '<p class="text-sm text-espresso-500">Nothing tagged yet.</p>')}
   </div>`;
+  if ($('#tagR')) $('#tagR').onchange = e => { TG.r = e.target.value; renderTag(); };
   $('#tagQ').oninput = e => { TG.q = e.target.value; const pos = e.target.selectionStart; renderTag(); const i = $('#tagQ'); i.focus(); i.setSelectionRange(pos, pos); };
   $('#tagF').onsubmit = async e => {
     e.preventDefault(); const f = e.target, err = m => { $('#tagErr').textContent = m; $('#tagErr').classList.remove('hidden'); };
